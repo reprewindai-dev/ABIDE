@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["routed_to", "endpoint_resolved", "connection_id"],
+  "properties": {
+    "routed_to":         { "type": "string" },
+    "endpoint_resolved": { "type": "string" },
+    "latency_estimate_ms": { "type": "integer" },
+    "trust_at_target":  { "type": "integer" },
+    "connection_id":    { "type": "string", "format": "uuid" }
+  }
+}

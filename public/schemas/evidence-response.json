@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["evidence_id", "connection_id", "timestamp", "who", "what", "when", "why", "result", "pgl_hash"],
+  "properties": {
+    "evidence_id": { "type": "string", "format": "uuid" },
+    "connection_id": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "who": {
+      "type": "object",
+      "required": ["agent_id"],
+      "properties": {
+        "agent_id": { "type": "string", "format": "uuid" },
+        "agent_public_key": { "type": "string" },
+        "owner_id": { "type": "string" }
+      }
+    },
+    "what": {
+      "type": "object",
+      "required": ["capability_id"],
+      "properties": {
+        "capability_id": { "type": "string", "format": "uuid" },
+        "capability_name": { "type": "string" },
+        "action": { "type": "string" }
+      }
+    },
+    "when": {
+      "type": "object",
+      "required": ["requested_at", "completed_at"],
+      "properties": {
+        "requested_at": { "type": "string" },
+        "executed_at": { "type": "string" },
+        "completed_at": { "type": "string" }
+      }
+    },
+    "why": {
+      "type": "object",
+      "properties": {
+        "policy_applied": { "type": "string" },
+        "policy_version": { "type": "string" },
+        "authorization_proof": { "type": "string" }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string" },
+        "output_hash": { "type": "string" },
+        "output_size": { "type": "integer" },
+        "execution_time_ms": { "type": "integer" }
+      }
+    },
+    "pgl_hash": { "type": "string" }
+  }
+}

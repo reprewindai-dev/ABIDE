@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["capabilities"],
+  "properties": {
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "trust_minimum"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "trust_minimum": { "type": "integer" },
+          "category": { "type": "string" },
+          "endpoint": { "type": "string" },
+          "input_schema": { "type": "string" },
+          "output_schema": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "ApexBlueprint Builder",
+  "description": "An advanced Hierarchical Reasoning (HRM) system that compiles messy notes, graphs, codebases, and audio transcripts into structured, validated software blueprints, complete business plans, X402 payment architectures, and cryptographic intellectual property certificates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
