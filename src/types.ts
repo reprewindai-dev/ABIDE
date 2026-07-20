@@ -297,6 +297,25 @@ export interface BlueprintResult {
   source?: string;
   quota_fallback?: boolean;
   fallback_message?: string;
+  compilationMetadata?: {
+    mode: "LOCAL_FALLBACK" | string;
+    requestedProvider: string;
+    resolvedProvider: string;
+    fallbackReason: string;
+    semanticValidationAvailable: boolean;
+    repositoryValidationAvailable: boolean;
+    templateAugmentation: "DISABLED" | string;
+    humanApproval: "REQUIRED" | string;
+    approvalEligibility: string;
+    executionEligibility: "BLOCKED" | string;
+    claimClassification: string;
+  };
+  inputProvenance?: {
+    suppliedText: string;
+    targetPlatform: string | null;
+    selectedJurisdiction: string | null;
+    templateAugmentation: "DISABLED" | string;
+  };
 }
 
 export interface ModelConfig {

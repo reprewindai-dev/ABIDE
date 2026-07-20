@@ -249,7 +249,9 @@ export const CapabilitySchema = z.object({
   verification: CapabilityVerificationSchema,
   dependencies: z.array(z.string()),
   lifecycleState: z.string(),
-  maturityState: z.string(),
+  // Canonical field is observedMaturity. Keep maturityState optional for legacy imports.
+  observedMaturity: z.string().optional(),
+  maturityState: z.string().optional(),
   verificationState: z.string(),
   pricingState: z.string(),
   deprecationState: z.string(),
@@ -313,7 +315,29 @@ export const CanonicalBlueprintV1Schema = z.object({
   productOfferings: z.array(ProductOfferingSchema),
   gapsReport: z.array(GapReportSchema),
   files: z.array(VirtualFileSchema),
-  agentPackets: z.array(AgentPacketSchema).optional()
+  agentPackets: z.array(AgentPacketSchema).optional(),
+  source: z.string().optional(),
+  quota_fallback: z.boolean().optional(),
+  fallback_message: z.string().optional(),
+  compilationMetadata: z.object({
+    mode: z.string(),
+    requestedProvider: z.string(),
+    resolvedProvider: z.string(),
+    fallbackReason: z.string(),
+    semanticValidationAvailable: z.boolean(),
+    repositoryValidationAvailable: z.boolean(),
+    templateAugmentation: z.string(),
+    humanApproval: z.string(),
+    approvalEligibility: z.string(),
+    executionEligibility: z.string(),
+    claimClassification: z.string()
+  }).optional(),
+  inputProvenance: z.object({
+    suppliedText: z.string(),
+    targetPlatform: z.string().nullable(),
+    selectedJurisdiction: z.string().nullable(),
+    templateAugmentation: z.string()
+  }).optional()
 });
 
 // Zod schema for PlanStep

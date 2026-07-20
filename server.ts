@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { DEFAULT_BLUEPRINT } from "./src/data/defaultBlueprint";
+import { generateInputBoundedFallback } from "./src/core/fallback";
 import { validatePlanIR, PlanIR, PlanStep, calculateBlueprintHash, stableStringify, computeCanonicalHash } from "./src/core/plan-ir";
 import { isExecutionAdapterConfigured, isPglAdapterConfigured, executeCapabilityStep, sealStepOnLedger } from "./src/core/execution";
 import { verifyAndValidateApprovalToken, verifyTokenForPlan } from "./src/core/token";
@@ -1040,7 +1041,9 @@ ${emailToUse}`;
         userEmail,
         selectedJurisdiction,
         constitutionVersion,
-        constitutionState
+        constitutionState,
+        error,
+        selectedProvider
       );
       cacheManager.set(cacheKey, fallbackBlueprint, modelName || "gemini-3.5-flash", jurisdictionProfileName, latencyMs);
       fallbackBlueprint.cacheStatus = {
@@ -1065,206 +1068,21 @@ function generateFallbackBlueprint(
   userEmail?: string,
   selectedJurisdiction?: string,
   constitutionVersion?: string,
-  constitutionState?: string
+  constitutionState?: string,
+  providerError?: unknown,
+  requestedProvider = "gemini"
 ) {
-  // Deep copy DEFAULT_BLUEPRINT
-  const blueprint = JSON.parse(JSON.stringify(DEFAULT_BLUEPRINT));
-  
-  blueprint.source = "fallback";
-  blueprint.quota_fallback = true;
-  blueprint.timestamp = new Date().toISOString();
-  
-  // Assign stable, canonical content-addressed hash based on actual content and notes
-  blueprint.hash = calculateCanonicalHash(blueprint, notes);
-
-  let title = "Sovereign Autonomous Platform";
-  let tagline = "A secure, capability-oriented infrastructure engineered for autonomous execution";
-
-  const lowercaseNotes = notes.toLowerCase();
-  
-  if (lowercaseNotes.includes("scooter") || lowercaseNotes.includes("fleet") || lowercaseNotes.includes("charging") || lowercaseNotes.includes("solar")) {
-    title = "Sovereign M2M Scooter Fleet";
-    tagline = "Electric micro-mobility units with automated solar re-charging via X402 payment settlements";
-    
-    blueprint.highLevelGoals = [
-      {
-        title: "Deploy Autonomous Solar Re-charging Pads",
-        description: "Equip local hubs with X402 micro-payment escrow terminals for vehicle docks.",
-        status: "Critical"
-      },
-      {
-        title: "Integrate Real-Time Battery-Adaptive Router",
-        description: "Scooters self-route to closest available solar pads when battery falls below 20%.",
-        status: "Planned"
-      },
-      {
-        title: "Configure Instant Cross-Border x402 Settlements",
-        description: "Direct machine-to-machine wallet payouts to solar provider nodes.",
-        status: "Critical"
-      }
-    ];
-
-    blueprint.competitiveMoat = [
-      {
-        capabilityName: "Autonomous Solar-Parity Escrow",
-        description: "Allows battery-depleted devices to lock, rent, and settle solar charging without a centralized payment gateway.",
-        advantageScore: 98
-      },
-      {
-        capabilityName: "Hardware-to-Hardware x402 Channels",
-        description: "Settles charging costs at sub-cent levels, optimizing operational profit margins directly on-chain.",
-        advantageScore: 96
-      }
-    ];
-    
-    blueprint.companyGraph.products = [
-      {
-        name: "Sovereign M2M Scooter Fleet",
-        domain: "Autonomous Orchestration",
-        businessValue: "Drives hardware independence, enabling vehicles to buy their own fuel and pay for maintenance.",
-        owner: "Dr. Evelyn Vance"
-      },
-      {
-        name: "Solar Escrow Ledger",
-        domain: "DeFi Ledger Settlements",
-        businessValue: "Instantly splits fees between vehicle owners and green energy solar providers.",
-        owner: "Maria Kostova"
-      }
-    ];
-  } else if (lowercaseNotes.includes("cdn") || lowercaseNotes.includes("cache") || lowercaseNotes.includes("bandwidth") || lowercaseNotes.includes("raspberry")) {
-    title = "Sovereign Edge CDN Network";
-    tagline = "Encrypted community web caches rewarded in real-time micro-payments per megabyte served";
-    
-    blueprint.highLevelGoals = [
-      {
-        title: "Implement ZK Bandwidth Completed Proofs",
-        description: "Enable zero-knowledge proof verification that content blocks were fully delivered before escrow payouts.",
-        status: "Critical"
-      },
-      {
-        title: "Establish Secure Hardware Enclave Caches",
-        description: "Operators cannot peer into cached payloads or track active client request histories.",
-        status: "Critical"
-      },
-      {
-        title: "Deploy Sub-Millisecond Bandwidth Ledgers",
-        description: "Micropayments executed on-the-fly per megabyte delivered via decentralized ledger.",
-        status: "Planned"
-      }
-    ];
-
-    blueprint.competitiveMoat = [
-      {
-        capabilityName: "Zero-Knowledge Delivery Verifier",
-        description: "Bypasses centralized CDN logs, allowing secure, anonymous reward distribution without falsification risks.",
-        advantageScore: 97
-      },
-      {
-        capabilityName: "Hardware Enclave Shielding",
-        description: "Protects enterprise data blocks on community-run Raspberry Pi and edge servers.",
-        advantageScore: 95
-      }
-    ];
-
-    blueprint.companyGraph.products = [
-      {
-        name: "Sovereign Edge Cache OS",
-        domain: "Autonomous Orchestration",
-        businessValue: "Secures edge cache pipelines, rewarding hosts based on verifiable byte delivery logs.",
-        owner: "Dr. Evelyn Vance"
-      },
-      {
-        name: "CDN Bandwidth Ledger",
-        domain: "DeFi Ledger Settlements",
-        businessValue: "Handles microsecond pay-as-you-go billing per downloaded content chunk.",
-        owner: "Maria Kostova"
-      }
-    ];
-  } else if (lowercaseNotes.includes("tutor") || lowercaseNotes.includes("vitals") || lowercaseNotes.includes("smartwatch") || lowercaseNotes.includes("heart") || lowercaseNotes.includes("student")) {
-    title = "Vitals-Adaptive AI Tutoring Platform";
-    tagline = "An AI-powered programming instructor that monitors focus levels and adapts teaching speeds dynamically";
-    
-    blueprint.highLevelGoals = [
-      {
-        title: "Deploy Vitals Cognitive Load Model",
-        description: "Process smartwatch telemetry data in secure enclaves to predict frustration indices.",
-        status: "Critical"
-      },
-      {
-        title: "Establish Dynamic Speed Regulators",
-        description: "Slow down educational prompts and introduce adaptive examples on high cognitive strain.",
-        status: "Critical"
-      },
-      {
-        title: "Integrate Prompt-Level Micro-billing",
-        description: "Allow students to pay micro-cents per successful prompt via autonomous X402 wallets.",
-        status: "Planned"
-      }
-    ];
-
-    blueprint.competitiveMoat = [
-      {
-        capabilityName: "Cognitive Load Speed Control",
-        description: "Boosts educational retention by 42% through bio-interactive, closed-loop instruction speeds.",
-        advantageScore: 99
-      },
-      {
-        capabilityName: "Prompt-by-Prompt Micro-billing",
-        description: "Enables users to pay only for exact value received, bypassing expensive monthly recurring subscriptions.",
-        advantageScore: 94
-      }
-    ];
-
-    blueprint.companyGraph.products = [
-      {
-        name: "Vitals Instruction Engine",
-        domain: "Autonomous Orchestration",
-        businessValue: "Guides the learning pace based on biometric focus feedback loop parameters.",
-        owner: "Dr. Evelyn Vance"
-      },
-      {
-        name: "Prompt Micropayment Vault",
-        domain: "DeFi Ledger Settlements",
-        businessValue: "Unlocks lessons sequentially based on micro-token transfers.",
-        owner: "Maria Kostova"
-      }
-    ];
-  } else {
-    // General Customizer
-    let derivedTitle = "";
-    const cleanLines = notes.replace(/[^\w\s-]/g, "").split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
-    if (cleanLines.length > 0 && cleanLines[0].length < 50) {
-      derivedTitle = cleanLines[0];
-    } else {
-      const words = notes.replace(/[^\w\s]/g, "").split(/\s+/).filter(w => w.length > 0);
-      if (words.length > 0) {
-        derivedTitle = words.slice(0, 4).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-      }
-    }
-
-    if (derivedTitle && derivedTitle.length > 4 && derivedTitle.length < 50) {
-      title = derivedTitle;
-      tagline = `Sovereign, capability-oriented infrastructure for ${derivedTitle.toLowerCase()} systems`;
-    }
-  }
-
-  blueprint.title = title;
-  blueprint.tagline = tagline;
-
-  if (selectedJurisdiction) {
-    blueprint.jurisdictionProfileName = selectedJurisdiction;
-  }
-  
-  blueprint.fallback_message = "Free-tier Gemini API token count limit exceeded (250K/min limit). Apex locally generated a validated blueprint for you to continue testing instantly!";
-
-  // Run formal SEKED triage heuristic engine on fallback blueprint
-  try {
-    blueprint.sekedTriage = triageBlueprintIntakeV1(blueprint);
-  } catch (triageError) {
-    console.warn("Failed to execute SEKED triage heuristic engine on fallback blueprint:", triageError);
-  }
-
-  return blueprint;
+  const message = providerError instanceof Error ? providerError.message : String(providerError || "");
+  const fallbackReason = /quota|rate.?limit|token count|429/i.test(message)
+    ? "QUOTA_EXHAUSTED"
+    : "PROVIDER_UNAVAILABLE";
+  return generateInputBoundedFallback({
+    notes,
+    requestedProvider,
+    fallbackReason,
+    targetPlatform,
+    selectedJurisdiction,
+  });
 }
 
 // Endpoint to verify connection to the selected LLM provider with custom authentication headers

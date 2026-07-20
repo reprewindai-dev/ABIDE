@@ -80,8 +80,16 @@ describe("Milestone 2: Veklom Adapter & Live Integration Tests", () => {
       // It should successfully return the fallback blueprint
       assert.strictEqual(res.status, 200, "Should fall back gracefully and return HTTP 200");
       const data = await res.json();
-      assert.strictEqual(data.source, "fallback", "Blueprint source should be 'fallback'");
+      assert.strictEqual(data.source, "local-deterministic-fallback", "Blueprint source should identify the deterministic fallback");
       assert.strictEqual(data.quota_fallback, true, "quota_fallback must be set to true");
+      assert.strictEqual(data.compilationMetadata.mode, "LOCAL_FALLBACK");
+      assert.strictEqual(data.compilationMetadata.semanticValidationAvailable, false);
+      assert.strictEqual(data.compilationMetadata.repositoryValidationAvailable, false);
+      assert.strictEqual(data.compilationMetadata.executionEligibility, "BLOCKED");
+      assert.strictEqual(data.compilationMetadata.templateAugmentation, "DISABLED");
+      assert.strictEqual(data.agentPackets.length, 1);
+      assert.match(data.agentPackets[0].title, /human review/i);
+      assert.doesNotMatch(JSON.stringify(data), /Dr\. Evelyn Vance|Rust Einstein|Solidity|Gnomledger Mainnet|94\.2%|8\.5ms/i);
 
       serverInstance.close();
       return;

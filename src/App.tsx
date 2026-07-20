@@ -1317,6 +1317,19 @@ export default function App() {
       const blueprintData: BlueprintResult = await response.json();
       setResult(blueprintData);
 
+      // A local fallback is a draft only. It cannot lock the constitution or create an approval revision.
+      if (blueprintData.compilationMetadata?.mode === "LOCAL_FALLBACK") {
+        setConstitutionState("PENDING_REVISION");
+      }
+
+      // Only a primary compiler result may enter the existing revision workflow.
+      if (blueprintData.compilationMetadata?.mode === "LOCAL_FALLBACK") {
+        if (blueprintData.files && blueprintData.files.length > 0) {
+          setSelectedFilePath(blueprintData.files[0].path);
+        }
+        return;
+      }
+
       // Automatically sign and append a new revision for this successful compilation
       let nextVersion = "v4.02.2";
       if (revisions && revisions.length > 0) {
@@ -2387,12 +2400,12 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 <div className="flex items-center gap-2">
                   <span className="text-amber-500 animate-pulse text-lg">⚠️</span>
                   <div>
-                    <span className="font-black text-amber-500">API QUOTA EXHAUSTED:</span>
-                    <span className="ml-1 text-gray-300">The Gemini API Free Tier rate-limit was reached (250K tokens/min). To keep your testing seamless, our local high-fidelity compiler compiled a fully validated blueprint tailored to your input!</span>
+                    <span className="font-black text-amber-500">LOCAL FALLBACK MODE:</span>
+                    <span className="ml-1 text-gray-300">The primary compiler was unavailable. This limited deterministic draft contains only supplied input; semantic validation and repository verification were not performed.</span>
                   </div>
                 </div>
                 <div className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 border border-amber-500/30 whitespace-nowrap font-bold">
-                  APEX COMPILER ACTIVE
+                  APPROVAL REQUIRED · EXECUTION BLOCKED
                 </div>
               </motion.div>
             )}
@@ -2412,7 +2425,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Award size={12} className="text-[#00F0FF]" />
-                    Verified Gold Standard
+                    {result.compilationMetadata?.mode === "LOCAL_FALLBACK" ? "Schema-valid draft" : "Verified Gold Standard"}
                   </span>
                 </div>
               </div>
@@ -2420,7 +2433,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
               {/* Cryptographic IP Certificate Card */}
               <div className="w-full md:w-96 p-5 border-2 border-[#222] bg-[#0A0A0A] relative rounded-none">
                 <div className="absolute -top-3 -right-3 bg-[#00F0FF] text-black p-1.5 font-black uppercase text-[10px] tracking-wider shadow-[0_0_8px_#00F0FF]">
-                  SECURED
+                  {result.compilationMetadata?.mode === "LOCAL_FALLBACK" ? "UNSIGNED" : "SECURED"}
                 </div>
                 <div className="flex items-center gap-2 border-b border-[#222] pb-3 mb-3">
                   <span className="text-[10px] font-mono font-black tracking-widest text-[#00F0FF] uppercase">IP PROTECTION REGISTER</span>
@@ -2436,12 +2449,12 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#444]">MINT SEAL:</span>
-                    <span className="text-[#E0E0E0]">UT_STAMP_CAL_M2M</span>
+                    <span className="text-[#E0E0E0]">{result.compilationMetadata?.mode === "LOCAL_FALLBACK" ? "NO SIGNATURE" : "UT_STAMP_CAL_M2M"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#444]">VERIFICATION:</span>
                     <span className="text-[#00F0FF] font-black flex items-center gap-0.5">
-                      <CheckCircle2 size={9} /> COMPILER APPROVED
+                      <CheckCircle2 size={9} /> {result.compilationMetadata?.mode === "LOCAL_FALLBACK" ? "NOT APPROVED" : "COMPILER APPROVED"}
                     </span>
                   </div>
                   {result.cacheStatus && (
