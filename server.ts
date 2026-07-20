@@ -634,7 +634,7 @@ app.post("/api/generate", async (req, res) => {
               },
               "dependencies": { "type": "array", "items": { "type": "string" } },
               "lifecycleState": { "type": "string" },
-              "maturityState": { "type": "string" },
+              "observedMaturity": { "type": "string" },
               "verificationState": { "type": "string" },
               "pricingState": { "type": "string" },
               "deprecationState": { "type": "string" },
@@ -651,7 +651,7 @@ app.post("/api/generate", async (req, res) => {
                 "required": ["dataBoundaryProfile", "jurisdictionConstraints", "paymentRailConstraints", "auditRetentionProfile"]
               }
             },
-            "required": ["id", "name", "purpose", "businessOutcome", "machineOutcome", "inputs", "outputs", "preconditions", "postconditions", "owner", "canonicalSystem", "exposedInterfaces", "exposureSurfaces", "pricingModel", "governance", "evidence", "verification", "dependencies", "lifecycleState", "maturityState", "verificationState", "pricingState", "deprecationState", "jurisdictionPolicy"]
+            "required": ["id", "name", "purpose", "businessOutcome", "machineOutcome", "inputs", "outputs", "preconditions", "postconditions", "owner", "canonicalSystem", "exposedInterfaces", "exposureSurfaces", "pricingModel", "governance", "evidence", "verification", "dependencies", "lifecycleState", "observedMaturity", "verificationState", "pricingState", "deprecationState", "jurisdictionPolicy"]
           }
         },
         "productOfferings": {
@@ -736,7 +736,7 @@ CONSTITUTION & COMPLIANCE ENGINE CONSTRAINTS:
 - Active Jurisdiction Profile: ${jurisdictionProfileName}
 
 You MUST ensure that:
-1. Every generated capability includes exact compliance state fields: 'lifecycleState', 'maturityState' ('Conceptual', 'Partially Simulated', or 'Sovereign Production'), 'verificationState' ('Unverified', 'Verified', or 'Drift Detected'), 'pricingState' ('Unpriced', 'Draft Price', 'Active Pricing', or 'Deprecated Pricing'), 'deprecationState' ('None', 'Deprecation Warning Issued', 'Sunset Scheduled', or 'Retired'), and 'jurisdictionPolicy' matching the active jurisdiction profile constraints.
+1. Every generated capability includes exact compliance state fields: 'lifecycleState', 'observedMaturity' ('Conceptual', 'Partially Simulated', or 'Sovereign Production'), 'verificationState' ('Unverified', 'Verified', or 'Drift Detected'), 'pricingState' ('Unpriced', 'Draft Price', 'Active Pricing', or 'Deprecated Pricing'), 'deprecationState' ('None', 'Deprecation Warning Issued', 'Sunset Scheduled', or 'Retired'), and 'jurisdictionPolicy' matching the active jurisdiction profile constraints.
 2. The generated files (especially README.md, manifest.md, registry.md, and work_orders.md) are strictly updated and constrained based on this active jurisdiction's profile, baseline standards (e.g. Canada ISED 'AI for All' pins enclaves strictly to AWS ca-central-1 and local Canadian hosts and biometric export limits) and are locked under this constitution version.
 
 CRITICAL STRUCTURAL OUTPUT CONSTRAINTS:
@@ -2524,7 +2524,7 @@ app.post("/api/covenant/project", async (req, res) => {
 - **Business Outcome**: ${cap.businessOutcome || "N/A"}
 - **Technical Inputs**: ${Array.isArray(cap.inputs) ? cap.inputs.join(", ") : "None"}
 - **Technical Outputs**: ${Array.isArray(cap.outputs) ? cap.outputs.join(", ") : "None"}
-- **Maturity**: ${cap.maturityState || "Conceptual"}`;
+- **Maturity**: ${cap.observedMaturity || "Conceptual"}`;
         }).join("\n\n");
       } else {
         capSection = `No custom capabilities compiled yet. Default sovereign scheduler active.`;
@@ -2577,7 +2577,7 @@ ${packetsSection}
 
       let capSummary = "";
       if (blueprint?.capabilities && blueprint.capabilities.length > 0) {
-        capSummary = blueprint.capabilities.map((cap: any) => `- **${cap.name}** [Maturity: ${cap.maturityState || "Conceptual"}]`).join("\n");
+        capSummary = blueprint.capabilities.map((cap: any) => `- **${cap.name}** [Maturity: ${cap.observedMaturity || "Conceptual"}]`).join("\n");
       } else {
         capSummary = "- Default scheduler service active";
       }
@@ -3015,7 +3015,7 @@ app.get(["/.well-known/ai-catalog.json", "/.well-known/ai-catalog.json/route.ts"
         name: cap.name,
         description: cap.purpose || cap.businessOutcome,
         trust_minimum: cap.evidence?.trustDecayFactor ? Math.round(cap.evidence.trustDecayFactor * 100) : 50,
-        category: cap.canonicalDataDomain || cap.maturityState || "Autonomous Orchestration",
+        category: cap.canonicalDataDomain || cap.observedMaturity || "Autonomous Orchestration",
         endpoint: cap.exposedInterfaces?.rest?.[0] || `/capi/v1/capabilities/${cap.id}`,
         input_schema: `/schemas/execute-request.json`,
         output_schema: `/schemas/execute-response.json`
@@ -3038,7 +3038,7 @@ app.get("/capi/v1/capabilities", (req, res) => {
         name: cap.name,
         description: cap.purpose || cap.businessOutcome,
         trust_minimum: cap.evidence?.trustDecayFactor ? Math.round(cap.evidence.trustDecayFactor * 100) : 50,
-        category: cap.canonicalDataDomain || cap.maturityState || "Autonomous Orchestration",
+        category: cap.canonicalDataDomain || cap.observedMaturity || "Autonomous Orchestration",
         endpoint: cap.exposedInterfaces?.rest?.[0] || `/capi/v1/capabilities/${cap.id}`,
         input_schema: `/schemas/execute-request.json`,
         output_schema: `/schemas/execute-response.json`

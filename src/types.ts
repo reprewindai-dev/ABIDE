@@ -108,13 +108,27 @@ export interface CapabilityEvidence {
   freshnessWindowDays?: number;
   nextRevalidationDue?: string;
   trustDecayFactor?: number; // 0.0 (untrusted/expired) to 1.0 (fresh)
+  
+  // Real evidence structure
+  service?: string;
+  recordId?: string;
+  databaseRevision?: number;
+  lastObservedAt?: string;
+  evidenceId?: string;
 }
 
 export interface ApprovalWorkflow {
-  approverRoles: string[];
-  approvalTimestamps: Record<string, string>;
-  requiredSignOffCount: number;
-  overrideRationale?: string;
+  requiredRoles: string[];
+  requiredCount: number;
+  signedApprovals: {
+    signerIdentity: string;
+    role: string;
+    approvedBlueprintHash: string;
+    signature: string;
+    signedAt: string;
+    expiresAt: string;
+    verificationStatus: string;
+  }[];
 }
 
 export interface DownstreamImpactAnalysis {
@@ -206,10 +220,16 @@ export interface Capability {
   dependencies: string[];
   // Lifecycle and State
   lifecycleState: "Draft" | "Approved" | "Active" | "Deprecated" | "Retired" | string;
-  maturityState: "Conceptual" | "Partially Simulated" | "Sovereign Production" | string;
+  observedMaturity: "UNVERIFIED_DESIGN_INTENT" | "IMPLEMENTED_UNVERIFIED" | "LOCALLY_VERIFIED" | "INTEGRATION_VERIFIED" | "SOVEREIGN_PRODUCTION" | string;
+  declaredTargetMaturity: "SOVEREIGN_PRODUCTION" | string;
   verificationState: "Unverified" | "Verified" | "Drift Detected" | string;
   pricingState: "Unpriced" | "Draft Price" | "Active Pricing" | "Deprecated Pricing" | string;
   deprecationState: "None" | "Deprecation Warning Issued" | "Sunset Scheduled" | "Retired" | string;
+  compilationState: "UNCOMPILED" | "COMPILED" | string;
+  integrityState: "UNVERIFIED" | "HASH_VERIFIED" | string;
+  approvalState: "PENDING_APPROVAL" | "APPROVED" | string;
+  lockState: "UNLOCKED" | "LOCKED" | string;
+  executionEligibility: "BLOCKED" | "ELIGIBLE" | "RESTRICTED" | string;
   // Versioning and Lineage
   stableId?: string;
   semanticVersion?: string;

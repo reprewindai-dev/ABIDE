@@ -203,7 +203,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
     let extraLabel = "";
 
     if (visualizeMode === "status") {
-      const state = cap.maturityState?.toLowerCase() || "";
+      const state = cap.observedMaturity?.toLowerCase() || "";
       if (state.includes("production")) {
         color = "#10B981"; // Emerald green
         extraLabel = "PROD";
@@ -592,7 +592,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                             </div>
                             <div>
                               <span className="text-gray-600 block">Maturity:</span>
-                              <span className="text-white font-bold">{cap.maturityState}</span>
+                              <span className="text-white font-bold">{cap.observedMaturity}</span>
                             </div>
                             <div>
                               <span className="text-gray-600 block">Verification:</span>

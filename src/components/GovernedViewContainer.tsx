@@ -81,7 +81,7 @@ export default function GovernedViewContainer({
       case "capabilityGraph":
         return {
           capabilitiesCount: result.capabilities.length,
-          capabilitiesList: result.capabilities.map(c => ({ id: c.id, name: c.name, maturityState: c.maturityState })),
+          capabilitiesList: result.capabilities.map(c => ({ id: c.id, name: c.name, observedMaturity: c.observedMaturity })),
           networkTopology: "Decentralized mesh",
           apexIntegrationRating: 100
         };

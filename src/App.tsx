@@ -1397,7 +1397,9 @@ export default function App() {
     const lineageContent = JSON.stringify({
       manifestType: "Capability Lineage Manifest",
       version: constitutionVersion,
-      lockState: "UNLOCKED_PLANNING_PHASE",
+      lockState: "UNLOCKED",
+      compilationState: "COMPILED",
+      approvalState: "PENDING_APPROVAL",
       blueprintHash: result.hash,
       lineageEntries: (result.capabilities || []).map(cap => ({
         id: cap.id,
@@ -1408,7 +1410,7 @@ export default function App() {
         dependencies: cap.dependencies || [],
         dataSovereignty: {
           sourceOfTruth: `GitHub Blueprint Master: .veklom/capabilities/${cap.id}.json`,
-          systemOfRecord: `Local State DB: ${cap.canonicalSystem || "Gnomledger"}`
+          systemOfRecord: cap.evidence?.recordId ? `Live Record: ${cap.evidence.recordId}` : `[EXAMPLE_DATA] Local State DB: ${cap.canonicalSystem || "Gnomledger"}`
         }
       }))
     }, null, 2);
@@ -1417,7 +1419,9 @@ export default function App() {
     const ownershipContent = JSON.stringify({
       manifestType: "Ownership and Approval Manifest",
       version: constitutionVersion,
-      lockState: "UNLOCKED_PLANNING_PHASE",
+      lockState: "UNLOCKED",
+      compilationState: "COMPILED",
+      approvalState: "PENDING_APPROVAL",
       signOffAuditLogs: (result.capabilities || []).map(cap => ({
         id: cap.id,
         name: cap.name,
@@ -1448,7 +1452,8 @@ export default function App() {
       promotionRules: (result.capabilities || []).map(cap => ({
         id: cap.id,
         name: cap.name,
-        maturityState: "UNVERIFIED_DESIGN_INTENT",
+        observedMaturity: cap.observedMaturity || "UNVERIFIED_DESIGN_INTENT",
+        declaredTargetMaturity: cap.declaredTargetMaturity || "SOVEREIGN_PRODUCTION",
         rules: [
           {
             targetMaturity: "Sovereign Production",
