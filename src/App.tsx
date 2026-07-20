@@ -5058,6 +5058,13 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                       </div>
                     </div>
 
+                    {cacheStats && (
+                      <div className="flex justify-between items-center bg-[#0C0C0C] border border-[#1A1A1A] p-2 text-[9px] font-mono uppercase">
+                        <span className="text-gray-500">ENGINE: <span className="text-[#00F0FF] font-black">{cacheStats.engine || "MEMORY"}</span></span>
+                        <span className="text-gray-500">REDIS: <span className={cacheStats.redisStatus === "CONNECTED" ? "text-emerald-400 font-black" : cacheStats.redisStatus === "DISABLED" ? "text-gray-600" : "text-amber-500 font-black"}>{cacheStats.redisStatus || "DISABLED"}</span></span>
+                      </div>
+                    )}
+
                     {cacheStats && cacheStats.items && cacheStats.items.length > 0 && (
                       <div className="space-y-1">
                         <span className="text-[8px] font-mono text-gray-500 uppercase block">Active Memory Blueprints:</span>
