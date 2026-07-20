@@ -38,24 +38,21 @@ The codebase is engineered with **pluggable ingress/egress ports** (`src/core/co
              │   Database Storage    │ │ Payment Rail │ │ Verification Engine  │
              └───────────┬───────────┘ └──────┬───────┘ └──────────┬───────────┘
                          │                    │                    │
-        ┌────────────────┴──────────────┐     │                    │
-        ▼                               ▼     ▼                    ▼
-┌──────────────┐                 ┌──────────┐ ┌──────────────┐ ┌──────────────────────┐
-│  Firestore   │                 │ Postgres │ │ X402 Ledger  │ │ Remote TLA+/Z3 Server│
-│ (Firebase)   │                 │ (SQL/DB) │ │ (Base L2/RPC)│ │ (Formal Solvers API) │
-└──────────────┘                 └──────────┘ └──────────────┘ └──────────────────────┘
+                         ▼                    ▼                    ▼
+                 ┌──────────┐          ┌──────────────┐ ┌──────────────────────┐
+                 │ Postgres │          │ X402 Ledger  │ │ Remote TLA+/Z3 Server│
+                 │ (SQL/DB) │          │ (Base L2/RPC)│ │ (Formal Solvers API) │
+                 └──────────┘          └──────────────┘ └──────────────────────┘
 ```
 
-### 1. Durable Cloud Persistence (Firestore / PostgreSQL)
-*   **How to Activate:**
-    *   For **Google Cloud / Firebase Firestore**: Set `FIRESTORE_PROJECT_ID` in your `.env`.
-    *   For **Relational SQL / PostgreSQL**: Set `DATABASE_URL` in your `.env` (fully compatible with Drizzle ORM).
+### 1. Durable Cloud Persistence (PostgreSQL / Relational SQL)
+*   **How to Activate:** Set `DATABASE_URL` in your `.env` (fully compatible with Drizzle ORM).
 *   **In-Code Adapter Hook (`RealWorldDBConnector`):**
     ```typescript
-    if (process.env.FIRESTORE_PROJECT_ID) {
-       const { getFirestore } = await import("firebase-admin/firestore");
-       const db = getFirestore();
-       await db.collection("blueprints").doc(id).set(blueprint);
+    if (process.env.DATABASE_URL) {
+       // Wire your migrations/Drizzle schema insert here, e.g.:
+       // const { db } = await import("../db");
+       // await db.insert(blueprintsTable).values({ id, data: blueprint });
     }
     ```
 

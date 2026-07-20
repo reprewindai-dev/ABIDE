@@ -26,7 +26,7 @@ Sovereign operations within the Apex Control Plane are governed by three distinc
 | Workspace Layer | File Path | Architectural Responsibility | Status |
 | :--- | :--- | :--- | :--- |
 | **Layer 1: Adapters & Connectors** | `/src/core/cache.ts` | High-performance memory and optional Redis cache with automatic fallback. | **FULLY BUILT** |
-| | `/src/core/connectors.ts` | Pluggable connectors for real FireStore DB, Postgres, X402 payment, and solver APIs. | **FULLY BUILT** |
+| | `/src/core/connectors.ts` | Pluggable connectors for real Postgres, X402 payment, and solver APIs. | **FULLY BUILT** |
 | **Layer 2: Compiler & Contracts** | `/src/compiler/seked.ts` | Pure Fenton-Wilkinson moment-matching complexity and safety lane triage solver. | **FULLY BUILT** |
 | | `/src/core/validation.ts` | Strict schema validation contracts (Zod) for Plan IR, signatures, and capabilities. | **FULLY BUILT** |
 | **Layer 3: Endpoints & Routing** | `/server.ts` | Main Express server routing API calls, checking cache, and serving capabilities. | **FULLY BUILT** |
@@ -41,10 +41,8 @@ Pluggable adapters in `/src/core/connectors.ts` ingest real network states or sa
 ```typescript
 // Real-world database saver inside RealWorldDBConnector
 async saveBlueprint(id: string, blueprint: any): Promise<void> {
-  if (process.env.FIRESTORE_PROJECT_ID) {
-    const { getFirestore } = await import("firebase-admin/firestore");
-    const db = getFirestore();
-    await db.collection("blueprints").doc(id).set(blueprint);
+  if (process.env.DATABASE_URL) {
+    // Insert Drizzle ORM insertion logic here
   }
 }
 ```
@@ -64,7 +62,7 @@ export function compileSekedDirective(input: SekedInput): SekedDirective {
 
 ### Step 3: API Execution Routing (Layer 3)
 The main Express server (`server.ts`) handles incoming requests and maps results to real-world endpoints:
-*   `POST /api/realworld/db/save`: Saves active blueprint state to real-world Firestore/Postgres.
+*   `POST /api/realworld/db/save`: Saves active blueprint state to real-world Postgres.
 *   `POST /api/realworld/x402/lock`: Locks collateral USD dynamically on live payment ledgers.
 *   `POST /api/realworld/verify/z3`: Computes static invariants via Z3 constraint solvers.
 *   `POST /api/realworld/verify/tla`: Model checks PlusCal states.

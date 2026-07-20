@@ -192,6 +192,13 @@ export class RealWorldVerificationConnector implements VerificationServiceConnec
             .replace(/\/\\/g, "&&")
             .replace(/\\\//g, "||");
 
+          // Strict token-based validation to prevent code injection / sandbox breakouts
+          const allowedTokensRegex = /^(?:[a-zA-Z_][a-zA-Z0-9_]*|[0-9]+(?:\.[0-9]+)?|true|false|==|!=|<=|>=|<|>|&&|\|\||!|\(|\)|\s)+$/;
+          if (!allowedTokensRegex.test(jsExpr)) {
+            failedAsserts.push(`${expr} (Security Block: unsafe tokens detected)`);
+            continue;
+          }
+
           const evaluator = new Function(...varKeys, `return (${jsExpr});`);
           const result = evaluator(...varValues);
           if (!result) {
