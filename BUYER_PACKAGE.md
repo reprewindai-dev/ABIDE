@@ -70,8 +70,10 @@ The codebase is engineered with **pluggable ingress/egress ports** (`src/core/co
     }
     ```
 
-### 3. TLA+ & Z3 SMT Formal Solvers (Remote Solver Server)
-*   **How to Activate:** Set `VERIFICATION_SERVICE_URL` in your `.env` to route PlusCal or SMT-LIB constraints directly to a verification cluster.
+### 3. TLA+ & Z3 SMT Formal Solvers (Remote & Native Local Integrations)
+*   **How to Activate:** 
+    *   **Remote Service:** Set `VERIFICATION_SERVICE_URL` in your `.env` to route PlusCal or SMT-LIB constraints directly to a remote verification cluster.
+    *   **Native Local Solver (Fallback):** When `VERIFICATION_SERVICE_URL` is unset, the system automatically shells out to the native **Z3 SMT solver** command-line utility (`z3`) available on the system path, instead of using a lightweight custom rule engine.
 *   **In-Code Adapter Hook (`RealWorldVerificationConnector`):**
     ```typescript
     if (process.env.VERIFICATION_SERVICE_URL) {
@@ -81,6 +83,10 @@ The codebase is engineered with **pluggable ingress/egress ports** (`src/core/co
           body: JSON.stringify({ assertions })
        });
        return await response.json();
+    } else {
+       // Local shell integration executing the native 'z3' binary:
+       const { stdout } = await execAsync(`z3 ${tempPath}`);
+       // Parsed via a custom S-expression tokenizer to extract assignments
     }
     ```
 
