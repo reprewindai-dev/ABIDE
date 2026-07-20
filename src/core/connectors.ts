@@ -7,8 +7,8 @@ export interface DBConnector {
 }
 
 export interface X402PaymentConnector {
-  lockCollateral(leaseId: string, amountUsd: number, payerAddress: string): Promise<{ txHash: string; success: boolean }>;
-  releaseEscrow(leaseId: string, amountUsd: number, payeeAddress: string): Promise<{ txHash: string; success: boolean }>;
+  lockCollateral(leaseId: string, amountUsd: number, payerAddress: string): Promise<{ txHash: string; success: boolean; simulated: boolean }>;
+  releaseEscrow(leaseId: string, amountUsd: number, payeeAddress: string): Promise<{ txHash: string; success: boolean; simulated: boolean }>;
 }
 
 export interface VerificationServiceConnector {
@@ -22,37 +22,22 @@ export interface OpenTelemetryExporter {
 
 /**
  * Real-world pluggable database connector.
- * If process.env.FIRESTORE_PROJECT_ID is set, uses Firestore.
- * If process.env.DATABASE_URL (PostgreSQL) is set, connects to Cloud SQL/Postgres.
- * Otherwise, falls back to high-performance local memory/cache.
+ * If process.env.DATABASE_URL (PostgreSQL) is set, wire your Drizzle/ORM queries below.
+ * Otherwise, falls back to local memory (non-persistent — resets on restart).
+ * NOTE: no Firebase/Firestore path here on purpose — this stack's locked decision is
+ * no Firebase and no external CDNs anywhere (Hetzner/Coolify for Canadian data sovereignty).
  */
 export class RealWorldDBConnector implements DBConnector {
   private memoryStore = new Map<string, any>();
 
   async saveBlueprint(id: string, blueprint: any): Promise<void> {
-    console.log(`[DB Connector] Saving blueprint ${id} to database.`);
-    
-    // Firestore Ingress Hook
-    if (process.env.FIRESTORE_PROJECT_ID) {
-      try {
-        // Safe lazy-initialization of Firebase Admin or client SDK
-        // @ts-ignore
-        const { getFirestore } = await import("firebase-admin/firestore");
-        const db = getFirestore();
-        await db.collection("blueprints").doc(id).set(blueprint);
-        return;
-      } catch (err: any) {
-        console.warn("[DB Connector] Firestore save failed, falling back to memory:", err.message);
-      }
-    }
-
     // Relational/PostgreSQL Drizzle Ingress Hook
     if (process.env.DATABASE_URL) {
       try {
-        // Users can easily run their migrations or drizzle schema insert queries here:
+        // Wire your migrations/Drizzle schema insert here, e.g.:
         // const { db } = await import("../db");
         // await db.insert(blueprintsTable).values({ id, data: blueprint });
-        console.log(`[DB Connector] PostgreSQL adapter ready. Configure your Drizzle ORM queries inside src/core/connectors.ts.`);
+        console.log(`[DB Connector] DATABASE_URL is set but no query is wired yet — configure src/core/connectors.ts. Falling back to memory for now.`);
       } catch (err: any) {
         console.warn("[DB Connector] PostgreSQL save failed:", err.message);
       }
@@ -62,34 +47,10 @@ export class RealWorldDBConnector implements DBConnector {
   }
 
   async getBlueprint(id: string): Promise<any | null> {
-    if (process.env.FIRESTORE_PROJECT_ID) {
-      try {
-        // @ts-ignore
-        const { getFirestore } = await import("firebase-admin/firestore");
-        const db = getFirestore();
-        const doc = await db.collection("blueprints").doc(id).get();
-        if (doc.exists) {
-          return doc.data();
-        }
-      } catch (err) {
-        // Fallback
-      }
-    }
     return this.memoryStore.get(id) || null;
   }
 
   async deleteBlueprint(id: string): Promise<boolean> {
-    if (process.env.FIRESTORE_PROJECT_ID) {
-      try {
-        // @ts-ignore
-        const { getFirestore } = await import("firebase-admin/firestore");
-        const db = getFirestore();
-        await db.collection("blueprints").doc(id).delete();
-        return true;
-      } catch (err) {
-        // Fallback
-      }
-    }
     return this.memoryStore.delete(id);
   }
 }
@@ -99,7 +60,7 @@ export class RealWorldDBConnector implements DBConnector {
  * Signs real EVM transactions on Base (L2) or proxies calls to a centralized ledger endpoint if configured.
  */
 export class RealWorldX402Connector implements X402PaymentConnector {
-  async lockCollateral(leaseId: string, amountUsd: number, payerAddress: string): Promise<{ txHash: string; success: boolean }> {
+  async lockCollateral(leaseId: string, amountUsd: number, payerAddress: string): Promise<{ txHash: string; success: boolean; simulated: boolean }> {
     console.log(`[X402 Connector] Locking $${amountUsd} USD for lease ${leaseId} from payer ${payerAddress}.`);
 
     if (process.env.X402_LEDGER_URL) {
@@ -111,19 +72,20 @@ export class RealWorldX402Connector implements X402PaymentConnector {
         });
         if (response.ok) {
           const data = await response.json();
-          return { txHash: data.txHash, success: true };
+          return { txHash: data.txHash, success: true, simulated: false };
         }
       } catch (err: any) {
         console.warn("[X402 Connector] Remote X402 Ledger connection failed:", err.message);
       }
     }
 
-    // Default high-fidelity local cryptographic signature generation
+    // No X402_LEDGER_URL configured (or it failed) — no money moved. This hash is a
+    // local placeholder for demo/dev purposes only, not a real settlement.
     const mockHash = "0x" + crypto.createHash("sha256").update(leaseId + amountUsd + Date.now().toString()).digest("hex");
-    return { txHash: mockHash, success: true };
+    return { txHash: mockHash, success: true, simulated: true };
   }
 
-  async releaseEscrow(leaseId: string, amountUsd: number, payeeAddress: string): Promise<{ txHash: string; success: boolean }> {
+  async releaseEscrow(leaseId: string, amountUsd: number, payeeAddress: string): Promise<{ txHash: string; success: boolean; simulated: boolean }> {
     console.log(`[X402 Connector] Releasing escrow of $${amountUsd} USD for lease ${leaseId} to payee ${payeeAddress}.`);
 
     if (process.env.X402_LEDGER_URL) {
@@ -135,15 +97,16 @@ export class RealWorldX402Connector implements X402PaymentConnector {
         });
         if (response.ok) {
           const data = await response.json();
-          return { txHash: data.txHash, success: true };
+          return { txHash: data.txHash, success: true, simulated: false };
         }
       } catch (err: any) {
         console.warn("[X402 Connector] Remote X402 Ledger connection failed:", err.message);
       }
     }
 
+    // Same rule: unconfigured or failed remote ledger means this did not move real money.
     const mockHash = "0x" + crypto.createHash("sha256").update(leaseId + amountUsd + Date.now().toString() + "_release").digest("hex");
-    return { txHash: mockHash, success: true };
+    return { txHash: mockHash, success: true, simulated: true };
   }
 }
 

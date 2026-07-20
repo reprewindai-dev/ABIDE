@@ -103,45 +103,41 @@ export class ApexCacheManager {
   }
 
   /**
-   * Retrieves a compiled blueprint from cache if present. Supports Redis and falls back to Memory LRU.
+   * Retrieves a compiled blueprint from cache if present.
+   * Checks local memory LRU first (fast path). On a local miss, if Redis is connected,
+   * checks Redis before declaring a real miss — this is what actually makes multi-instance
+   * deployments share cache hits instead of each instance only ever seeing its own memory.
    */
-  public get(key: string): any | null {
-    // 1. Try Redis first if connected
-    if (this.isRedisConnected && this.redisClient) {
-      try {
-        // We do this synchronously or we can return a Promise?
-        // Wait, the Express route uses `cacheManager.get(key)` synchronously.
-        // In Node.js, redis calls are async. To prevent breaking the existing synchronous compiler flow,
-        // we can utilize a hybrid model:
-        // We mirror Redis writes asynchronously, and for reads, we serve from memory LRU instantly,
-        // but we can also pre-populate our memory LRU from Redis in the background, or handle async routes.
-        // Wait, let's keep the get/set synchronous for the main compiler loop, using our super-fast
-        // LRU memory cache, but synchronizing it with Redis asynchronously!
-        // This is a brilliant engineering design: "Redis-Asynchronous-Write-Back with Instant Memory Cache".
-        // It provides ~0ms fetch latency (since memory is always faster than network Redis) while ensuring
-        // multiple clustered node instances of server.ts can hydrate their memory caches from Redis in the background!
-        // Let's implement this "Hybrid Memory-Backed Write-Through Cache"!
-      } catch (err) {
-        // Ignore and fall through
-      }
-    }
-
+  public async get(key: string): Promise<any | null> {
     const entry = this.cache.get(key);
     if (entry) {
       this.hitsCount++;
       entry.hits++;
       entry.lastAccessed = new Date().toISOString();
-      
+
       // Move to end to preserve LRU ordering
       this.cache.delete(key);
       this.cache.set(key, entry);
 
       this.latencySavedMs += entry.latencyMs;
 
-      // Async sync back to Redis if connected (update hit count or TTL)
+      // Async sync back to Redis if connected (refresh TTL)
       this.syncToRedisAsync(key, entry);
 
       return entry.data;
+    }
+
+    // Local miss — check Redis before giving up, so other instances' writes are visible here.
+    if (this.isRedisConnected && this.redisClient) {
+      const hydrated = await this.hydrateFromRedis(key);
+      if (hydrated) {
+        this.hitsCount++;
+        const redisEntry = this.cache.get(key);
+        if (redisEntry) {
+          this.latencySavedMs += redisEntry.latencyMs;
+        }
+        return redisEntry?.data ?? null;
+      }
     }
 
     this.missesCount++;

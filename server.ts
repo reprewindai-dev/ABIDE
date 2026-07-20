@@ -334,7 +334,7 @@ app.post("/api/generate", async (req, res) => {
     const ipHash = crypto.createHash("sha256").update(notes + (audioTranscript || "") + emailToUse).digest("hex");
 
     if (!bypassCache) {
-      const cachedResult = cacheManager.get(cacheKey);
+      const cachedResult = await cacheManager.get(cacheKey);
       if (cachedResult) {
         console.log(`[Cache Hit] Serving compiled blueprint for key: ${cacheKey}`);
         return res.json({
