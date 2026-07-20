@@ -413,6 +413,63 @@ export default function App() {
   const [scrapeKeyword, setScrapeKeyword] = useState("");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeMessage, setScrapeMessage] = useState<string | null>(null);
+  
+  const [verifyingIndex, setVerifyingIndex] = useState<number | null>(null);
+
+  const handleVerifyPaper = async (paper: any, listIdx: number, isSearchResult: boolean) => {
+    setVerifyingIndex(listIdx);
+    try {
+      const response = await fetch("/api/academic/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: paper.title,
+          resolvableIdentifier: paper.resolvableIdentifier || paper.url
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        const updatedPaper = {
+          ...paper,
+          title: data.paper.title,
+          authors: data.paper.authors,
+          summary: data.paper.summary,
+          url: data.paper.url,
+          verificationStatus: "VERIFIED",
+          digitalSignature: data.paper.digitalSignature,
+          source: data.paper.source
+        };
+        
+        if (isSearchResult) {
+          setAcademicResults(prev => prev.map((p, i) => i === listIdx ? updatedPaper : p));
+        } else {
+          setResult(prev => {
+            if (!prev) return prev;
+            const updatedGrounding = prev.academicGrounding.map((p, i) => i === listIdx ? {
+              ...p,
+              title: data.paper.title,
+              author: data.paper.authors,
+              summary: data.paper.summary,
+              url: data.paper.url,
+              verificationStatus: "VERIFIED",
+              digitalSignature: data.paper.digitalSignature,
+              source: data.paper.source
+            } : p);
+            return {
+              ...prev,
+              academicGrounding: updatedGrounding
+            };
+          });
+        }
+      } else {
+        alert(data.message || "Failed to verify paper on arXiv.");
+      }
+    } catch (err: any) {
+      alert(`Verification error: ${err.message}`);
+    } finally {
+      setVerifyingIndex(null);
+    }
+  };
 
   // File explorer states
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>("README.md");
@@ -4068,18 +4125,43 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                             <div key={idx} className="p-4 bg-[#0A0A0A] border-2 border-[#222] space-y-3 hover:border-[#00F0FF]/30 transition-all rounded-none">
                               <div className="flex justify-between items-center text-[10px] font-mono uppercase">
                                 <span className="text-[#00F0FF] font-black">{paper.source}</span>
-                                <span className="px-2 py-0.5 bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] font-bold">
-                                  Score: {typeof paper.score === "number" ? paper.score.toFixed(4) : paper.score}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  {paper.verificationStatus === "VERIFIED" ? (
+                                    <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                                      <CheckCircle2 size={11} />
+                                      <span>VERIFIED on arXiv</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-amber-400 font-bold">● UNVERIFIED SOURCE</span>
+                                      <button
+                                        onClick={() => handleVerifyPaper(paper, idx, true)}
+                                        disabled={verifyingIndex === idx}
+                                        className="px-2 py-0.5 bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30 text-[#00F0FF] text-[9px] uppercase font-bold transition-all"
+                                      >
+                                        {verifyingIndex === idx ? "Verifying..." : "Verify Live"}
+                                      </button>
+                                    </div>
+                                  )}
+                                  <span className="px-2 py-0.5 bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] font-bold">
+                                    Score: {typeof paper.score === "number" ? paper.score.toFixed(4) : paper.score}
+                                  </span>
+                                </div>
                               </div>
                               <div>
                                 <h4 className="font-bold text-white text-xs uppercase tracking-wider">{paper.title}</h4>
                                 <p className="text-[10px] font-mono text-[#666] uppercase">By {paper.authors || paper.author}</p>
                               </div>
                               <p className="text-xs font-mono text-[#888] leading-relaxed uppercase bg-[#111] p-3 border border-[#222] rounded-none whitespace-pre-line">
-                                <span className="font-bold text-white block mb-1">Abstract Abstract:</span>
+                                <span className="font-bold text-white block mb-1">Abstract:</span>
                                 {paper.summary}
                               </p>
+                              {paper.digitalSignature && (
+                                <div className="p-2 bg-[#020F12]/80 border border-[#00F0FF]/10 font-mono text-[9px] text-[#00F0FF]/70 rounded-none break-all">
+                                  <span className="font-bold text-white uppercase mr-1">digitalSignature:</span>
+                                  {paper.digitalSignature}
+                                </div>
+                              )}
                               <div className="pt-2 flex justify-between items-center border-t border-[#111] text-[10px] font-mono uppercase">
                                 <span className="text-gray-500">Relevance: {paper.relevance}</span>
                                 {paper.url && (
@@ -4096,7 +4178,26 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                             <div key={idx} className="p-4 bg-[#0A0A0A] border-2 border-[#222] space-y-3 hover:border-[#00F0FF]/30 transition-all rounded-none">
                               <div className="flex justify-between items-center text-[10px] font-mono uppercase">
                                 <span className="text-[#00F0FF] font-black">{paper.source}</span>
-                                <span className="text-[#444]">Ref ID: #{idx + 101}</span>
+                                <div className="flex items-center gap-2">
+                                  {paper.verificationStatus === "VERIFIED" ? (
+                                    <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                                      <CheckCircle2 size={11} />
+                                      <span>VERIFIED on arXiv</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-amber-400 font-bold">● UNVERIFIED SOURCE</span>
+                                      <button
+                                        onClick={() => handleVerifyPaper(paper, idx, false)}
+                                        disabled={verifyingIndex === idx}
+                                        className="px-2 py-0.5 bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 border border-[#00F0FF]/30 text-[#00F0FF] text-[9px] uppercase font-bold transition-all"
+                                      >
+                                        {verifyingIndex === idx ? "Verifying..." : "Verify Live"}
+                                      </button>
+                                    </div>
+                                  )}
+                                  <span className="text-[#444]">Ref ID: #{idx + 101}</span>
+                                </div>
                               </div>
                               <div>
                                 <h4 className="font-bold text-white text-xs uppercase tracking-wider">{paper.title}</h4>
@@ -4106,8 +4207,19 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                                 <span className="font-bold text-white block mb-1">Abstract Summary:</span>
                                 {paper.summary}
                               </p>
+                              {paper.digitalSignature && (
+                                <div className="p-2 bg-[#020F12]/80 border border-[#00F0FF]/10 font-mono text-[9px] text-[#00F0FF]/70 rounded-none break-all">
+                                  <span className="font-bold text-white uppercase mr-1">digitalSignature:</span>
+                                  {paper.digitalSignature}
+                                </div>
+                              )}
                               <div className="pt-2 flex justify-between items-center border-t border-[#111] text-[10px] font-mono uppercase">
                                 <span className="text-gray-500">Relevance: {paper.relevance}</span>
+                                {paper.url && (
+                                  <a href={paper.url} target="_blank" rel="noopener noreferrer" className="text-[#00F0FF] hover:underline flex items-center gap-0.5 font-bold">
+                                    <span>View link</span> <ExternalLink size={10} />
+                                  </a>
+                                )}
                               </div>
                             </div>
                           ))
