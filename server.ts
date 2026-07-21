@@ -143,6 +143,36 @@ function resolveSafeRemoteUrl(rawUrl: unknown, fallbackUrl: string, label: strin
   return parsed.toString().replace(/\/+$/, "");
 }
 
+function configuredOllamaBaseUrl(): string {
+  const value = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").trim().replace(/\/+$/, "");
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("OLLAMA_BASE_URL must be a valid http(s) URL.");
+  }
+  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+    throw new Error("OLLAMA_BASE_URL must be an http(s) URL without credentials.");
+  }
+  return parsed.toString().replace(/\/+$/, "");
+}
+
+function ollamaBaseUrl(customUrl: unknown): string {
+  if (typeof customUrl === "string" && customUrl.trim()) {
+    return resolveSafeRemoteUrl(customUrl, configuredOllamaBaseUrl(), "Ollama");
+  }
+  return configuredOllamaBaseUrl();
+}
+
+function ollamaOpenAiBaseUrl(customUrl: unknown): string {
+  const base = ollamaBaseUrl(customUrl);
+  return base.endsWith("/v1") ? base : `${base}/v1`;
+}
+
+function configuredOllamaModel(): string {
+  return (process.env.OLLAMA_MODEL || "llama3").trim() || "llama3";
+}
+
 app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/readyz", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
 
@@ -990,7 +1020,7 @@ ${emailToUse}`;
       if (customUrl) {
         openAiBaseUrl = resolveSafeRemoteUrl(customUrl, openAiBaseUrl, "OpenAI-compatible");
       } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+        openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
@@ -1029,7 +1059,7 @@ ${emailToUse}`;
 
       // Build payload
       const payload: any = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : configuredOllamaModel()),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -1304,7 +1334,7 @@ app.post("/api/test-connection", async (req, res) => {
       if (customUrl) {
         openAiBaseUrl = resolveSafeRemoteUrl(customUrl, openAiBaseUrl, "OpenAI-compatible");
       } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+        openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
@@ -1335,7 +1365,7 @@ app.post("/api/test-connection", async (req, res) => {
       }
 
       const payload = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : configuredOllamaModel()),
         messages: [{ role: "user", content: testPrompt }],
         max_tokens: 10,
         temperature: 0.1,
@@ -1395,9 +1425,9 @@ app.post("/api/test-connection", async (req, res) => {
     console.error("Connection test error:", error);
     let errorMsg = error.message || "Connection test failed.";
     if (errorMsg.includes("11434") || errorMsg.includes("ECONNREFUSED") || (error.cause && error.cause.toString().includes("11434"))) {
-      errorMsg = "Ollama (Llama) at localhost:11434 is unreachable from our secure cloud sandbox. To connect your local LLM, please expose it via a secure tunnel (like Ngrok or localtunnel) and provide the public URL in Custom URL, or use our server-side Gemini API instead!";
+      errorMsg = "Ollama (Llama) is unreachable at the configured provider endpoint. Set OLLAMA_BASE_URL for the server-side daemon or provide a reachable development URL.";
     }
-    return res.status(200).json({
+    return res.status(503).json({
       success: false,
       error: errorMsg,
     });
@@ -2255,13 +2285,13 @@ ${JSON.stringify(blueprint, null, 2)}`;
       if (customUrl) {
         openAiBaseUrl = resolveSafeRemoteUrl(customUrl, openAiBaseUrl, "OpenAI-compatible");
       } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+        openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       }
 
       const activeApiKey = apiKey || (selectedProvider === "openai" ? process.env.OPENAI_API_KEY : "ollama");
-      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct");
+      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : configuredOllamaModel());
 
       const fetchHeaders: any = {
         "Content-Type": "application/json"
@@ -3094,13 +3124,13 @@ app.post("/api/cache/clear", (req, res) => {
 
 // 7. OLLAMA REAL-TIME LOCAL MODEL DISCOVERY
 app.post("/api/ollama/models", async (req, res) => {
-  if (!requireManagementAccess(req, res)) {
-    return;
-  }
+  // Read-only provider discovery is safe for the UI; execution and management
+  // routes remain authenticated. User-supplied production URLs are still
+  // constrained by ollamaBaseUrl/resolveSafeRemoteUrl.
   const { customUrl } = req.body;
   let baseUrl: string;
   try {
-    baseUrl = resolveSafeRemoteUrl(customUrl, "http://localhost:11434", "Ollama");
+    baseUrl = ollamaBaseUrl(customUrl);
   } catch (error: any) {
     return res.status(400).json({ error: error.message || "Invalid Ollama URL." });
   }
@@ -3113,7 +3143,7 @@ app.post("/api/ollama/models", async (req, res) => {
     const latencyMs = Date.now() - startTime;
     if (response.ok) {
       const data = await response.json();
-      return res.json({
+      return res.status(503).json({
         success: true,
         source: "local-ollama",
         latencyMs,
@@ -3129,7 +3159,7 @@ app.post("/api/ollama/models", async (req, res) => {
     }
   } catch (err: any) {
     const latencyMs = Date.now() - startTime;
-    return res.json({
+    return res.status(503).json({
       success: false,
       source: "local-ollama",
       latencyMs,
