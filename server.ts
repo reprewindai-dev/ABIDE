@@ -1590,6 +1590,7 @@ app.post("/api/academic/scrape", async (req, res) => {
 app.post("/api/github/analyze", async (req, res) => {
   try {
     const { repoUrl, notes, businessPlanText, apiKey, customToken } = req.body;
+    const githubToken = typeof customToken === "string" && customToken.trim() ? customToken.trim() : process.env.GITHUB_TOKEN;
 
     if (!repoUrl) {
       return res.status(400).json({ error: "Missing required GitHub Repository URL." });
@@ -1624,8 +1625,8 @@ app.post("/api/github/analyze", async (req, res) => {
         "User-Agent": "ApexBlueprint-Compiler",
         Accept: "application/vnd.github.v3+json",
       };
-      if (customToken) {
-        headers["Authorization"] = `token ${customToken}`;
+      if (githubToken) {
+        headers["Authorization"] = `Bearer ${githubToken}`;
       }
 
       const gitTreeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`;
@@ -1789,11 +1790,12 @@ You must return a valid JSON object matching this schema exactly:
 app.post("/api/github/push-blueprint", async (req, res) => {
   try {
     const { repoUrl, token, branchName, blueprint, baseBranch = "main" } = req.body;
+    const githubToken = typeof token === "string" && token.trim() ? token.trim() : process.env.GITHUB_TOKEN;
 
     if (!repoUrl) {
       return res.status(400).json({ error: "Missing GitHub Repository URL." });
     }
-    if (!token) {
+    if (!githubToken) {
       return res.status(400).json({ error: "GitHub Access Token (PAT) is required to push a new branch." });
     }
     if (!blueprint) {
@@ -1824,7 +1826,7 @@ app.post("/api/github/push-blueprint", async (req, res) => {
     const headers: HeadersInit = {
       "User-Agent": "ApexBlueprint-Compiler",
       "Accept": "application/vnd.github.v3+json",
-      "Authorization": `token ${token}`,
+      "Authorization": `Bearer ${githubToken}`,
       "Content-Type": "application/json"
     };
 
