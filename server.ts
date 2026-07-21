@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
+import net from "net";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -31,6 +32,116 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+function timingSafeEqualString(left: string, right: string): boolean {
+  const leftHash = crypto.createHash("sha256").update(left).digest();
+  const rightHash = crypto.createHash("sha256").update(right).digest();
+  return crypto.timingSafeEqual(leftHash, rightHash);
+}
+
+function getAdminApiKey(): string | null {
+  const value = process.env.ADMIN_API_KEY?.trim();
+  return value ? value : null;
+}
+
+function requireManagementAccess(req: express.Request, res: express.Response): boolean {
+  const adminApiKey = getAdminApiKey();
+  if (!adminApiKey) {
+    if (process.env.NODE_ENV === "production") {
+      res.status(500).json({ error: "ADMIN_API_KEY is not configured." });
+      return false;
+    }
+    return true;
+  }
+
+  const provided =
+    req.get("x-admin-api-key")?.trim() ||
+    req.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
+    "";
+
+  if (!provided) {
+    res.status(401).json({ error: "Admin authentication is required." });
+    return false;
+  }
+
+  if (!timingSafeEqualString(provided, adminApiKey)) {
+    res.status(403).json({ error: "Invalid admin credentials." });
+    return false;
+  }
+
+  return true;
+}
+
+function isBlockedPrivateHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  if (normalized === "localhost" || normalized === "0.0.0.0" || normalized === "127.0.0.1" || normalized === "::1") {
+    return true;
+  }
+  if (normalized === "metadata.google.internal" || normalized === "169.254.169.254") {
+    return true;
+  }
+  if (normalized.endsWith(".local") || normalized.endsWith(".internal") || normalized.endsWith(".intranet")) {
+    return true;
+  }
+
+  if (net.isIP(normalized) === 4) {
+    return (
+      normalized.startsWith("10.") ||
+      normalized.startsWith("127.") ||
+      normalized.startsWith("192.168.") ||
+      normalized.startsWith("169.254.") ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalized)
+    );
+  }
+
+  if (net.isIP(normalized) === 6) {
+    return (
+      normalized === "::1" ||
+      normalized.startsWith("fe80:") ||
+      normalized.startsWith("fc") ||
+      normalized.startsWith("fd") ||
+      normalized.startsWith("::ffff:127.0.0.1") ||
+      normalized.startsWith("::ffff:10.") ||
+      normalized.startsWith("::ffff:172.") ||
+      normalized.startsWith("::ffff:192.168.")
+    );
+  }
+
+  return false;
+}
+
+function resolveSafeRemoteUrl(rawUrl: unknown, fallbackUrl: string, label: string): string {
+  const fallback = fallbackUrl.replace(/\/+$/, "");
+  if (typeof rawUrl !== "string" || !rawUrl.trim()) {
+    return fallback;
+  }
+
+  const candidate = rawUrl.trim();
+  if (process.env.NODE_ENV !== "production" || process.env.ALLOW_UNSAFE_CUSTOM_URLS === "true") {
+    return candidate.replace(/\/+$/, "");
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error(`${label} URL must be a valid http(s) URL.`);
+  }
+
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error(`${label} URL must use http or https.`);
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error(`${label} URL credentials are not allowed.`);
+  }
+
+  if (isBlockedPrivateHostname(parsed.hostname)) {
+    throw new Error(`${label} URL points to a private, loopback, or metadata host and is blocked in production.`);
+  }
+
+  return parsed.toString().replace(/\/+$/, "");
+}
 
 app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/readyz", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
@@ -847,7 +958,7 @@ ${emailToUse}`;
       }
 
       // Check if custom URL or environment base URL is provided
-      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+      const geminiBaseUrl = resolveSafeRemoteUrl(customUrl, process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini", "Gemini");
       const aiOptions: any = {
         apiKey: activeApiKey,
         httpOptions: {
@@ -877,7 +988,7 @@ ${emailToUse}`;
       // Determine base URL to use
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
-        openAiBaseUrl = customUrl;
+        openAiBaseUrl = resolveSafeRemoteUrl(customUrl, openAiBaseUrl, "OpenAI-compatible");
       } else if (selectedProvider === "llama") {
         openAiBaseUrl = "http://localhost:11434/v1";
       } else if (selectedProvider === "deepseek") {
@@ -951,7 +1062,7 @@ ${emailToUse}`;
         throw new Error("Anthropic API key is required.");
       }
 
-      const anthropicUrl = customUrl || "https://api.anthropic.com/v1/messages";
+      const anthropicUrl = resolveSafeRemoteUrl(customUrl, "https://api.anthropic.com/v1/messages", "Anthropic");
 
       const headers = {
         "Content-Type": "application/json",
@@ -1108,11 +1219,10 @@ ${emailToUse}`;
         error,
         selectedProvider
       );
-      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "gemini-3.5-flash", jurisdictionProfileName, latencyMs);
       fallbackBlueprint.cacheStatus = {
         hit: false,
         key: cacheKey,
-        type: "MEMORY",
+        type: "BYPASS",
         latencyMs,
         isFallback: true
       };
@@ -1170,7 +1280,7 @@ app.post("/api/test-connection", async (req, res) => {
         throw new Error("Gemini API key is not configured.");
       }
 
-      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+      const geminiBaseUrl = resolveSafeRemoteUrl(customUrl, process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini", "Gemini");
       const aiOptions: any = {
         apiKey: activeApiKey,
         httpOptions: { headers: { "User-Agent": "aistudio-build" } },
@@ -1192,7 +1302,7 @@ app.post("/api/test-connection", async (req, res) => {
     } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
-        openAiBaseUrl = customUrl;
+        openAiBaseUrl = resolveSafeRemoteUrl(customUrl, openAiBaseUrl, "OpenAI-compatible");
       } else if (selectedProvider === "llama") {
         openAiBaseUrl = "http://localhost:11434/v1";
       } else if (selectedProvider === "deepseek") {
@@ -1247,7 +1357,7 @@ app.post("/api/test-connection", async (req, res) => {
         throw new Error("Anthropic API key is required.");
       }
 
-      const anthropicUrl = customUrl || "https://api.anthropic.com/v1/messages";
+      const anthropicUrl = resolveSafeRemoteUrl(customUrl, "https://api.anthropic.com/v1/messages", "Anthropic");
       const headers = {
         "Content-Type": "application/json",
         "x-api-key": activeApiKey,
@@ -1307,7 +1417,7 @@ app.post("/api/academic/search", async (req, res) => {
       throw new Error("Gemini API key is required to calculate search embeddings.");
     }
 
-    const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+    const geminiBaseUrl = resolveSafeRemoteUrl(customUrl, process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini", "Gemini");
     const aiOptions: any = {
       apiKey: activeApiKey,
       httpOptions: { headers: { "User-Agent": "aistudio-build" } },
@@ -1516,7 +1626,7 @@ app.post("/api/academic/scrape", async (req, res) => {
     let match;
 
     const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-    const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+    const geminiBaseUrl = resolveSafeRemoteUrl(customUrl, process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini", "Gemini");
     let ai = null;
     if (activeApiKey || geminiBaseUrl) {
       const aiOptions: any = {
@@ -1789,6 +1899,9 @@ You must return a valid JSON object matching this schema exactly:
 
 app.post("/api/github/push-blueprint", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { repoUrl, token, branchName, blueprint, baseBranch = "main" } = req.body;
     const githubToken = typeof token === "string" && token.trim() ? token.trim() : process.env.GITHUB_TOKEN;
 
@@ -1928,6 +2041,9 @@ app.post("/api/github/push-blueprint", async (req, res) => {
 
 // GET backend status and active routes
 app.get("/api/backends/status", async (req, res) => {
+  if (!requireManagementAccess(req, res)) {
+    return;
+  }
   const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl } = req.query;
 
   const defaultBackends = [
@@ -1937,7 +2053,7 @@ app.get("/api/backends/status", async (req, res) => {
       role: "Workspace, Tenant Data, and Connection Saga Engine",
       owner: "reprewindai-dev/veklom-byos-backend",
       // CANONICAL — replaced from http://localhost:8081
-      url: byosUrl || process.env.VEKLOM_API_URL || "https://api.veklom.com",
+      url: resolveSafeRemoteUrl(byosUrl, process.env.VEKLOM_API_URL || "https://api.veklom.com", "BYOS backend"),
       status: "Configured",
       latencyMs: null,
       error: null,
@@ -1949,7 +2065,7 @@ app.get("/api/backends/status", async (req, res) => {
       role: "Sole Final Authority Engine & LAW 0 Evaluator",
       owner: "reprewindai-dev/cappo-backend",
       // CANONICAL — replaced from http://localhost:8082
-      url: cappoUrl || process.env.CAPPO_URL || "https://cappo.veklom.com",
+      url: resolveSafeRemoteUrl(cappoUrl, process.env.CAPPO_URL || "https://cappo.veklom.com", "CAPPO backend"),
       status: "Configured",
       latencyMs: null,
       error: null,
@@ -1961,7 +2077,7 @@ app.get("/api/backends/status", async (req, res) => {
       role: "Canonical Lineage, Evidence Packets & Verification Ledger",
       owner: "PGL / Gnome Ledger",
       // CANONICAL — replaced from http://localhost:8083
-      url: gnomeledgerUrl || process.env.GNOMELEDGER_URL || "https://pgl.veklom.com",
+      url: resolveSafeRemoteUrl(gnomeledgerUrl, process.env.GNOMELEDGER_URL || "https://pgl.veklom.com", "Gnome Ledger"),
       status: "Configured",
       latencyMs: null,
       error: null,
@@ -1973,7 +2089,7 @@ app.get("/api/backends/status", async (req, res) => {
       role: "Hetzner Node Physical Measurements & Active Telemetry Network",
       owner: "reprewindai-dev/veklom-vnp",
       // CANONICAL — replaced from http://localhost:8084
-      url: vnpUrl || process.env.VNP_URL || "https://vnp.veklom.com",
+      url: resolveSafeRemoteUrl(vnpUrl, process.env.VNP_URL || "https://vnp.veklom.com", "VNP telemetry node"),
       status: "Configured",
       latencyMs: null,
       error: null,
@@ -2023,14 +2139,19 @@ app.get("/api/backends/status", async (req, res) => {
 
 // POST to verify deep sync & trigger test execution checks
 app.post("/api/backends/verify-sync", async (req, res) => {
+  if (!requireManagementAccess(req, res)) {
+    return;
+  }
   const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, connectionId, connectionVersion } = req.body;
 
   const logs: string[] = [];
   logs.push(`[SYS_INIT] Initiating authority health checks for Connection ${connectionId || "default-conn"} v${connectionVersion || "1.0.0"}`);
 
-  const authorities = [["BYOS", byosUrl], ["CAPPO", cappoUrl], ["GNOMLEDGER", gnomeledgerUrl], ["VNP", vnpUrl]] as const;
-  if (authorities.some(([, url]) => typeof url !== "string" || !/^https?:\/\//i.test(url))) {
-    return res.status(400).json({ success: false, isSyncOk: false, status: "BLOCKED", error: "All authority URLs must be absolute HTTP(S) URLs." });
+  let authorities: readonly [string, string][];
+  try {
+    authorities = [["BYOS", resolveSafeRemoteUrl(byosUrl, process.env.VEKLOM_API_URL || "https://api.veklom.com", "BYOS backend")], ["CAPPO", resolveSafeRemoteUrl(cappoUrl, process.env.CAPPO_URL || "https://cappo.veklom.com", "CAPPO backend")], ["GNOMLEDGER", resolveSafeRemoteUrl(gnomeledgerUrl, process.env.GNOMELEDGER_URL || "https://pgl.veklom.com", "Gnome Ledger")], ["VNP", resolveSafeRemoteUrl(vnpUrl, process.env.VNP_URL || "https://vnp.veklom.com", "VNP telemetry node")]] as const;
+  } catch (error: any) {
+    return res.status(400).json({ success: false, isSyncOk: false, status: "BLOCKED", error: error.message || "Invalid backend URL." });
   }
   const startedAt = Date.now();
   const results = await Promise.all(authorities.map(async ([name, baseUrl]) => {
@@ -2108,7 +2229,7 @@ ${JSON.stringify(blueprint, null, 2)}`;
         throw new Error("Gemini API key is not configured.");
       }
 
-      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+      const geminiBaseUrl = resolveSafeRemoteUrl(customUrl, process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini", "Gemini");
       const aiOptions: any = {
         apiKey: activeApiKey,
         httpOptions: { headers: { "User-Agent": "aistudio-build" } },
@@ -2132,7 +2253,7 @@ ${JSON.stringify(blueprint, null, 2)}`;
       // OpenAI/Ollama compatible endpoint
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
-        openAiBaseUrl = customUrl;
+        openAiBaseUrl = resolveSafeRemoteUrl(customUrl, openAiBaseUrl, "OpenAI-compatible");
       } else if (selectedProvider === "llama") {
         openAiBaseUrl = "http://localhost:11434/v1";
       } else if (selectedProvider === "deepseek") {
@@ -2759,6 +2880,9 @@ app.post("/api/seked/compile", (req, res) => {
 // Scans the workspace directory recursively to verify files, sizes, LOC count, and check hashes for drift control.
 app.get("/api/repo-intelligence", (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const rootDir = process.cwd();
     const repoFiles: any[] = [];
     let totalLinesOfCode = 0;
@@ -2836,6 +2960,9 @@ app.get("/api/repo-intelligence", (req, res) => {
 // 3. SECURE CONSTITUTION REVISION SIGNATURE ENDPOINT
 // Issues an HMAC-backed cryptographic proof of authority when committing a revised constitution.
 app.post("/api/constitution/sign", (req, res) => {
+  if (!requireManagementAccess(req, res)) {
+    return;
+  }
   const { constitutionVersion, jurisdiction, content, authorizedEmail } = req.body;
 
   if (!constitutionVersion || !jurisdiction || !content) {
@@ -2944,6 +3071,9 @@ app.get("/capi/v1/capabilities", (req, res) => {
 // 6. CACHE MANAGEMENT ENDPOINTS
 app.get("/api/cache/stats", (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     return res.json(cacheManager.getStats());
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Failed to fetch cache stats." });
@@ -2952,6 +3082,9 @@ app.get("/api/cache/stats", (req, res) => {
 
 app.post("/api/cache/clear", (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     cacheManager.clear();
     return res.json({ success: true, message: "Apex Blueprint compilation cache cleared successfully." });
   } catch (error: any) {
@@ -2961,8 +3094,16 @@ app.post("/api/cache/clear", (req, res) => {
 
 // 7. OLLAMA REAL-TIME LOCAL MODEL DISCOVERY
 app.post("/api/ollama/models", async (req, res) => {
+  if (!requireManagementAccess(req, res)) {
+    return;
+  }
   const { customUrl } = req.body;
-  const baseUrl = (customUrl || "http://localhost:11434").replace(/\/+$/, "");
+  let baseUrl: string;
+  try {
+    baseUrl = resolveSafeRemoteUrl(customUrl, "http://localhost:11434", "Ollama");
+  } catch (error: any) {
+    return res.status(400).json({ error: error.message || "Invalid Ollama URL." });
+  }
   const startTime = Date.now();
   try {
     const response = await fetch(`${baseUrl}/api/tags`, {
@@ -3003,6 +3144,9 @@ app.post("/api/ollama/models", async (req, res) => {
 
 app.post("/api/realworld/db/save", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { id, blueprint } = req.body;
     if (!id || !blueprint) {
       return res.status(400).json({ error: "Missing required fields: id and blueprint." });
@@ -3017,6 +3161,9 @@ app.post("/api/realworld/db/save", async (req, res) => {
 
 app.get("/api/realworld/db/get/:id", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { id } = req.params;
     if (!id) {
       return res.status(400).json({ error: "Missing required parameter: id." });
@@ -3034,6 +3181,9 @@ app.get("/api/realworld/db/get/:id", async (req, res) => {
 
 app.post("/api/realworld/x402/lock", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { leaseId, amountUsd, payerAddress } = req.body;
     if (!leaseId || !amountUsd || !payerAddress) {
       return res.status(400).json({ error: "Missing required fields: leaseId, amountUsd, and payerAddress." });
@@ -3048,6 +3198,9 @@ app.post("/api/realworld/x402/lock", async (req, res) => {
 
 app.post("/api/realworld/x402/release", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { leaseId, amountUsd, payeeAddress } = req.body;
     if (!leaseId || !amountUsd || !payeeAddress) {
       return res.status(400).json({ error: "Missing required fields: leaseId, amountUsd, and payeeAddress." });
@@ -3062,6 +3215,9 @@ app.post("/api/realworld/x402/release", async (req, res) => {
 
 app.post("/api/realworld/verify/tla", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { plusCalCode } = req.body;
     if (!plusCalCode) {
       return res.status(400).json({ error: "Missing required field: plusCalCode." });
@@ -3076,6 +3232,9 @@ app.post("/api/realworld/verify/tla", async (req, res) => {
 
 app.post("/api/realworld/verify/z3", async (req, res) => {
   try {
+    if (!requireManagementAccess(req, res)) {
+      return;
+    }
     const { assertions } = req.body;
     if (!assertions || !Array.isArray(assertions)) {
       return res.status(400).json({ error: "Missing or invalid field: assertions (must be array)." });
@@ -3093,6 +3252,11 @@ app.post("/api/realworld/verify/z3", async (req, res) => {
 // ==========================================
 
 async function startServer() {
+  if (process.env.NODE_ENV === "production" && !getAdminApiKey()) {
+    console.error("FATAL: ADMIN_API_KEY must be configured in production.");
+    process.exit(1);
+  }
+
   // Requirement 8: Enforce robust cryptographic secrets in production
   if (process.env.NODE_ENV === "production") {
     const isAbsOrDef = (v: string | undefined, def: string) => !v || v === def;
