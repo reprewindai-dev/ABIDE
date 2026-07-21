@@ -2168,7 +2168,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       </header>
 
       {/* Main Page Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 print:p-0">
+      <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 print:p-0">
         
         {/* Intro Banner */}
         <section className="max-w-4xl mx-auto mb-12 print:hidden text-center">
@@ -5401,7 +5401,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 
       {/* Global Footer */}
       <footer className="border-t-2 border-[#222] bg-[#050505] py-8 mt-16 print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
           <p className="text-xs font-mono uppercase text-[#666] tracking-wider">
             ApexBlueprint Compiler. Created on high-contrast obsidian dark patterns. Verified for cross-device responsiveness.
           </p>
