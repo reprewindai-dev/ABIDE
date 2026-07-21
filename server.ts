@@ -2903,9 +2903,9 @@ import axios from "axios";
 
 describe("Veklom Canonical System Integration & Authority Boundaries", () => {
   let connectionContext: any;
-  const BYOS_ENDPOINT = "http://localhost:8081";
-  const CAPPO_ENDPOINT = "http://localhost:8082";
-  const GNOMELEDGER_ENDPOINT = "http://localhost:8083";
+  const BYOS_ENDPOINT = process.env.VEKLOM_API_URL || "https://api.veklom.com";
+  const CAPPO_ENDPOINT = process.env.CAPPO_API_URL || "https://cappo.veklom.com";
+  const GNOMELEDGER_ENDPOINT = process.env.GNOMELEDGER_URL || "https://pgl.veklom.com";
 
   beforeAll(() => {
     connectionContext = {
