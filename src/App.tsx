@@ -889,28 +889,31 @@ export default function App() {
       }
 
       const data = await response.json();
+      if (!response.ok || data.success !== true || data.isSyncOk !== true) {
+        throw new Error(data.error || "Backend convergence was not verified.");
+      }
       
       // Delay logging for an industrial console effect!
       setTimeout(() => {
         setSyncLogs(prev => [
           ...prev,
           ...data.logs,
-          `[SUCCESS] System alignment converged in ${data.totalLatencyMs}ms. Status: ${data.systemState}`
+          `[HEALTH_VERIFIED] All authority health contracts confirmed in ${data.totalLatencyMs}ms. No execution authority issued.`
         ]);
 
         // Add manual event to escrow console
         const timestampStr = new Date().toISOString();
         const randId = "evt-" + Math.floor(Math.random() * 9000 + 1000);
         const hasActiveNodes = backendStatuses && backendStatuses.length > 0 && backendStatuses.some(b => b.status === "Active");
-        const eventClaimState = hasActiveNodes ? "SYNTHETIC_VERIFIED" : "SIMULATED_EXECUTION";
+        const eventClaimState = hasActiveNodes ? "VERIFIED" : "UNMEASURED";
 
         setSmartEscrowEvents(prev => [
           {
             id: randId,
             timestamp: timestampStr,
-            type: "SUCCESS",
+            type: "VERIFIED",
             claimState: eventClaimState,
-            message: `Manual Handshake: Synchronization verified. Latency: ${data.totalLatencyMs}ms. [TEST MODE]`,
+            message: `Manual Handshake: Authority health verified. No execution or settlement authority issued.`,
             latencyMs: data.totalLatencyMs
           },
           ...prev
@@ -1113,12 +1116,14 @@ export default function App() {
           }
 
           const data = await response.json();
+          if (!response.ok || data.success !== true || data.isSyncOk !== true) {
+            throw new Error(data.error || "Backend convergence was not verified.");
+          }
           
-          // Local/Tunnel backend status offline check for realistic synthetic labelling
+          // Health verification never implies execution or settlement authority.
           const hasActiveNodes = backendStatuses && backendStatuses.length > 0 && backendStatuses.some(b => b.status === "Active");
-          const eventType = "SUCCESS";
-          // If probes show offline, we use SIMULATED_EXECUTION, otherwise SYNTHETIC_VERIFIED
-          const eventClaimState = hasActiveNodes ? "SYNTHETIC_VERIFIED" : "SIMULATED_EXECUTION";
+          const eventType = "VERIFIED";
+          const eventClaimState = hasActiveNodes ? "VERIFIED" : "UNMEASURED";
           
           setSmartEscrowEvents(prev => [
             {
@@ -1126,7 +1131,7 @@ export default function App() {
               timestamp: timestampStr,
               type: eventType,
               claimState: eventClaimState,
-              message: `Auto-Verify Tick: Sync handshake simulated converged (${data.totalLatencyMs}ms). No production authority.`,
+              message: `Auto-Verify Tick: Authority health contracts confirmed. No execution or settlement authority issued.`,
               latencyMs: data.totalLatencyMs
             },
             ...prev
@@ -1135,7 +1140,7 @@ export default function App() {
           setSyncLogs(prev => [
             `[AUTO-VERIFY TICK] - ${timestampStr}`,
             ...data.logs,
-            `[FIXTURE_PASSED] Auto-Verify completed. Latency: ${data.totalLatencyMs}ms`,
+            `[HEALTH_VERIFIED] Authority health contracts confirmed. No execution authority issued.`,
             ...prev.slice(0, 50)
           ]);
 

@@ -85,10 +85,7 @@ export class RealWorldX402Connector implements X402PaymentConnector {
       }
     }
 
-    // No X402_LEDGER_URL configured (or it failed) — no money moved. This hash is a
-    // local placeholder for demo/dev purposes only, not a real settlement.
-    const mockHash = "0x" + crypto.createHash("sha256").update(leaseId + amountUsd + Date.now().toString()).digest("hex");
-    return { txHash: mockHash, success: true, simulated: true };
+    throw new Error("X402 settlement unavailable: no confirmed ledger transaction was created.");
   }
 
   async releaseEscrow(leaseId: string, amountUsd: number, payeeAddress: string): Promise<{ txHash: string; success: boolean; simulated: boolean }> {
@@ -110,9 +107,7 @@ export class RealWorldX402Connector implements X402PaymentConnector {
       }
     }
 
-    // Same rule: unconfigured or failed remote ledger means this did not move real money.
-    const mockHash = "0x" + crypto.createHash("sha256").update(leaseId + amountUsd + Date.now().toString() + "_release").digest("hex");
-    return { txHash: mockHash, success: true, simulated: true };
+    throw new Error("X402 release unavailable: no confirmed ledger transaction was created.");
   }
 }
 

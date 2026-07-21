@@ -2026,31 +2026,37 @@ app.post("/api/backends/verify-sync", async (req, res) => {
   const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, connectionId, connectionVersion } = req.body;
 
   const logs: string[] = [];
-  logs.push(`[SYS_INIT] Initiating 100% true backend-to-backend alignment checks for Connection ${connectionId || "default-conn"} v${connectionVersion || "1.0.0"}`);
+  logs.push(`[SYS_INIT] Initiating authority health checks for Connection ${connectionId || "default-conn"} v${connectionVersion || "1.0.0"}`);
 
-  let isSyncOk = true;
-
-  // Let's do virtual handshake verification
-  logs.push(`[BYOS] Reading TrustConnection metadata schema validation... OK`);
-  logs.push(`[BYOS] Verifying PostgreSQL RLS session bypass blocks... Verified. Standard clients locked.`);
-  
-  logs.push(`[CAPPO] Resolving LAW 0 authority boundary... Checked.`);
-  logs.push(`[CAPPO] Inspecting ExecutionIdentity token seal key... Verified.`);
-
-  logs.push(`[GNOMELEDGER] Verification post-execution pre-commit pipeline audit... Connected.`);
-  logs.push(`[VNP] Telemetry node registry heartbeats status query: Hillsboro [Ready], Falkenstein [Ready], Singapore [Ready].`);
-
-  // Random simulation latency
-  const totalLatency = Math.floor(Math.random() * 45) + 12; // 12-57ms
-
-  return res.json({
-    success: true,
-    isSyncOk,
-    totalLatencyMs: totalLatency,
-    logs,
-    systemState: "CONVERGED_SOVEREIGN_PRODUCTION",
-    timestamp: new Date().toISOString()
-  });
+  const authorities = [["BYOS", byosUrl], ["CAPPO", cappoUrl], ["GNOMLEDGER", gnomeledgerUrl], ["VNP", vnpUrl]] as const;
+  if (authorities.some(([, url]) => typeof url !== "string" || !/^https?:\/\//i.test(url))) {
+    return res.status(400).json({ success: false, isSyncOk: false, status: "BLOCKED", error: "All authority URLs must be absolute HTTP(S) URLs." });
+  }
+  const startedAt = Date.now();
+  const results = await Promise.all(authorities.map(async ([name, baseUrl]) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    try {
+      const healthUrl = new URL("/healthz", baseUrl).toString();
+      const response = await fetch(healthUrl, { signal: controller.signal, headers: { Accept: "application/json" } });
+      const contentType = response.headers.get("content-type") || "";
+      const body = contentType.includes("application/json") ? await response.json() : null;
+      const healthy = response.ok && body?.status === "ok";
+      logs.push(`[${name}] ${healthUrl} -> HTTP ${response.status}; JSON health=${healthy ? "confirmed" : "not confirmed"}`);
+      return healthy;
+    } catch (error: any) {
+      logs.push(`[${name}] health probe failed: ${error?.message || "unreachable"}`);
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }));
+  const isSyncOk = results.every(Boolean);
+  const totalLatency = Date.now() - startedAt;
+  if (!isSyncOk) {
+    return res.status(503).json({ success: false, isSyncOk: false, status: "BLOCKED", totalLatencyMs: totalLatency, logs, systemState: "UNMEASURED", timestamp: new Date().toISOString(), connectionId, connectionVersion });
+  }
+  return res.json({ success: true, isSyncOk: true, totalLatencyMs: totalLatency, logs, systemState: "CONVERGED_VERIFIED", timestamp: new Date().toISOString(), connectionId, connectionVersion });
 });
 
 // POST to generate Jest/Vitest test suites using the active LLM or high-fidelity fallback
@@ -2191,8 +2197,10 @@ ${JSON.stringify(blueprint, null, 2)}`;
     
     // Create spectacular, highly-aligned, detailed fallback test suite to ensure an incredibly successful UX!
     const fallbackTestCode = generateLocalFallbackTestSuite(selectedSpecName, testFramework, blueprint);
-    return res.json({
-      success: true,
+    return res.status(503).json({
+      success: false,
+      status: "LOCAL_FALLBACK",
+      executionEligible: false,
       specName: selectedSpecName,
       framework: testFramework,
       code: fallbackTestCode,
@@ -3015,6 +3023,9 @@ app.get("/api/realworld/db/get/:id", async (req, res) => {
     }
     const blueprint = await dbConnector.getBlueprint(id);
     await otelExporter.exportSpan("db_get_blueprint", { blueprint_id: id, found: !!blueprint });
+    if (blueprint === null || blueprint === undefined) {
+      return res.status(404).json({ success: false, status: "NOT_FOUND", id });
+    }
     return res.json({ success: true, id, blueprint });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Failed to retrieve blueprint." });
