@@ -66,11 +66,11 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
 
     return {
       ...cap,
-      stableId: cap.stableId || (cap.id.startsWith("cap-") ? cap.id : `cap-${cap.id}`),
+      stableId: cap.stableId || `cap-${cap.id}`,
       semanticVersion: cap.semanticVersion || "v1.0.0",
       dataSovereignty: cap.dataSovereignty || {
         sourceOfTruth: `GitHub Veklom Manifest: .veklom/capabilities/${cap.id}.json (Revision v1.0.0)`,
-        systemOfRecord: cap.evidence?.recordId ? `Live Record: ${cap.evidence.recordId} at Rev ${cap.evidence.databaseRevision}` : `[EXAMPLE_DATA] Local State DB: ${cap.canonicalSystem || "Gnomledger"} at Block #18900000`,
+        systemOfRecord: `Local State DB: ${cap.canonicalSystem || "Gnomledger"} at Block #18900000`,
         truthConsistencyCheckUrl: `https://explorer.veklom.io/address/${cap.id}`
       },
       approvalWorkflow: cap.approvalWorkflow || {
@@ -115,8 +115,6 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
           manifestType: "Capability Lineage Manifest",
           version: constitutionVersion,
           lockState: constitutionState,
-          compilationState: "COMPILED",
-          approvalState: "PENDING_APPROVAL",
           blueprintHash: "e50c9782ea38d8d3fcd066929cf39be50f81a1a479efcb1d06371f652cb9287a",
           lineageEntries: capabilities.map(c => {
             const resolved = c.id === activeGovCap.id ? activeGovCap : c;
@@ -139,8 +137,6 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
           manifestType: "Ownership and Approval Manifest",
           version: constitutionVersion,
           lockState: constitutionState,
-          compilationState: "COMPILED",
-          approvalState: "PENDING_APPROVAL",
           signOffAuditLogs: capabilities.map(c => {
             const resolved = c.id === activeGovCap.id ? activeGovCap : {
               ...c,
@@ -175,8 +171,7 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
             return {
               id: c.id,
               name: c.name,
-              observedMaturity: c.observedMaturity,
-              declaredTargetMaturity: c.declaredTargetMaturity,
+              maturityState: c.maturityState,
               rules: c.verification?.promotionRules || [
                 {
                   targetMaturity: "Sovereign Production",

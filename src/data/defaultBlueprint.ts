@@ -107,16 +107,28 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
     ],
     repositories: [
       {
-        name: "veklom-core-rust",
-        url: "https://github.com/veklom/veklom-core-rust",
-        capabilities: ["govern-agent-session", "score-api-eligibility", "resolve-capability-plan"],
+        name: "cappo-backend",
+        url: "https://github.com/reprewindai-dev/cappo-backend",
+        capabilities: ["govern-agent-session", "score-api-eligibility"],
         status: "Active"
       },
       {
-        name: "veklom-solidity-ledger",
-        url: "https://github.com/veklom/veklom-solidity-ledger",
-        capabilities: ["verify-provider-ownership", "mint-settlement-evidence", "issue-verification-badge"],
-        status: "Migration Required"
+        name: "veklom-byos-backend",
+        url: "https://github.com/reprewindai-dev/veklom-byos-backend",
+        capabilities: ["resolve-capability-plan"],
+        status: "Active"
+      },
+      {
+        name: "lockerphycer",
+        url: "https://github.com/reprewindai-dev/lockerphycer",
+        capabilities: ["verify-provider-ownership"],
+        status: "Active"
+      },
+      {
+        name: "gnomledger",
+        url: "https://github.com/reprewindai-dev/gnomledger",
+        capabilities: ["mint-settlement-evidence", "issue-verification-badge"],
+        status: "Active"
       }
     ],
     environments: ["Local Sandbox Emulator", "Edge Cluster West-1", "Gnomledger Mainnet"],
@@ -205,11 +217,6 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
         completedProof: "0x3f2a89cbde1a2d59ff...88b2a1a",
         classification: "RESEARCH_SUPPORTED",
         evidenceTimestamp: "2026-07-10T11:45:00Z",
-        service: "abide-compiler-service",
-        recordId: "rec-18900000",
-        databaseRevision: 42,
-        lastObservedAt: "2026-07-10T11:45:00Z",
-        evidenceId: "ev-123",
         freshnessWindowDays: 15,
         nextRevalidationDue: "2026-07-25T11:45:00Z",
         trustDecayFactor: 0.95
@@ -235,13 +242,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       },
       dependencies: ["score-api-eligibility"],
       lifecycleState: "Active",
-      observedMaturity: "IMPLEMENTED_UNVERIFIED",
-      declaredTargetMaturity: "SOVEREIGN_PRODUCTION",
-      compilationState: "COMPILED",
-      integrityState: "HASH_VERIFIED",
-      approvalState: "PENDING_APPROVAL",
-      lockState: "UNLOCKED",
-      executionEligibility: "RESTRICTED",
+      maturityState: "Sovereign Production",
       verificationState: "Verified",
       pricingState: "Active Pricing",
       deprecationState: "None",
@@ -259,15 +260,19 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
         blockedRegions: ["CN", "RU"],
         modifiedBehaviorByRegion: {
           EU: "Applies EU AI Act high-risk Einstein scheduler drift-check thresholds automatically to prevent continuous loop cascades. Enables strict local telemetry logging.",
-          CA: "Pins storage strictly to Hetzner de-falkenstein. Encrypts with local FIPS 140-3 Levels 3 keys."
+          CA: "Pins storage strictly to AWS ca-central-1. Encrypts with local FIPS 140-3 Levels 3 keys."
         },
         fallbackInteractionPattern: "Fallback to localized stateless enclaves, returning degraded capability state with logged offline signatures."
       },
       approvalWorkflow: {
-        requiredRoles: ["Chief Compliance Officer", "VP of Engineering", "SecOps Lead"],
-        signedApprovals: [],
-        requiredCount: 3,
-        
+        approverRoles: ["Chief Compliance Officer", "VP of Engineering", "SecOps Lead"],
+        approvalTimestamps: {
+          "Chief Compliance Officer": "2026-07-11T09:30:00Z",
+          "VP of Engineering": "2026-07-11T14:15:00Z",
+          "SecOps Lead": "2026-07-12T10:05:00Z"
+        },
+        requiredSignOffCount: 3,
+        overrideRationale: "Production release expedited under NIST compliance pre-certification."
       },
       downstreamImpact: {
         affectedInterfaces: ["POST /api/v1/sessions/govern", "govern_agent_session_tool"],
@@ -357,13 +362,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       },
       dependencies: [],
       lifecycleState: "Active",
-      observedMaturity: "IMPLEMENTED_UNVERIFIED",
-      declaredTargetMaturity: "SOVEREIGN_PRODUCTION",
-      compilationState: "COMPILED",
-      integrityState: "HASH_VERIFIED",
-      approvalState: "PENDING_APPROVAL",
-      lockState: "UNLOCKED",
-      executionEligibility: "RESTRICTED",
+      maturityState: "Sovereign Production",
       verificationState: "Verified",
       pricingState: "Active Pricing",
       deprecationState: "None",
@@ -441,13 +440,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       },
       dependencies: [],
       lifecycleState: "Active",
-      observedMaturity: "IMPLEMENTED_UNVERIFIED",
-      declaredTargetMaturity: "SOVEREIGN_PRODUCTION",
-      compilationState: "COMPILED",
-      integrityState: "HASH_VERIFIED",
-      approvalState: "PENDING_APPROVAL",
-      lockState: "UNLOCKED",
-      executionEligibility: "RESTRICTED",
+      maturityState: "Sovereign Production",
       verificationState: "Verified",
       pricingState: "Active Pricing",
       deprecationState: "None",
@@ -527,13 +520,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       },
       dependencies: ["govern-agent-session"],
       lifecycleState: "Active",
-      observedMaturity: "IMPLEMENTED_UNVERIFIED",
-      declaredTargetMaturity: "SOVEREIGN_PRODUCTION",
-      compilationState: "COMPILED",
-      integrityState: "HASH_VERIFIED",
-      approvalState: "PENDING_APPROVAL",
-      lockState: "UNLOCKED",
-      executionEligibility: "RESTRICTED",
+      maturityState: "Sovereign Production",
       verificationState: "Verified",
       pricingState: "Active Pricing",
       deprecationState: "None",

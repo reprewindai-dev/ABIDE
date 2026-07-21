@@ -1,5 +1,16 @@
-import crypto from "crypto";
+import { sha256 } from "js-sha256";
 import { SEKED_HMAC_SECRET } from "../core/config";
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
 
 export interface SekedInput {
   E: number; // Execution Jitter / Latency
@@ -93,10 +104,7 @@ export function compileSekedDirective(input: SekedInput): SekedResult {
   
   // Create cryptographic SHA-256 HMAC signature of the directive and score to lock and authorize the state
   const rawPayload = `${directive}|${compositeScore.toFixed(4)}|${timestamp}`;
-  const signature = crypto
-    .createHmac("sha256", SEKED_SYSTEM_SECRET)
-    .update(rawPayload)
-    .digest("hex");
+  const signature = sha256.hmac(SEKED_SYSTEM_SECRET, rawPayload);
 
   return {
     directive,
@@ -111,10 +119,7 @@ export function compileSekedDirective(input: SekedInput): SekedResult {
  */
 export function signAgentPacket(packet: AgentPacket): string {
   const payload = `${packet.id}|${packet.title}|${packet.scope}|${packet.files.sort().join(",")}|${packet.contracts}`;
-  return crypto
-    .createHmac("sha256", SEKED_SYSTEM_SECRET)
-    .update(payload)
-    .digest("hex");
+  return sha256.hmac(SEKED_SYSTEM_SECRET, payload);
 }
 
 /**
@@ -122,10 +127,7 @@ export function signAgentPacket(packet: AgentPacket): string {
  */
 export function verifyAgentPacket(packet: AgentPacket, signature: string): boolean {
   const expectedSig = signAgentPacket(packet);
-  return crypto.timingSafeEqual(
-    Buffer.from(signature, "hex"),
-    Buffer.from(expectedSig, "hex")
-  );
+  return timingSafeEqual(signature, expectedSig);
 }
 
 
@@ -449,10 +451,7 @@ export function triageBlueprintIntakeV1(blueprint: any): SekedIntakeResult {
 
   // Create cryptographic SHA-256 HMAC signature of the complete triage state to prevent tampering
   const rawPayload = `${directive}|${compositeScore.toFixed(4)}|${timestamp}`;
-  const signature = crypto
-    .createHmac("sha256", SEKED_SYSTEM_SECRET)
-    .update(rawPayload)
-    .digest("hex");
+  const signature = sha256.hmac(SEKED_SYSTEM_SECRET, rawPayload);
 
   return {
     scores: {
