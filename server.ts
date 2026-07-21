@@ -15,14 +15,77 @@ import { PlanIRSchema, CanonicalBlueprintV1Schema } from "./src/core/validation"
 import { compileSekedDirective, normalizeTelemetry, signAgentPacket, verifyAgentPacket, triageBlueprintIntakeV1 } from "./src/compiler/seked";
 import { cacheManager } from "./src/core/cache";
 import { dbConnector, x402Connector, verificationConnector, otelExporter } from "./src/core/connectors";
+import { WigoloResearchAdapter } from "./src/integrations/research/wigolo";
+import { GptResearcherAdapter } from "./src/integrations/research/gpt-researcher";
+import { ResearchProvider } from "./src/integrations/research/types";
+import { createCodeGraphRagAdapter } from "./src/integrations/repository/code-graph-rag";
+import { discoverPiExtensionsConfiguration } from "./src/integrations/agents/pi-extensions";
 
 dotenv.config();
 
 export const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
+  throw new Error("PORT must be an integer between 1 and 65535.");
+}
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
+app.get("/readyz", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
+
+app.get("/api/integrations/status", (_req, res) => {
+  const env = process.env;
+  return res.json({
+    integrations: {
+      wigolo: { configured: Boolean(env.WIGOLO_BASE_URL), verified: false },
+      gptResearcher: { configured: Boolean(env.GPT_RESEARCHER_BASE_URL), verified: false },
+      codeGraphRag: { configured: Boolean(env.CODE_GRAPH_RAG_URL), verified: false },
+      piExtensions: discoverPiExtensionsConfiguration({ env: env as Record<string, string | undefined> }),
+    },
+    verification: "configuration-only",
+  });
+});
+
+app.post("/api/integrations/research", async (req, res) => {
+  const provider = req.body?.provider as ResearchProvider;
+  const request = req.body?.request;
+  if (provider !== "wigolo" && provider !== "gpt-researcher") {
+    return res.status(400).json({ error: "provider must be wigolo or gpt-researcher." });
+  }
+  if (!request || typeof request.query !== "string" || request.query.trim().length === 0) {
+    return res.status(400).json({ error: "request.query is required." });
+  }
+  try {
+    const baseUrl = provider === "wigolo" ? process.env.WIGOLO_BASE_URL : process.env.GPT_RESEARCHER_BASE_URL;
+    if (!baseUrl) return res.status(503).json({ error: `${provider} is not configured.` });
+    const adapter = provider === "wigolo"
+      ? new WigoloResearchAdapter({ baseUrl, apiKey: process.env.WIGOLO_API_KEY })
+      : new GptResearcherAdapter({ baseUrl, apiKey: process.env.GPT_RESEARCHER_API_KEY });
+    return res.json(await adapter.research(request));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Research integration failed.";
+    return res.status(502).json({ error: message });
+  }
+});
+
+app.post("/api/integrations/repository/query", async (req, res) => {
+  const request = req.body;
+  if (!request || typeof request.repository !== "string" || request.repository.trim().length === 0) {
+    return res.status(400).json({ error: "repository is required." });
+  }
+  if (!process.env.CODE_GRAPH_RAG_URL) {
+    return res.status(503).json({ error: "code-graph-rag is not configured." });
+  }
+  try {
+    const adapter = createCodeGraphRagAdapter({ transport: "http", endpoint: process.env.CODE_GRAPH_RAG_URL, headers: process.env.CODE_GRAPH_RAG_API_KEY ? { authorization: `Bearer ${process.env.CODE_GRAPH_RAG_API_KEY}` } : undefined });
+    return res.json(await adapter.query(request));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Repository intelligence integration failed.";
+    return res.status(502).json({ error: message });
+  }
+});
 
 // ==========================================
 // VECTOR DATABASE & ACADEMIC GROUNDING SETUP

@@ -60,6 +60,7 @@ import BuildExecutionAttestation from "./components/BuildExecutionAttestation";
 import PresentationDeck from "./components/PresentationDeck";
 import GovernedViewContainer from "./components/GovernedViewContainer";
 import CognitiveIde from "./components/CognitiveIde";
+import SafeMarkdown from "./components/SafeMarkdown";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -116,7 +117,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 // Dynamic custom markdown renderer to render detailed text into beautiful JSX
-const MarkdownRenderer = ({ content }: { content: string }) => {
+const LegacyMarkdownRenderer = ({ content }: { content: string }) => {
   const lines = content.split("\n");
   const parsedJSX: React.ReactNode[] = [];
   let currentList: React.ReactNode[] = [];
@@ -321,6 +322,10 @@ function processInlineFormatting(text: string): React.ReactNode[] {
 
   return parts;
 }
+
+const MarkdownRenderer = ({ content }: { content: string }) => (
+  <SafeMarkdown content={content} className="space-y-1 text-slate-300 font-sans" />
+);
 
 export default function App() {
   // Application input states
