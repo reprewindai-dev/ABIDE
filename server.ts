@@ -23,7 +23,6 @@ const PORT = 3000;
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-<<<<<<< HEAD
 function timingSafeEqualString(left: string, right: string): boolean {
   const leftHash = crypto.createHash("sha256").update(left).digest();
   const rightHash = crypto.createHash("sha256").update(right).digest();
@@ -219,8 +218,6 @@ app.post("/api/integrations/repository/query", async (req, res) => {
   }
 });
 
-=======
->>>>>>> origin/main
 // ==========================================
 // VECTOR DATABASE & ACADEMIC GROUNDING SETUP
 // ==========================================
