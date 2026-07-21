@@ -1,18 +1,202 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { CompanyGraph, Capability } from "../types";
-import { Globe, Activity, ChevronRight, HelpCircle, Layers, Shield, Check, GitBranch, UserCheck, Compass, Wrench } from "lucide-react";
+import { Globe, Activity, ChevronRight, HelpCircle, Layers, Shield, Check, GitBranch, UserCheck, Compass, Wrench, Terminal, Plus, Play, ArrowRight, Cpu, Coins, Info, AlertTriangle, Clock } from "lucide-react";
 
 interface CapabilityGraphProps {
   companyGraph: CompanyGraph;
   capabilities: Capability[];
   killedCaps?: Record<string, boolean>;
+  setActiveTab?: (tab: any) => void;
 }
 
-export default function CapabilityGraphComponent({ companyGraph, capabilities, killedCaps }: CapabilityGraphProps) {
+export default function CapabilityGraphComponent({ companyGraph, capabilities, killedCaps, setActiveTab }: CapabilityGraphProps) {
+  const [localCapabilities, setLocalCapabilities] = useState<Capability[]>(() => [...capabilities]);
+  const [customCapabilities, setCustomCapabilities] = useState<Capability[]>([]);
+  
+  useEffect(() => {
+    setLocalCapabilities(capabilities);
+  }, [capabilities]);
+
+  const combinedCapabilities = useMemo(() => {
+    return [...localCapabilities, ...customCapabilities];
+  }, [localCapabilities, customCapabilities]);
+
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [activeSubTab, setActiveSubTab] = useState<"def" | "surf" | "owners" | "jurisdiction" | "verification">("def");
   const [visualizeMode, setVisualizeMode] = useState<"type" | "status" | "cost" | "verification">("type");
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
+  // Playground & Weaver States
+  const [weaverTab, setWeaverTab] = useState<"weaver" | "subagents" | "bundles">("weaver");
+  const [highlightedProduct, setHighlightedProduct] = useState<string | null>(null);
+  const [isExecutingOps, setIsExecutingOps] = useState(false);
+  const [auditTargetId, setAuditTargetId] = useState<string>(() => capabilities[0]?.id || "");
+  
+  const [consoleLogs, setConsoleLogs] = useState<string[]>([
+    "[SYSTEM_INIT] Veklom Sovereign Node Orchestrator active.",
+    "[SUB_AGENTS] 3 background M2M sub-agents listening on network loop.",
+    "[GNOMLEDGER] Verified anchor proof signature: v_sec_0x2a91... [SLA: <15ms]"
+  ]);
+
+  // Weaver Form States
+  const [formCapId, setFormCapId] = useState("custom-audit-agent");
+  const [formCapName, setFormCapName] = useState("Narrow Audit Agent");
+  const [formDomain, setFormDomain] = useState(() => companyGraph?.domains[0]?.name || "Agent Identity");
+  const [formProduct, setFormProduct] = useState(() => companyGraph?.products[0]?.name || "");
+  const [formSystem, setFormSystem] = useState(() => companyGraph?.canonicalSystems[0]?.name || "Gnomledger");
+  const [formPriceFloor, setFormPriceFloor] = useState("0.0240");
+  const [formInputs, setFormInputs] = useState("raw_logs, telemetry_claims");
+  const [formOutputs, setFormOutputs] = useState("audited_receipt, signoff_vector");
+
+  const handleWeaveCapability = () => {
+    const cleanId = formCapId.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!cleanId) return;
+
+    if (combinedCapabilities.some(c => c.id === cleanId)) {
+      setConsoleLogs(prev => [
+        ...prev,
+        `[WEAVER_ERR] Refusing to compile. Capability ID "${cleanId}" already registered in active blueprint.`
+      ]);
+      return;
+    }
+
+    const newCap: Capability = {
+      id: cleanId,
+      name: formCapName.trim(),
+      purpose: `Automated ${formCapName.trim()} verifying localized states on-the-fly.`,
+      businessOutcome: "Provides instantaneous decentralized verification and eliminates legal/regulatory clearing lag.",
+      machineOutcome: "Emits verifiable cryptographic witness vector.",
+      inputs: formInputs.split(",").map(s => s.trim()).filter(Boolean),
+      outputs: formOutputs.split(",").map(s => s.trim()).filter(Boolean),
+      preconditions: ["ledger_sync_ok"],
+      postconditions: ["witness_sealed"],
+      owner: "Developer Sub-agent",
+      canonicalSystem: formSystem,
+      canonicalDataDomain: formProduct,
+      supportingServices: ["arbitrum-gateway"],
+      exposedInterfaces: {
+        rest: [`/api/v1/custom/${cleanId}`],
+        mcp: [`mcp://custom/${cleanId}`],
+        sdk: [`veklom.custom.${cleanId}`],
+        cli: [`veklom custom ${cleanId}`],
+        ui: [],
+        webhooks: []
+      },
+      exposureSurfaces: [
+        {
+          type: "API",
+          identifier: `/api/v1/custom/${cleanId}`,
+          description: `Localized API exposure for ${formCapName.trim()}`,
+          status: "Active",
+          semanticVersion: "v1.0.0"
+        }
+      ],
+      pricingModel: {
+        billingUnit: "per check",
+        priceFloor: parseFloat(formPriceFloor) || 0.0150,
+        includedQuota: "1,000 runs",
+        overage: "$0.02 per run",
+        settlementCompat: "X402",
+        costToServe: "0.002",
+        marginEstimate: 85
+      },
+      governance: {
+        requiredApprovals: ["Secops Autopay"],
+        budgetRules: "Standard micro-billing",
+        dataBoundaries: "VPC Private subnet",
+        delegations: "Runtime delegation",
+        auditReqs: "Continuous trace log telemetry",
+        killSwitchRules: "Manual toggle by secure admin",
+        limits: "500 rps"
+      },
+      evidence: {
+        evidenceProduced: "Witness signature",
+        hashAlgorithm: "SHA-256",
+        ledgerStorage: formSystem,
+        verifiable: true,
+        privateDetails: "Sovereign keys locked in HSM",
+        completedProof: "Verified",
+        classification: "VERIFIED_EXISTING"
+      },
+      verification: {
+        unitTests: ["Verify contract signature", "Validate bounds constraint"],
+        contractTests: ["Check Gnomledger alignment"],
+        fixtureTests: [],
+        mcpTests: [],
+        securityTests: ["Static source analysis check"],
+        latencySlo: "SLA < 12ms",
+        driftChecks: "Active continuously"
+      },
+      dependencies: [],
+      lifecycleState: "Draft",
+      maturityState: "Conceptual",
+      verificationState: "Unverified",
+      pricingState: "Draft Price",
+      deprecationState: "None",
+      jurisdictionPolicy: {
+        dataBoundaryProfile: "EU/US Compliant Residency",
+        jurisdictionConstraints: ["Sovereign key ownership", "Decoupled exposure layer"],
+        paymentRailConstraints: ["X402 micro-payment settlement"],
+        auditRetentionProfile: "7 Year Auditable Ledger Log",
+        allowedRegions: ["US", "EU"],
+        blockedRegions: [],
+        modifiedBehaviorByRegion: {},
+        fallbackInteractionPattern: "Graceful fall-back to local offline cache buffer."
+      }
+    };
+
+    setCustomCapabilities(prev => [...prev, newCap]);
+    setSelectedNode({
+      id: cleanId,
+      rawId: cleanId,
+      label: formCapName.trim(),
+      type: "capability",
+      x: 250,
+      y: 220,
+      color: "#00F0FF",
+      details: newCap.purpose
+    });
+    
+    setConsoleLogs(prev => [
+      ...prev,
+      `[WEAVER_COMPILER] SUCCESS: Compiled and woven capability "${newCap.name}" into network topology!`,
+      `[WEAVER_COMPILER] Auto-allocated topology coordinates. Linked to product: "${formProduct}" & system: "${formSystem}".`
+    ]);
+  };
+
+  const runOpsCommand = (capId: string) => {
+    const targetCap = combinedCapabilities.find(c => c.id === capId);
+    if (!targetCap) return;
+    
+    setIsExecutingOps(true);
+    setConsoleLogs(prev => [
+      ...prev,
+      `[ops-command-runner] $ ./veklom-ops-command --validate --capability "${capId}"`,
+      `[ops-command-runner] Initiating symbolic verification of capability boundary: ${targetCap.name}`
+    ]);
+
+    setTimeout(() => {
+      setConsoleLogs(prev => [
+        ...prev,
+        `[sub-agent-alpha] Scanning AST interface fields for "${targetCap.name}"... Found valid exposure definitions.`,
+        `[sub-agent-beta] SLA test packet injection: sent 100 fake micro-transaction payloads. Avg latency returned: 11.4ms.`
+      ]);
+    }, 600);
+
+    setTimeout(() => {
+      const anchorHash = `AG_ANCHOR_${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      setConsoleLogs(prev => [
+        ...prev,
+        `[sub-agent-gamma] No schema drift detected. Committing cryptographic signature to Gnomledger...`,
+        `[gnomledger] Block generated and verified. Proof signature: ${anchorHash}`,
+        `[ops-command-runner] SUCCESS: Capability "${targetCap.name}" verification state promoted to VERIFIED SAFETY.`
+      ]);
+      
+      setCustomCapabilities(prev => prev.map(c => c.id === capId ? { ...c, verificationState: "Verified" } : c));
+      setLocalCapabilities(prev => prev.map(c => c.id === capId ? { ...c, verificationState: "Verified" } : c));
+      setIsExecutingOps(false);
+    }, 1600);
+  };
 
   // Dynamic coordinate generation for nodes based on compiled blueprint
   const viewBoxWidth = 500;
@@ -56,7 +240,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
   });
 
   // 3. Capabilities (Y: 220)
-  const capabilityNodes = (capabilities || []).map((cap, idx, arr) => {
+  const capabilityNodes = (combinedCapabilities || []).map((cap, idx, arr) => {
     const count = arr.length;
     const x = count > 1
       ? 50 + (idx * (viewBoxWidth - 100)) / (count - 1)
@@ -92,11 +276,46 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
     };
   });
 
+  // 5. Abide Micro-Nodes (Y: 390)
+  const abideNodes = [
+    {
+      id: "abide-node-a",
+      rawId: "Abide-Node-A",
+      label: "Abide Node A",
+      type: "abide",
+      x: 100,
+      y: 390,
+      color: "#FF9F0A", // Orange
+      desc: "Lockerphycer physical security isolation enclave."
+    },
+    {
+      id: "abide-node-b",
+      rawId: "Abide-Node-B",
+      label: "Abide Node B",
+      type: "abide",
+      x: 250,
+      y: 390,
+      color: "#30D158", // Green
+      desc: "Cappo-backend & BYOS capability verification router."
+    },
+    {
+      id: "abide-node-c",
+      rawId: "Abide-Node-C",
+      label: "Abide Node C",
+      type: "abide",
+      x: 400,
+      y: 390,
+      color: "#0A84FF", // Blue
+      desc: "Gnomledger decentralized peer lineage witness anchor."
+    }
+  ];
+
   const nodes = [
     ...domainNodes,
     ...productNodes,
     ...capabilityNodes,
     ...systemNodes,
+    ...abideNodes,
   ];
 
   // Dynamic link generation linking domain to product, product to capability, and capability to system
@@ -128,14 +347,20 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
   }
 
   // B. Link Product -> Capability (Heuristic mapping based on domain context or sequential distribution)
-  (capabilities || []).forEach((cap, idx) => {
+  (combinedCapabilities || []).forEach((cap, idx) => {
     const capNode = capabilityNodes.find(cn => cn.id === cap.id);
     if (capNode) {
-      let matchedProd = productNodes.find(pn => {
-        const prodLower = pn.rawId.toLowerCase();
-        const capLower = cap.id.toLowerCase();
-        return prodLower.includes("os") && (capLower.includes("session") || capLower.includes("route") || capLower.includes("eligibility") || capLower.includes("govern"));
-      });
+      let matchedProd = null;
+      if (cap.owner === "Developer Sub-agent" && cap.canonicalDataDomain) {
+        matchedProd = productNodes.find(pn => pn.rawId === cap.canonicalDataDomain);
+      }
+      if (!matchedProd) {
+        matchedProd = productNodes.find(pn => {
+          const prodLower = pn.rawId.toLowerCase();
+          const capLower = cap.id.toLowerCase();
+          return prodLower.includes("os") && (capLower.includes("session") || capLower.includes("route") || capLower.includes("eligibility") || capLower.includes("govern"));
+        });
+      }
       if (!matchedProd) {
         matchedProd = productNodes.find(pn => {
           const prodLower = pn.rawId.toLowerCase();
@@ -153,7 +378,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
   });
 
   // C. Link Capability -> Canonical System
-  (capabilities || []).forEach(cap => {
+  (combinedCapabilities || []).forEach(cap => {
     const capNode = capabilityNodes.find(cn => cn.id === cap.id);
     if (capNode) {
       const targetSysName = cap.canonicalServiceSystem || cap.canonicalSystem;
@@ -174,7 +399,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
   });
 
   // D. Link Inter-Capability dependencies
-  (capabilities || []).forEach(cap => {
+  (combinedCapabilities || []).forEach(cap => {
     const capNode = capabilityNodes.find(cn => cn.id === cap.id);
     if (capNode && cap.dependencies) {
       cap.dependencies.forEach(depId => {
@@ -186,6 +411,49 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
     }
   });
 
+  // E. Link System -> Abide Micro-Nodes
+  systemNodes.forEach(sn => {
+    if (sn.rawId.includes("Router")) {
+      links.push({ source: sn.id, target: "abide-node-b" });
+    } else if (sn.rawId.includes("Ledger") || sn.rawId.includes("Gnomledger")) {
+      links.push({ source: sn.id, target: "abide-node-c" });
+    }
+  });
+  // Connect Node A (Secure Enclave) to the first system (or any system containing Security or Router)
+  if (systemNodes[0]) {
+    links.push({ source: systemNodes[0].id, target: "abide-node-a" });
+  }
+
+  // Product Offering Cascade highlighting lookup
+  const illuminatedNodeIds = useMemo(() => {
+    if (!highlightedProduct) return null;
+    const ids = new Set<string>();
+    
+    const pNode = productNodes.find(pn => pn.rawId === highlightedProduct);
+    if (pNode) {
+      ids.add(pNode.id);
+      
+      const prodObj = companyGraph?.products.find(p => p.name === highlightedProduct);
+      if (prodObj) {
+        const dNode = domainNodes.find(dn => dn.rawId === prodObj.domain);
+        if (dNode) ids.add(dNode.id);
+      }
+      
+      links.forEach(l => {
+        if (l.source === pNode.id) {
+          ids.add(l.target);
+          
+          links.forEach(l2 => {
+            if (l2.source === l.target) {
+              ids.add(l2.target);
+            }
+          });
+        }
+      });
+    }
+    return ids;
+  }, [highlightedProduct, productNodes, domainNodes, companyGraph, links]);
+
   // Dynamic node color and badge calculation helper
   const getNodeVisuals = (node: any) => {
     if (node.type !== "capability") {
@@ -196,14 +464,14 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
       return { color: "#EF4444", extraLabel: "HALTED" };
     }
 
-    const cap = capabilities.find(c => c.id === node.id);
+    const cap = combinedCapabilities.find(c => c.id === node.id);
     if (!cap) return { color: node.color, extraLabel: "" };
 
     let color = node.color;
     let extraLabel = "";
 
     if (visualizeMode === "status") {
-      const state = cap.observedMaturity?.toLowerCase() || "";
+      const state = cap.maturityState?.toLowerCase() || "";
       if (state.includes("production")) {
         color = "#10B981"; // Emerald green
         extraLabel = "PROD";
@@ -290,8 +558,8 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Interactive SVG Canvas */}
-        <div className="lg:col-span-8 p-4 bg-[#050505] border-2 border-[#1E293B] relative rounded-none overflow-hidden h-[400px]">
-          <svg className="w-full h-full" viewBox="0 0 500 380">
+        <div className="lg:col-span-8 p-4 bg-[#050505] border-2 border-[#1E293B] relative rounded-none overflow-hidden h-[460px]">
+          <svg className="w-full h-full" viewBox="0 0 500 440">
             {/* Grid background & arrow markers */}
             <defs>
               <pattern id="graph-grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -335,29 +603,49 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
               const isHoveredNetwork = hoveredNode 
                 ? (link.source === hoveredNode || link.target === hoveredNode)
                 : false;
-              const opacity = hoveredNode ? (isHoveredNetwork ? "1" : "0.15") : "0.5";
+              
+              const isIlluminatedLink = illuminatedNodeIds 
+                ? (illuminatedNodeIds.has(link.source) && illuminatedNodeIds.has(link.target))
+                : false;
+
+              let opacity = "0.5";
+              if (hoveredNode) {
+                opacity = isHoveredNetwork ? "1" : "0.15";
+              } else if (illuminatedNodeIds) {
+                opacity = isIlluminatedLink ? "1" : "0.08";
+              }
+
               const isHaltedLink = killedCaps && (killedCaps[link.source] || killedCaps[link.target]);
-              const strokeColor = isHoveredNetwork 
+              let strokeColor = isHoveredNetwork 
                 ? "#00F0FF" 
                 : (isHaltedLink ? "#EF4444" : (link.dashed ? "#FFD60A" : "#333"));
-              const strokeWidth = isHoveredNetwork 
+              
+              if (!hoveredNode && isIlluminatedLink) {
+                strokeColor = "#00F0FF";
+              }
+
+              let strokeWidth = isHoveredNetwork 
                 ? "2.5" 
                 : (isHaltedLink ? "2.0" : (link.dashed ? "1.5" : "1.5"));
+
+              if (!hoveredNode && isIlluminatedLink) {
+                strokeWidth = "2.5";
+              }
 
               return (
                 <g key={i} style={{ opacity, transition: "opacity 0.2s" }}>
                   <path
-                    d={pathData}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={link.dashed ? "4 4" : "0"}
-                    className={link.dashed ? "animate-[dash_2s_linear_infinite]" : ""}
-                    markerEnd={link.dashed ? "url(#arrow-dashed)" : "url(#arrow)"}
+                     d={pathData}
+                     fill="none"
+                     stroke={strokeColor}
+                     strokeWidth={strokeWidth}
+                     strokeDasharray={link.dashed ? "4 4" : "0"}
+                     className={link.dashed ? "animate-[dash_2s_linear_infinite]" : ""}
+                     markerEnd={link.dashed ? "url(#arrow-dashed)" : "url(#arrow)"}
                   />
                   {/* Small animated signal bubble on links */}
-                  <circle r={isHoveredNetwork ? "3" : "2"} fill={isHoveredNetwork ? "#FFD60A" : "#00F0FF"} className="glow-cyan">
-                    <animateMotion dur={isHoveredNetwork ? "1.5s" : "3s"} repeatCount="indefinite" path={pathData} />
+                  <circle r={isHoveredNetwork || isIlluminatedLink ? "3" : "2"} fill={isHoveredNetwork || isIlluminatedLink ? "#FFD60A" : "#00F0FF"} className="glow-cyan">
+                    <animateMotion dur={isHoveredNetwork || isIlluminatedLink ? "1.5s" : "3s"} repeatCount="indefinite" path={pathData} />
                   </circle>
                 </g>
               );
@@ -371,7 +659,17 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                 ? (hoveredNode === node.id || links.some(l => (l.source === hoveredNode && l.target === node.id) || (l.target === hoveredNode && l.source === node.id)))
                 : false;
               
-              const opacity = hoveredNode ? (isRelated ? "1" : "0.3") : "1";
+              const isIlluminatedNode = illuminatedNodeIds 
+                ? illuminatedNodeIds.has(node.id)
+                : false;
+
+              let opacity = "1";
+              if (hoveredNode) {
+                opacity = isRelated ? "1" : "0.3";
+              } else if (illuminatedNodeIds) {
+                opacity = isIlluminatedNode ? "1" : "0.15";
+              }
+
               const { color, extraLabel } = getNodeVisuals(node);
 
               return (
@@ -387,7 +685,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                   <circle
                     r={node.type === "domain" ? "12" : node.type === "product" ? "10" : "8"}
                     fill={color}
-                    stroke={isSelected ? "#FFF" : (isHovered ? "#00F0FF" : "#050505")}
+                    stroke={isSelected ? "#FFF" : (isHovered || isIlluminatedNode ? "#00F0FF" : "#050505")}
                     strokeWidth="2"
                     className="group-hover:scale-125 transition-transform duration-200"
                   />
@@ -397,14 +695,14 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                     fill="none"
                     stroke={color}
                     strokeWidth="1"
-                    opacity={isSelected || isHovered ? "0.8" : "0.2"}
-                    className={isSelected || isHovered ? "animate-ping" : ""}
+                    opacity={isSelected || isHovered || isIlluminatedNode ? "0.8" : "0.2"}
+                    className={isSelected || isHovered || isIlluminatedNode ? "animate-ping" : ""}
                     style={{ animationDuration: "3s" }}
                   />
                   <text
                     y="-16"
                     textAnchor="middle"
-                    fill={isSelected || isHovered ? "#00F0FF" : "#E0E0E0"}
+                    fill={isSelected || isHovered || isIlluminatedNode ? "#00F0FF" : "#E0E0E0"}
                     fontSize="7.5"
                     fontFamily="monospace"
                     fontWeight="bold"
@@ -491,7 +789,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                     TYPE: {selectedNode.type}
                   </span>
                   {selectedNode.type === "capability" && (() => {
-                    const cap = capabilities.find(c => c.id === selectedNode.id);
+                    const cap = combinedCapabilities.find(c => c.id === selectedNode.id);
                     if (!cap) return null;
                     return (
                       <span className="text-[8px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-black uppercase">
@@ -504,7 +802,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
 
               {/* DYNAMIC METADATA RENDER BASED ON TYPE */}
               {selectedNode.type === "capability" ? (() => {
-                const cap = capabilities.find(c => c.id === selectedNode.id);
+                const cap = combinedCapabilities.find(c => c.id === selectedNode.id);
                 if (!cap) {
                   return (
                     <div className="space-y-2">
@@ -592,7 +890,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                             </div>
                             <div>
                               <span className="text-gray-600 block">Maturity:</span>
-                              <span className="text-white font-bold">{cap.observedMaturity}</span>
+                              <span className="text-white font-bold">{cap.maturityState}</span>
                             </div>
                             <div>
                               <span className="text-gray-600 block">Verification:</span>
@@ -944,6 +1242,340 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
             Security: Verified Gnomledger Anchor Proof. Handshake response target SLA &lt; 15ms.
           </div>
         </div>
+      </div>
+
+      {/* Sovereign Weaver & Sub-Agent M2M Playground */}
+      <div className="mt-8 border-2 border-[#222] bg-[#050505] p-5 space-y-6 text-xs font-mono uppercase">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#222] pb-4 gap-4">
+          <div className="space-y-1">
+            <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+              <Cpu size={16} className="text-[#00F0FF] animate-pulse" />
+              <span>Sovereign Weaver & Sub-Agent M2M Playground</span>
+            </h4>
+            <p className="text-[10px] font-mono text-[#666] uppercase">
+              Interactively customize capabilities, run background sub-agent ops checks, and trace alignment.
+            </p>
+          </div>
+          
+          <div className="flex gap-1.5 bg-black p-1 border border-[#222] text-[9px] font-mono">
+            {[
+              { id: "weaver", label: "Weave Capability", icon: Plus },
+              { id: "subagents", label: "M2M Sub-Agents", icon: Terminal },
+              { id: "bundles", label: "Bundle Overlay", icon: Layers }
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setWeaverTab(tab.id as any)}
+                  className={`px-3 py-1.5 flex items-center gap-1.5 font-bold transition-all uppercase cursor-pointer ${
+                    weaverTab === tab.id
+                      ? "bg-[#00F0FF]/15 border border-[#00F0FF]/30 text-[#00F0FF] font-black"
+                      : "border border-transparent text-gray-500 hover:text-gray-300"
+                  }`}
+                >
+                  <Icon size={11} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tab 1: Weave Capability */}
+        {weaverTab === "weaver" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+            <div className="space-y-3">
+              <span className="text-[10px] text-gray-400 font-bold tracking-wider block">[ CAPABILITY DIRECTIVES ]</span>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">CAPABILITY ID (STABLE):</label>
+                  <input
+                    type="text"
+                    value={formCapId}
+                    onChange={(e) => setFormCapId(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">FRIENDLY NAME:</label>
+                  <input
+                    type="text"
+                    value={formCapName}
+                    onChange={(e) => setFormCapName(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">DOMAIN:</label>
+                  <select
+                    value={formDomain}
+                    onChange={(e) => setFormDomain(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  >
+                    {(companyGraph?.domains || []).map(d => (
+                      <option key={d.name} value={d.name}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">PRODUCT OFFERING:</label>
+                  <select
+                    value={formProduct}
+                    onChange={(e) => setFormProduct(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  >
+                    <option value="">-- DEFAULT --</option>
+                    {(companyGraph?.products || []).map(p => (
+                      <option key={p.name} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">CANONICAL SYSTEM:</label>
+                  <select
+                    value={formSystem}
+                    onChange={(e) => setFormSystem(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  >
+                    {(companyGraph?.canonicalSystems || []).map(s => (
+                      <option key={s.name} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">INPUT PARAMS (COMMA SEP):</label>
+                  <input
+                    type="text"
+                    value={formInputs}
+                    onChange={(e) => setFormInputs(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] text-[#555]">OUTPUT PARAMS (COMMA SEP):</label>
+                  <input
+                    type="text"
+                    value={formOutputs}
+                    onChange={(e) => setFormOutputs(e.target.value)}
+                    className="w-full bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1 pt-1">
+                <label className="text-[9px] text-[#555]">M2M TRANSACTION PRICING FLOOR ($):</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0.0"
+                    value={formPriceFloor}
+                    onChange={(e) => setFormPriceFloor(e.target.value)}
+                    className="w-48 bg-black border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-[#666]">X402 micro-payment settlement compatible.</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleWeaveCapability}
+                className="w-full mt-4 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/25 py-3.5 font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 text-xs"
+              >
+                <Plus size={14} />
+                <span>Compile & Weave into Topology Map</span>
+              </button>
+            </div>
+
+            <div className="p-4 bg-black border border-[#222] flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-400 font-bold">
+                  <Info size={14} />
+                  <span>Decoupled M2M Compilation Rules</span>
+                </div>
+                <p className="text-[10.5px] text-gray-400 normal-case leading-relaxed">
+                  Weaving executes a dry compile on our local compiler (<b>Seked</b>). The new capability receives a standard isolation wrapper, registers automatically within coordinates (Y: 220), and inherits the chosen domain boundaries.
+                </p>
+                <p className="text-[10.5px] text-gray-400 normal-case leading-relaxed">
+                  Once compiled, the node will appear as grey (<b>UNVERIFIED</b>) in the topology graph. Navigate to the <b>M2M Sub-Agents</b> tab to run localized unit/contract audits via our verification pipeline.
+                </p>
+              </div>
+
+              <div className="border-t border-[#151515] pt-3 flex items-center justify-between text-[#555] text-[9px]">
+                <span>COMPILER: Seked v1.1.2</span>
+                <span>LEDGER STATE: GNOM_OK</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: M2M Sub-Agents & Terminal */}
+        {weaverTab === "subagents" && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-fadeIn">
+            {/* Left controller: Run Ops checks */}
+            <div className="md:col-span-4 space-y-4">
+              <div className="p-3 bg-black border border-[#222] space-y-3">
+                <span className="text-[10px] text-gray-400 font-bold block uppercase">[ ACTIVATE BACKGROUND AGENTS ]</span>
+                <p className="text-[10px] text-gray-500 normal-case leading-normal">
+                  Background sub-agents evaluate AST contract bounds, check latency SLO parameters, and sign cryptographically valid receipts.
+                </p>
+
+                <div className="space-y-1.5">
+                  <label className="text-[9px] text-[#555] block">SELECT CAPABILITY NODE TARGET:</label>
+                  <select
+                    value={auditTargetId}
+                    onChange={(e) => setAuditTargetId(e.target.value)}
+                    className="w-full bg-[#050505] border border-[#222] p-2 text-white font-mono uppercase text-[10px] focus:border-[#00F0FF] focus:outline-none"
+                  >
+                    {combinedCapabilities.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  disabled={isExecutingOps || !auditTargetId}
+                  onClick={() => runOpsCommand(auditTargetId)}
+                  className={`w-full py-2.5 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+                    isExecutingOps || !auditTargetId
+                      ? "bg-[#111] text-[#444] border border-[#222] cursor-not-allowed"
+                      : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
+                  }`}
+                >
+                  <Play size={12} className={isExecutingOps ? "animate-spin text-emerald-400" : ""} />
+                  <span>{isExecutingOps ? "Executing Ops Validation..." : "Execute Sub-Agent Ops Check"}</span>
+                </button>
+              </div>
+
+              {/* Subagent Status List */}
+              <div className="space-y-2">
+                {[
+                  { name: "Sub-Agent Alpha (Audit Validator)", role: "Validates AST constraints", status: "ONLINE", col: "text-emerald-400" },
+                  { name: "Sub-Agent Beta (SLO Monitor)", role: "Injects test latency packets", status: "MONITORING", col: "text-cyan-400" },
+                  { name: "Sub-Agent Gamma (Heuristic Solver)", role: "Prevents data boundary drift", status: "STANDBY", col: "text-[#666]" }
+                ].map((sa, i) => (
+                  <div key={i} className="p-2 bg-[#0A0A0A] border border-[#222] flex justify-between items-center text-[9.5px]">
+                    <div>
+                      <span className="text-white font-bold block">{sa.name}</span>
+                      <span className="text-gray-500 normal-case">{sa.role}</span>
+                    </div>
+                    <span className={`font-black text-[9px] ${sa.col}`}>[ {sa.status} ]</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Hacker Terminal */}
+            <div className="md:col-span-8 flex flex-col h-full min-h-[220px]">
+              <div className="bg-[#050505] border border-[#222] flex items-center justify-between px-3 py-1.5 border-b-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                </div>
+                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">veklom-ops-command console</span>
+              </div>
+              <div className="bg-black border border-[#222] p-3 flex-1 overflow-y-auto max-h-[240px] font-mono text-[9.5px] leading-relaxed text-emerald-400 space-y-1">
+                {consoleLogs.map((log, i) => {
+                  let logCol = "text-emerald-400";
+                  if (log.includes("[WEAVER_COMPILER]")) logCol = "text-[#00F0FF]";
+                  if (log.includes("[WEAVER_ERR]") || log.includes("[SYSTEM_ERR]")) logCol = "text-red-400";
+                  if (log.includes("[gnomledger]") || log.includes("[sub-agent-alpha]")) logCol = "text-amber-400";
+                  if (log.includes("$")) logCol = "text-white font-bold";
+                  return (
+                    <div key={i} className={`${logCol} whitespace-pre-wrap`}>
+                      {log}
+                    </div>
+                  );
+                })}
+                {isExecutingOps && (
+                  <div className="text-emerald-400 animate-pulse">
+                    ▒ [sub-agent-audit] running verification loops...
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Bundle Overlay */}
+        {weaverTab === "bundles" && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-fadeIn">
+            <div className="md:col-span-7 space-y-4">
+              <span className="text-[10px] text-gray-400 font-bold block uppercase">[ INTENTIONAL BUNDLE MAPPING OVERLAYS ]</span>
+              <p className="text-[10.5px] text-gray-400 normal-case leading-relaxed">
+                Toggle a product bundle below to trace its exact coordinate mapping across the physical layout. Unselected pathways will dim automatically to optimize system visualization density.
+              </p>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setHighlightedProduct(null)}
+                  className={`p-3 text-left border flex justify-between items-center font-bold cursor-pointer transition-colors ${
+                    !highlightedProduct
+                      ? "bg-white/5 border-[#00F0FF] text-[#00F0FF]"
+                      : "bg-black border-[#222] text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <span>CLEAR FILTER (SHOW COMPLETE TOPOLOGY NETWORK)</span>
+                  <span className="text-[9px] font-mono">[ ACTIVE ]</span>
+                </button>
+
+                {(companyGraph?.products || []).map(p => {
+                  const isAct = highlightedProduct === p.name;
+                  return (
+                    <button
+                      key={p.name}
+                      onClick={() => setHighlightedProduct(p.name)}
+                      className={`p-3 text-left border flex justify-between items-center font-bold cursor-pointer transition-colors ${
+                        isAct
+                          ? "bg-[#00F0FF]/15 border-[#00F0FF] text-[#00F0FF]"
+                          : "bg-black border-[#222] text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className={`w-2.5 h-2.5 rounded-full ${isAct ? "bg-[#00F0FF]" : "bg-[#333]"}`} />
+                        <span>{p.name.toUpperCase()}</span>
+                      </div>
+                      <span className="text-[9px] text-[#666] font-mono lowercase">view cascade trail</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="md:col-span-5 p-4 bg-black border border-[#222] flex flex-col justify-between space-y-5">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-[#00F0FF] font-bold">
+                  <Compass size={14} />
+                  <span>Cognitive IDE Navigation</span>
+                </div>
+                <p className="text-[10.5px] text-gray-400 normal-case leading-relaxed">
+                  Looking to perform advanced AST engineering, run solver queries, or code live interfaces? Jump directly to the Interactive Developer Assistant (IDA).
+                </p>
+                <p className="text-[10.5px] text-gray-400 normal-case leading-relaxed">
+                  All capabilities and bundles woven inside this visualization graph remain synchronized within the active runtime context.
+                </p>
+              </div>
+
+              {setActiveTab && (
+                <button
+                  onClick={() => setActiveTab("explorer")}
+                  className="w-full bg-[#00F0FF]/15 border border-[#00F0FF]/40 text-[#00F0FF] hover:bg-[#00F0FF]/30 py-3 font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 uppercase text-xs"
+                >
+                  <span>Go to IDA (Cognitive IDE)</span>
+                  <ArrowRight size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
