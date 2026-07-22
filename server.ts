@@ -2303,10 +2303,10 @@ app.get("/api/backends/status", async (req, res) => {
       const response = await fetch(b.url + "/health", { signal: controller.signal }).catch(() => null);
       clearTimeout(id);
 
-      if (response && response.ok) {
+      if (response && (response.ok || response.status === 402)) {
         return {
           ...b,
-          status: "Active",
+          status: response.status === 402 ? "Active (Payment Required)" : "Active",
           latencyMs: Date.now() - start
         };
       } else {
@@ -2314,7 +2314,7 @@ app.get("/api/backends/status", async (req, res) => {
         return {
           ...b,
           status: "Offline",
-          error: "Refused connection. No live listener at the given port."
+          error: response ? `HTTP ${response.status} - Refused connection.` : "Refused connection. No live listener at the given port."
         };
       }
     } catch (e: any) {

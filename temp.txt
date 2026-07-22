@@ -1,0 +1,153 @@
+
+> .windsurf\abide\server.ts:1466:app.post("/api/test-connection", async (req, res) => {
+  .windsurf\abide\server.ts:1467:  const startTime = Date.now();
+  .windsurf\abide\server.ts:1468:  try {
+  .windsurf\abide\server.ts:1469:    const {
+  .windsurf\abide\server.ts:1470:      provider,
+  .windsurf\abide\server.ts:1471:      apiKey,
+  .windsurf\abide\server.ts:1472:      modelName,
+  .windsurf\abide\server.ts:1473:      customUrl,
+  .windsurf\abide\server.ts:1474:      authMode,
+  .windsurf\abide\server.ts:1475:      customHeaderName,
+  .windsurf\abide\server.ts:1476:    } = req.body;
+  .windsurf\abide\server.ts:1477:
+  .windsurf\abide\server.ts:1478:    const selectedProvider = provider || "gemini";
+  .windsurf\abide\server.ts:1479:    const testPrompt = "Respond only with the word 'OK'.";
+  .windsurf\abide\server.ts:1480:
+  .windsurf\abide\server.ts:1481:    if (selectedProvider === "gemini") {
+  .windsurf\abide\server.ts:1482:      const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
+  .windsurf\abide\server.ts:1483:      if (!activeApiKey) {
+  .windsurf\abide\server.ts:1484:        throw new Error("Gemini API key is not configured.");
+  .windsurf\abide\server.ts:1485:      }
+  .windsurf\abide\server.ts:1486:
+  .windsurf\abide\server.ts:1487:      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+  .windsurf\abide\server.ts:1488:      const aiOptions: any = {
+  .windsurf\abide\server.ts:1489:        apiKey: activeApiKey,
+  .windsurf\abide\server.ts:1490:        httpOptions: { headers: { "User-Agent": "aistudio-build" } },
+  .windsurf\abide\server.ts:1491:      };
+  .windsurf\abide\server.ts:1492:      if (geminiBaseUrl) {
+  .windsurf\abide\server.ts:1493:        aiOptions.baseUrl = geminiBaseUrl;
+  .windsurf\abide\server.ts:1494:      }
+  .windsurf\abide\server.ts:1495:
+  .windsurf\abide\server.ts:1496:      const ai = new GoogleGenAI(aiOptions);
+  .windsurf\abide\server.ts:1497:      const model = modelName || "gemini-3.5-flash";
+  .windsurf\abide\server.ts:1498:      await ai.models.generateContent({
+  .windsurf\abide\server.ts:1499:        model: model,
+  .windsurf\abide\server.ts:1500:        contents: testPrompt,
+  .windsurf\abide\server.ts:1501:        config: {
+  .windsurf\abide\server.ts:1502:          maxOutputTokens: 10,
+  .windsurf\abide\server.ts:1503:          temperature: 0.1,
+  .windsurf\abide\server.ts:1504:        },
+  .windsurf\abide\server.ts:1505:      });
+  .windsurf\abide\server.ts:1506:    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+  .windsurf\abide\server.ts:1507:      let openAiBaseUrl = "https://api.openai.com/v1";
+  .windsurf\abide\server.ts:1508:      if (customUrl) {
+  .windsurf\abide\server.ts:1509:        openAiBaseUrl = customUrl;
+  .windsurf\abide\server.ts:1510:      } else if (selectedProvider === "llama") {
+  .windsurf\abide\server.ts:1511:        openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
+  .windsurf\abide\server.ts:1512:      } else if (selectedProvider === "deepseek") {
+  .windsurf\abide\server.ts:1513:        openAiBaseUrl = "https://api.deepseek.com/v1";
+  .windsurf\abide\server.ts:1514:      } else if (selectedProvider === "openai") {
+  .windsurf\abide\server.ts:1515:        openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "http://localhost:1106/modelfarm/openai";
+  .windsurf\abide\server.ts:1516:      }
+  .windsurf\abide\server.ts:1517:
+  .windsurf\abide\server.ts:1518:      let cleanUrl = openAiBaseUrl.replace(/\/+$/, "");
+  .windsurf\abide\server.ts:1519:      if (!cleanUrl.endsWith("/chat/completions")) {
+  .windsurf\abide\server.ts:1520:        cleanUrl = `${cleanUrl}/chat/completions`;
+  .windsurf\abide\server.ts:1521:      }
+  .windsurf\abide\server.ts:1522:
+  .windsurf\abide\server.ts:1523:      const headers: any = {
+  .windsurf\abide\server.ts:1524:        "Content-Type": "application/json",
+  .windsurf\abide\server.ts:1525:      };
+  .windsurf\abide\server.ts:1526:
+  .windsurf\abide\server.ts:1527:      if (apiKey) {
+  .windsurf\abide\server.ts:1528:        if (authMode === "bearer") {
+  .windsurf\abide\server.ts:1529:          headers.Authorization = `Bearer ${apiKey}`;
+  .windsurf\abide\server.ts:1530:        } else if (authMode === "apiKeyHeader") {
+  .windsurf\abide\server.ts:1531:          headers["x-api-key"] = apiKey;
+  .windsurf\abide\server.ts:1532:        } else if (authMode === "customHeader" && customHeaderName) {
+  .windsurf\abide\server.ts:1533:          headers[customHeaderName] = apiKey;
+  .windsurf\abide\server.ts:1534:        } else if (authMode === "none") {
+  .windsurf\abide\server.ts:1535:          // No auth header
+  .windsurf\abide\server.ts:1536:        } else {
+  .windsurf\abide\server.ts:1537:          headers.Authorization = `Bearer ${apiKey}`;
+  .windsurf\abide\server.ts:1538:        }
+  .windsurf\abide\server.ts:1539:      }
+  .windsurf\abide\server.ts:1540:
+  .windsurf\abide\server.ts:1541:      const payload = {
+  .windsurf\abide\server.ts:1542:        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : configuredOllamaModel()),
+  .windsurf\abide\server.ts:1543:        messages: [{ role: "user", content: testPrompt }],
+  .windsurf\abide\server.ts:1544:        max_tokens: 10,
+  .windsurf\abide\server.ts:1545:        temperature: 0.1,
+  .windsurf\abide\server.ts:1546:      };
+  .windsurf\abide\server.ts:1547:
+  .windsurf\abide\server.ts:1548:      const response = await fetch(cleanUrl, {
+  .windsurf\abide\server.ts:1549:        method: "POST",
+  .windsurf\abide\server.ts:1550:        headers,
+  .windsurf\abide\server.ts:1551:        body: JSON.stringify(payload),
+  .windsurf\abide\server.ts:1552:      });
+  .windsurf\abide\server.ts:1553:
+  .windsurf\abide\server.ts:1554:      if (!response.ok) {
+  .windsurf\abide\server.ts:1555:        const errorText = await response.text();
+  .windsurf\abide\server.ts:1556:        throw new Error(`${selectedProvider.toUpperCase()} failed: ${errorText}`);
+  .windsurf\abide\server.ts:1557:      }
+  .windsurf\abide\server.ts:1558:    } else if (selectedProvider === "anthropic") {
+  .windsurf\abide\server.ts:1559:      const activeApiKey = apiKey;
+  .windsurf\abide\server.ts:1560:      if (!activeApiKey) {
+  .windsurf\abide\server.ts:1561:        throw new Error("Anthropic API key is required.");
+  .windsurf\abide\server.ts:1562:      }
+  .windsurf\abide\server.ts:1563:
+  .windsurf\abide\server.ts:1564:      const anthropicUrl = customUrl || "https://api.anthropic.com/v1/messages";
+  .windsurf\abide\server.ts:1565:      const headers = {
+  .windsurf\abide\server.ts:1566:        "Content-Type": "application/json",
+  .windsurf\abide\server.ts:1567:        "x-api-key": activeApiKey,
+  .windsurf\abide\server.ts:1568:        "anthropic-version": "2023-06-01",
+  .windsurf\abide\server.ts:1569:      };
+  .windsurf\abide\server.ts:1570:
+  .windsurf\abide\server.ts:1571:      const payload = {
+  .windsurf\abide\server.ts:1572:        model: modelName || "claude-3-5-sonnet-20241022",
+  .windsurf\abide\server.ts:1573:        max_tokens: 10,
+  .windsurf\abide\server.ts:1574:        messages: [{ role: "user", content: testPrompt }],
+  .windsurf\abide\server.ts:1575:        temperature: 0.1,
+  .windsurf\abide\server.ts:1576:      };
+  .windsurf\abide\server.ts:1577:
+  .windsurf\abide\server.ts:1578:      const response = await fetch(anthropicUrl, {
+  .windsurf\abide\server.ts:1579:        method: "POST",
+  .windsurf\abide\server.ts:1580:        headers,
+  .windsurf\abide\server.ts:1581:        body: JSON.stringify(payload),
+  .windsurf\abide\server.ts:1582:      });
+  .windsurf\abide\server.ts:1583:
+  .windsurf\abide\server.ts:1584:      if (!response.ok) {
+  .windsurf\abide\server.ts:1585:        const errorText = await response.text();
+  .windsurf\abide\server.ts:1586:        throw new Error(`Anthropic failed: ${errorText}`);
+  .windsurf\abide\server.ts:1587:      }
+  .windsurf\abide\server.ts:1588:    } else {
+  .windsurf\abide\server.ts:1589:      throw new Error(`Unknown provider: ${selectedProvider}`);
+  .windsurf\abide\server.ts:1590:    }
+  .windsurf\abide\server.ts:1591:
+  .windsurf\abide\server.ts:1592:    const latencyMs = Date.now() - startTime;
+  .windsurf\abide\server.ts:1593:    return res.json({
+  .windsurf\abide\server.ts:1594:      success: true,
+  .windsurf\abide\server.ts:1595:      latencyMs,
+  .windsurf\abide\server.ts:1596:      model: modelName || "default",
+  .windsurf\abide\server.ts:1597:    });
+  .windsurf\abide\server.ts:1598:  } catch (error: any) {
+  .windsurf\abide\server.ts:1599:    console.error("Connection test error:", error);
+  .windsurf\abide\server.ts:1600:    let errorMsg = error.message || "Connection test failed.";
+  .windsurf\abide\server.ts:1601:    if (errorMsg.includes("11434") || errorMsg.includes("ECONNREFUSED") || (error.cause && error.cause.toString().includes("11434"))) {
+  .windsurf\abide\server.ts:1602:      errorMsg = "Ollama (Llama) is unreachable at the configured provider endpoint. Set OLLAMA_BASE_URL for the server-side daemon or provide a reachable development URL.";
+  .windsurf\abide\server.ts:1603:    }
+  .windsurf\abide\server.ts:1604:    return res.status(503).json({
+  .windsurf\abide\server.ts:1605:      success: false,
+  .windsurf\abide\server.ts:1606:      error: errorMsg,
+  .windsurf\abide\server.ts:1607:    });
+  .windsurf\abide\server.ts:1608:  }
+  .windsurf\abide\server.ts:1609:});
+  .windsurf\abide\server.ts:1610:
+  .windsurf\abide\server.ts:1611:// 2. Query Vector DB with Text Embeddings (Semantic Search)
+  .windsurf\abide\server.ts:1612:app.post("/api/academic/search", async (req, res) => {
+  .windsurf\abide\server.ts:1613:  try {
+  .windsurf\abide\server.ts:1614:    const { query, apiKey, customUrl } = req.body;
+  .windsurf\abide\server.ts:1615:    if (!query) {
+  .windsurf\abide\server.ts:1616:      return res.status(400).json({ error: "Missing required query string." });
+
