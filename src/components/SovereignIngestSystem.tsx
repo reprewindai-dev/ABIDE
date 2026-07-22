@@ -540,6 +540,26 @@ ${rawContent}
           </div>
         </div>
       </div>
+      
+      {/* Visual File Browser (New Addition based on User Feedback) */}
+      {ingestedFiles.length > 0 && (
+        <div className="bg-[#111] border border-[#222] p-3 space-y-2">
+          <div className="text-[10px] text-[#888] font-bold border-b border-[#222] pb-1">
+            VERIFIED INGESTION PAYLOAD ({ingestedFiles.length} FILES)
+          </div>
+          <div className="max-h-32 overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-[#333] scrollbar-track-transparent">
+            {ingestedFiles.map((f, i) => (
+              <div key={i} className="flex items-center justify-between bg-black border border-[#222] p-2 text-[9px]">
+                <div className="flex items-center gap-2 truncate">
+                  <FileCheck size={10} className="text-[#00F0FF] flex-shrink-0" />
+                  <span className="truncate text-gray-300 font-semibold">{f.name}</span>
+                </div>
+                <span className="text-gray-600 flex-shrink-0">{(f.size / 1024).toFixed(1)} KB</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Extracted Stats Block */}
       {parsedStats && (
@@ -564,8 +584,9 @@ ${rawContent}
       {/* Apex Trust Pipeline Architecture Visualizer */}
       <div className="space-y-3">
         <div className="flex items-center justify-between border-b border-[#111] pb-1">
-          <span className="text-[10px] text-[#00F0FF] font-bold tracking-widest block">
+          <span className="text-[10px] text-[#00F0FF] font-bold tracking-widest block flex items-center gap-2">
             [ APEX TRUST PIPELINE ARCHITECTURE ]
+            {pipelineState === "done" && <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] animate-pulse">VERIFIED</span>}
           </span>
           {pipelineState === "processing" && (
             <span className="text-[9px] text-[#00F0FF] animate-pulse font-black">
@@ -584,10 +605,10 @@ ${rawContent}
             let barStyle = "bg-[#222]";
 
             if (isSuccess) {
-              borderStyle = "border-emerald-500/40 bg-emerald-950/10 text-emerald-400";
-              barStyle = "bg-emerald-500";
+              borderStyle = "border-emerald-500/40 bg-emerald-950/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]";
+              barStyle = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
             } else if (isProcessing) {
-              borderStyle = "border-[#00F0FF] bg-[#00F0FF]/5 text-white shadow-[0_0_10px_rgba(0,240,255,0.1)]";
+              borderStyle = "border-[#00F0FF] bg-[#00F0FF]/5 text-white shadow-[0_0_15px_rgba(0,240,255,0.2)]";
               barStyle = "bg-[#00F0FF] animate-pulse";
             }
 
@@ -649,3 +670,4 @@ ${rawContent}
     </div>
   );
 };
+
