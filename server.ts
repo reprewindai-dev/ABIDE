@@ -574,6 +574,156 @@ async function callVeklom(params: {
   return data.response;
 }
 
+interface ProviderCompletionParams {
+  systemPrompt: string;
+  userPrompt: string;
+  provider?: string;
+  apiKey?: string;
+  modelName?: string;
+  customUrl?: string;
+  authMode?: string;
+  customHeaderName?: string;
+}
+
+async function runProviderCompletion(params: ProviderCompletionParams): Promise<string> {
+  const selectedProvider = params.provider || defaultProvider();
+  const { systemPrompt, userPrompt, apiKey, modelName, customUrl, authMode, customHeaderName } = params;
+
+  if (selectedProvider === "veklom") {
+    return callVeklom({ systemPrompt, userPrompt, model: modelName, apiKey });
+  }
+
+  if (selectedProvider === "gemini") {
+    const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
+    if (!activeApiKey) {
+      throw new Error("Gemini API key is not configured. Please supply a key or configure it in secrets.");
+    }
+    const aiOptions: any = {
+      apiKey: activeApiKey,
+      httpOptions: { headers: { "User-Agent": "aistudio-build" } },
+    };
+    const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+    if (geminiBaseUrl) aiOptions.baseUrl = geminiBaseUrl;
+
+    const response = await new GoogleGenAI(aiOptions).models.generateContent({
+      model: modelName || "gemini-3.5-flash",
+      contents: userPrompt,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        temperature: 0.2,
+      },
+    });
+    return response.text || "";
+  }
+
+  if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    let openAiBaseUrl = "https://api.openai.com/v1";
+    if (customUrl) {
+      openAiBaseUrl = customUrl;
+    } else if (selectedProvider === "llama") {
+      openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
+    } else if (selectedProvider === "deepseek") {
+      openAiBaseUrl = "https://api.deepseek.com/v1";
+    } else if (selectedProvider === "openai") {
+      openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "http://localhost:1106/modelfarm/openai";
+    }
+
+    const cleanUrl = openAiBaseUrl.replace(/\/+$/, "").endsWith("/chat/completions")
+      ? openAiBaseUrl.replace(/\/+$/, "")
+      : `${openAiBaseUrl.replace(/\/+$/, "")}/chat/completions`;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) {
+      if (authMode === "bearer") headers.Authorization = `Bearer ${apiKey}`;
+      else if (authMode === "apiKeyHeader") headers["x-api-key"] = apiKey;
+      else if (authMode === "customHeader" && customHeaderName) headers[customHeaderName] = apiKey;
+      else if (authMode !== "none") headers.Authorization = `Bearer ${apiKey}`;
+    } else if (selectedProvider === "openai" && !process.env.AI_INTEGRATIONS_OPENAI_BASE_URL) {
+      throw new Error("OpenAI API key is required for this model provider.");
+    }
+
+    const payload: Record<string, unknown> = {
+      model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : configuredOllamaModel()),
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.2,
+    };
+    if (selectedProvider === "openai" || selectedProvider === "deepseek") {
+      payload.response_format = { type: "json_object" };
+    }
+
+    console.log(`Routing ${selectedProvider} request to: ${cleanUrl} with model: ${payload.model}`);
+    const response = await fetch(cleanUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error(`${selectedProvider.toUpperCase()} API failed: ${await response.text()}`);
+    }
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content;
+    if (typeof text !== "string") throw new Error(`${selectedProvider.toUpperCase()} returned no completion text.`);
+    return text;
+  }
+
+  if (selectedProvider === "anthropic") {
+    if (!apiKey) throw new Error("Anthropic API key is required.");
+    const response = await fetch(customUrl || "https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: modelName || "claude-3-5-sonnet-20241022",
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+        temperature: 0.2,
+      }),
+    });
+    if (!response.ok) throw new Error(`Anthropic API failed: ${await response.text()}`);
+    const data = await response.json();
+    const text = data.content?.[0]?.text;
+    if (typeof text !== "string") throw new Error("Anthropic returned no completion text.");
+    return text;
+  }
+
+  if (await isOllamaReachable()) {
+    return runProviderCompletion({
+      systemPrompt,
+      userPrompt,
+      provider: "llama",
+      modelName: configuredOllamaModel(),
+    });
+  }
+
+  const activeApiKey = process.env.GEMINI_API_KEY;
+  if (!activeApiKey) {
+    throw new Error("Free server compilation key is currently exhausted. Please provide your own LLM Key under settings.");
+  }
+  const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini";
+  const aiOptions: any = {
+    apiKey: activeApiKey,
+    httpOptions: { headers: { "User-Agent": "aistudio-build" } },
+  };
+  if (geminiBaseUrl) aiOptions.baseUrl = geminiBaseUrl;
+  const response = await new GoogleGenAI(aiOptions).models.generateContent({
+    model: "gemini-3.5-flash",
+    contents: userPrompt,
+    config: {
+      systemInstruction: systemPrompt,
+      responseMimeType: "application/json",
+      temperature: 0.2,
+    },
+  });
+  return response.text || "";
+}
+
 // ==========================================
 // API ROUTES
 // ==========================================
@@ -1046,206 +1196,16 @@ ${targetPlatform || "Multi-platform Web/Mobile"}
 User Email for validation:
 ${emailToUse}`;
 
-    // Use the already declared selectedProvider
-    let textResult = "";
-
-    if (selectedProvider === "veklom") {
-      textResult = await callVeklom({
-        systemPrompt,
-        userPrompt,
-        model: modelName,
-        apiKey: apiKey,
-      });
-    } else if (selectedProvider === "gemini") {
-      const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-      if (!activeApiKey) {
-        throw new Error("Gemini API key is not configured. Please supply a key or configure it in secrets.");
-      }
-
-      // Check if custom URL or environment base URL is provided
-      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const aiOptions: any = {
-        apiKey: activeApiKey,
-        httpOptions: {
-          headers: {
-            "User-Agent": "aistudio-build",
-          },
-        },
-      };
-      if (geminiBaseUrl) {
-        aiOptions.baseUrl = geminiBaseUrl;
-      }
-
-      const ai = new GoogleGenAI(aiOptions);
-
-      const response = await ai.models.generateContent({
-        model: modelName || "gemini-3.5-flash",
-        contents: userPrompt,
-        config: {
-          systemInstruction: systemPrompt,
-          responseMimeType: "application/json",
-          temperature: 0.2,
-        },
-      });
-
-      textResult = response.text || "";
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
-      // Determine base URL to use
-      let openAiBaseUrl = "https://api.openai.com/v1";
-      if (customUrl) {
-        openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
-      } else if (selectedProvider === "deepseek") {
-        openAiBaseUrl = "https://api.deepseek.com/v1";
-      } else if (selectedProvider === "openai") {
-        openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "http://localhost:1106/modelfarm/openai";
-      }
-
-      // Clean the endpoint: strip trailing slashes, make sure it has /chat/completions
-      let cleanUrl = openAiBaseUrl.replace(/\/+$/, "");
-      if (!cleanUrl.endsWith("/chat/completions")) {
-        cleanUrl = `${cleanUrl}/chat/completions`;
-      }
-
-      // Configure headers
-      const headers: any = {
-        "Content-Type": "application/json",
-      };
-      
-      // Dynamic auth mode application
-      if (apiKey) {
-        if (authMode === "bearer") {
-          headers.Authorization = `Bearer ${apiKey}`;
-        } else if (authMode === "apiKeyHeader") {
-          headers["x-api-key"] = apiKey;
-        } else if (authMode === "customHeader" && customHeaderName) {
-          headers[customHeaderName] = apiKey;
-        } else if (authMode === "none") {
-          // No authentication headers
-        } else {
-          // Default fallback
-          headers.Authorization = `Bearer ${apiKey}`;
-        }
-      } else if (selectedProvider === "openai" && !process.env.AI_INTEGRATIONS_OPENAI_BASE_URL) {
-        // Only require API key if using real OpenAI without a local modelfarm/proxy override
-        throw new Error("OpenAI API key is required for this model provider.");
-      }
-
-      // Build payload
-      const payload: any = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : configuredOllamaModel()),
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.2,
-      };
-
-      // Only pass JSON response format if using a provider known to support it natively
-      if (selectedProvider === "openai" || selectedProvider === "deepseek") {
-        payload.response_format = { type: "json_object" };
-      }
-
-      console.log(`Routing ${selectedProvider} request to: ${cleanUrl} with model: ${payload.model}`);
-
-      const response = await fetch(cleanUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`${selectedProvider.toUpperCase()} API failed: ${errorText}`);
-      }
-      const data = await response.json();
-      textResult = data.choices[0].message.content;
-    } else if (selectedProvider === "anthropic") {
-      const activeApiKey = apiKey;
-      if (!activeApiKey) {
-        throw new Error("Anthropic API key is required.");
-      }
-
-      const anthropicUrl = customUrl || "https://api.anthropic.com/v1/messages";
-
-      const headers = {
-        "Content-Type": "application/json",
-        "x-api-key": activeApiKey,
-        "anthropic-version": "2023-06-01",
-      };
-
-      const payload = {
-        model: modelName || "claude-3-5-sonnet-20241022",
-        max_tokens: 8192,
-        system: systemPrompt,
-        messages: [
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.2,
-      };
-
-      const response = await fetch(anthropicUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Anthropic API failed: ${errorText}`);
-      }
-
-      const data = await response.json();
-      textResult = data.content[0].text;
-    } else if (await isOllamaReachable()) {
-      const cleanUrl = `${ollamaOpenAiBaseUrl(undefined)}/chat/completions`;
-      const response = await fetch(cleanUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: configuredOllamaModel(),
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.2,
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`OLLAMA API failed: ${errorText}`);
-      }
-      const data = await response.json();
-      textResult = data.choices[0].message.content;
-    } else {
-      // General fallback using server key to compile with Gemini
-      const activeApiKey = process.env.GEMINI_API_KEY;
-      if (!activeApiKey) {
-        throw new Error("Free server compilation key is currently exhausted. Please provide your own LLM Key under settings.");
-      }
-
-      const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini";
-      const aiOptions: any = {
-        apiKey: activeApiKey,
-        httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-      };
-      if (geminiBaseUrl) {
-        aiOptions.baseUrl = geminiBaseUrl;
-      }
-
-      const ai = new GoogleGenAI(aiOptions);
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: userPrompt,
-        config: {
-          systemInstruction: systemPrompt,
-          responseMimeType: "application/json",
-          temperature: 0.2,
-        },
-      });
-      textResult = response.text || "";
-    }
+    const textResult = await runProviderCompletion({
+      systemPrompt,
+      userPrompt,
+      provider: selectedProvider,
+      apiKey,
+      modelName,
+      customUrl,
+      authMode,
+      customHeaderName,
+    });
 
     let parsedData: any;
     try {
@@ -1566,6 +1526,130 @@ function generateFallbackBlueprint(
 
   return blueprint;
 }
+
+app.post("/api/ide/agent", async (req, res) => {
+  const {
+    instruction,
+    files,
+    provider,
+    apiKey,
+    modelName,
+    customUrl,
+    authMode,
+    customHeaderName,
+  } = req.body || {};
+
+  if (typeof instruction !== "string" || !instruction.trim()) {
+    return res.status(400).json({ error: "Missing required field: instruction" });
+  }
+  if (!files || typeof files !== "object" || Array.isArray(files)) {
+    return res.status(400).json({ error: "Missing or invalid required field: files" });
+  }
+
+  const systemPrompt = `You are the Einstein cognitive coding agent inside a sovereign mini-IDE.
+Make minimal, correct, runnable edits to the user's workspace in response to the instruction.
+Respond with ONLY valid JSON, with no prose or markdown, using exactly this shape:
+{
+  "summary": "short description of the changes",
+  "operations": [
+    { "op": "create" | "update" | "delete", "path": "workspace/path", "content": "file contents" }
+  ],
+  "notes": ["optional note"]
+}
+For delete operations, content must be an empty string. Preserve unrelated files and avoid unnecessary edits.`;
+  const userPrompt = `Instruction:
+${instruction.trim()}
+
+Current workspace files:
+${Object.entries(files as Record<string, string>)
+  .map(([path, content]) => `--- ${path} ---\n${content}`)
+  .join("\n\n")}`;
+
+  try {
+    const rawText = await runProviderCompletion({
+      systemPrompt,
+      userPrompt,
+      provider: provider || defaultProvider(),
+      apiKey,
+      modelName,
+      customUrl,
+      authMode,
+      customHeaderName,
+    });
+
+    const withoutFences = rawText
+      .replace(/```(?:json)?/gi, "")
+      .replace(/```/g, "")
+      .trim();
+    const start = withoutFences.indexOf("{");
+    const end = withoutFences.lastIndexOf("}");
+    const candidate = start >= 0 && end > start ? withoutFences.slice(start, end + 1) : withoutFences;
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(candidate);
+    } catch {
+      return res.status(422).json({ error: "Agent returned invalid JSON.", raw: rawText });
+    }
+
+    if (!parsed || typeof parsed.summary !== "string" || !Array.isArray(parsed.operations)) {
+      return res.status(422).json({ error: "Agent response must include summary and operations.", raw: rawText });
+    }
+    for (const operation of parsed.operations) {
+      if (
+        !operation ||
+        !["create", "update", "delete"].includes(operation.op) ||
+        typeof operation.path !== "string" ||
+        !operation.path.trim() ||
+        typeof operation.content !== "string"
+      ) {
+        return res.status(422).json({ error: "Agent response contains an invalid operation.", raw: rawText });
+      }
+    }
+    if (parsed.notes !== undefined && (!Array.isArray(parsed.notes) || parsed.notes.some((note: unknown) => typeof note !== "string"))) {
+      return res.status(422).json({ error: "Agent response contains invalid notes.", raw: rawText });
+    }
+
+    const operations = parsed.operations.map((operation: any) => ({
+      op: operation.op,
+      path: operation.path.trim(),
+      content: operation.content,
+    }));
+    const output = {
+      instruction: instruction.trim(),
+      operationCount: operations.length,
+      paths: operations.map((operation: { path: string }) => operation.path),
+    };
+    const stepId = `ide-agent-${crypto.createHash("sha256").update(JSON.stringify(output)).digest("hex").slice(0, 16)}`;
+    const executedAt = new Date().toISOString();
+    const resultPayload = JSON.stringify({
+      stepId,
+      output,
+      executedAt,
+      status: "SUCCESS",
+    });
+    const resultHash = crypto.createHash("sha256").update(resultPayload).digest("hex");
+    const attestation = sealStepOnLedger("ide-agent", {
+      stepId,
+      sequence: 1,
+      capability: "ide.agent.codegen",
+      status: "SUCCESS",
+      output,
+      executedAt,
+      resultHash,
+    });
+
+    return res.json({
+      summary: parsed.summary,
+      operations,
+      ...(parsed.notes ? { notes: parsed.notes } : {}),
+      attestation,
+    });
+  } catch (error: any) {
+    console.error("[IDE Agent] Completion failed:", error);
+    return res.status(500).json({ error: error?.message || "IDE agent execution failed." });
+  }
+});
 
 // Endpoint to verify connection to the selected LLM provider with custom authentication headers
 app.post("/api/test-connection", async (req, res) => {

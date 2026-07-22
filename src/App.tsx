@@ -4384,6 +4384,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     setEinsteinJitter={setEinsteinJitter}
                     vnpUrl={vnpUrl}
                     gnomeledgerUrl={gnomeledgerUrl}
+                    config={config}
                   />
                 </div>
               )}
