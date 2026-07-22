@@ -336,9 +336,10 @@ export default function App() {
 
   // Model selection configurations
   const [config, setConfig] = useState<ModelConfig>({
-    provider: "gemini",
+    provider: "llama",
     apiKey: "",
-    modelName: "gemini-3.5-flash",
+    modelName: "llama3",
+    customUrl: "",
     temperature: 0.2,
     authMode: "bearer",
     customHeaderName: "X-API-Key"
@@ -5071,8 +5072,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         dModel = "deepseek-chat";
                         dUrl = "";
                       } else if (prov === "llama") {
-                        dModel = "llama-3-8b-instruct";
-                        dUrl = "http://localhost:11434/v1";
+                        dModel = "llama3";
+                        dUrl = "";
                       } else if (prov === "custom") {
                         dModel = "custom-model";
                         dUrl = "http://localhost:1234/v1";
@@ -5081,11 +5082,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     }}
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
                   >
+                    <option value="llama">Ollama / Local Llama API</option>
                     <option value="gemini">Google Gemini AI</option>
                     <option value="openai">OpenAI (GPT Models)</option>
                     <option value="anthropic">Anthropic (Claude Models)</option>
                     <option value="deepseek">DeepSeek AI</option>
-                    <option value="llama">Ollama / Local Llama API</option>
                     <option value="custom">Custom OpenAI-Compatible</option>
                   </select>
                 </div>

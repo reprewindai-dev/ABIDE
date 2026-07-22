@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
+import net from "net";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -22,6 +23,74 @@ const PORT = 3000;
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+const capiServiceName = "abide-node";
+const capiCapabilities = ["blueprint.compile", "governance.simulate", "z3.verify", "tla.verify", "x402.lock"];
+
+function capiUrl(): string {
+  return (process.env.CAPI_URL || "https://capi.veklom.com").replace(/\/+$/, "");
+}
+
+function capiHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = process.env.CAPI_REGISTRY_TOKEN?.trim();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+async function registerWithCapi(): Promise<boolean> {
+  if (process.env.NODE_ENV === "test" || process.env.DISABLE_CAPI_REGISTRATION === "true") {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${capiUrl()}/api/v1/registry/register`, {
+      method: "POST",
+      headers: capiHeaders(),
+      body: JSON.stringify({
+        service_name: capiServiceName,
+        base_url: process.env.ABIDE_PUBLIC_BASE_URL || "https://abide.veklom.com",
+        telemetry_supported: true,
+        capabilities: capiCapabilities,
+        metadata: { role: "sovereign-control-plane", repo: "reprewindai-dev/ABIDE" },
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+    console.log(`[cAPI] Registered ${capiServiceName}`);
+    return true;
+  } catch (error: any) {
+    console.error(`[cAPI] Registration failed (non-fatal): ${error?.message || error}`);
+    return false;
+  }
+}
+
+function startCapiHeartbeat(): void {
+  if (process.env.NODE_ENV === "test" || process.env.DISABLE_CAPI_REGISTRATION === "true") {
+    return;
+  }
+
+  const interval = setInterval(async () => {
+    try {
+      const response = await fetch(`${capiUrl()}/api/v1/registry/heartbeat`, {
+        method: "POST",
+        headers: capiHeaders(),
+        body: JSON.stringify({ service_name: capiServiceName }),
+      });
+      if (response.status === 404) {
+        await registerWithCapi();
+      } else if (!response.ok) {
+        console.error(`[cAPI] Heartbeat failed (non-fatal): HTTP ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error(`[cAPI] Heartbeat failed (non-fatal): ${error?.message || error}`);
+    }
+  }, 30_000);
+  interval.unref();
+}
 
 function timingSafeEqualString(left: string, right: string): boolean {
   const leftHash = crypto.createHash("sha256").update(left).digest();
@@ -161,6 +230,22 @@ function ollamaOpenAiBaseUrl(customUrl: unknown): string {
 
 function configuredOllamaModel(): string {
   return (process.env.OLLAMA_MODEL || "llama3").trim() || "llama3";
+}
+
+function defaultProvider(): string {
+  return (process.env.ABIDE_DEFAULT_PROVIDER || "llama").trim();
+}
+
+async function isOllamaReachable(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1000);
+    const response = await fetch(`${configuredOllamaBaseUrl()}/api/tags`, { signal: controller.signal });
+    clearTimeout(timeout);
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
@@ -520,7 +605,7 @@ app.post("/api/generate", async (req, res) => {
   const jurisdictionProfileName = selectedJurisdiction || "global";
   const constVersion = constitutionVersion || "v4.02.1";
   const constState = constitutionState || "LOCKED";
-  const selectedProvider = provider || "gemini";
+  const selectedProvider = provider || defaultProvider();
   const cacheKey = cacheManager.generateKey(notes, jurisdictionProfileName, selectedProvider, modelName || "gemini-3.5-flash", constVersion);
   const bypassCache = req.body.bypassCache === true;
   const startTime = Date.now();
@@ -1113,6 +1198,26 @@ ${emailToUse}`;
 
       const data = await response.json();
       textResult = data.content[0].text;
+    } else if (await isOllamaReachable()) {
+      const cleanUrl = `${ollamaOpenAiBaseUrl(undefined)}/chat/completions`;
+      const response = await fetch(cleanUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: configuredOllamaModel(),
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.2,
+        }),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OLLAMA API failed: ${errorText}`);
+      }
+      const data = await response.json();
+      textResult = data.choices[0].message.content;
     } else {
       // General fallback using server key to compile with Gemini
       const activeApiKey = process.env.GEMINI_API_KEY;
@@ -1475,7 +1580,7 @@ app.post("/api/test-connection", async (req, res) => {
       customHeaderName,
     } = req.body;
 
-    const selectedProvider = provider || "gemini";
+    const selectedProvider = provider || defaultProvider();
     const testPrompt = "Respond only with the word 'OK'.";
 
     if (selectedProvider === "gemini") {
@@ -2240,9 +2345,20 @@ app.post("/api/github/push-blueprint", async (req, res) => {
 
 // GET backend status and active routes
 app.get("/api/backends/status", async (req, res) => {
-  const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl } = req.query;
+  const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, capiUrl } = req.query;
 
   const defaultBackends = [
+    {
+      id: "capi",
+      name: "cAPI — Governed Connection Layer (Central Nervous System)",
+      role: "Discovery, Authorization, Execution, Proof & Learning hub",
+      owner: "reprewindai-dev/cAPI",
+      url: capiUrl || process.env.CAPI_URL || "https://capi.veklom.com",
+      status: "Configured",
+      latencyMs: null,
+      error: null,
+      capabilities: ["discover", "authorize", "execute", "prove", "learn"]
+    },
     {
       id: "veklom-byos-backend",
       name: "Veklom BYOS Workspace Backend",
@@ -2300,7 +2416,8 @@ app.get("/api/backends/status", async (req, res) => {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), 1000); // 1s timeout
       
-      const response = await fetch(b.url + "/health", { signal: controller.signal }).catch(() => null);
+      const healthPath = b.id === "capi" ? "/api/v1/registry/services" : "/health";
+      const response = await fetch(b.url + healthPath, { signal: controller.signal }).catch(() => null);
       clearTimeout(id);
 
       if (response && (response.ok || response.status === 402)) {
@@ -2405,7 +2522,7 @@ Here is the active compiled sovereign blueprint:
 ${JSON.stringify(blueprint, null, 2)}`;
 
   try {
-    const selectedProvider = provider || "gemini";
+    const selectedProvider = provider || defaultProvider();
     let generatedCode = "";
 
     if (selectedProvider === "gemini") {
@@ -3431,6 +3548,8 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[ApexBlueprint Server] Running at http://localhost:${PORT}`);
+    void registerWithCapi();
+    startCapiHeartbeat();
   });
 }
 
