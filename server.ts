@@ -159,7 +159,7 @@ function ollamaOpenAiBaseUrl(customUrl: unknown): string {
 }
 
 function configuredOllamaModel(): string {
-  return (process.env.OLLAMA_MODEL || "llama3").trim() || "llama3";
+  return (process.env.OLLAMA_MODEL || "qwen2.5:1.5b").trim() || "qwen2.5:1.5b";
 }
 
 app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
@@ -524,7 +524,7 @@ app.post("/api/generate", async (req, res) => {
   const constVersion = constitutionVersion || "v4.02.1";
   const constState = constitutionState || "LOCKED";
   const selectedProvider = provider || "ollama";
-  const cacheKey = cacheManager.generateKey(notes, jurisdictionProfileName, selectedProvider, modelName || "llama3", constVersion);
+  const cacheKey = cacheManager.generateKey(notes, jurisdictionProfileName, selectedProvider, modelName || "qwen2.5:1.5b", constVersion);
   const bypassCache = req.body.bypassCache === true;
   const startTime = Date.now();
 
@@ -1207,7 +1207,7 @@ ${emailToUse}`;
         constitutionVersion,
         constitutionState
       );
-      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "llama3", jurisdictionProfileName, latencyMs);
+      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "qwen2.5:1.5b", jurisdictionProfileName, latencyMs);
       fallbackBlueprint.cacheStatus = {
         hit: false,
         key: cacheKey,
