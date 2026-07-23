@@ -4,7 +4,6 @@ import crypto from "crypto";
 import fs from "fs";
 import net from "net";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { DEFAULT_BLUEPRINT } from "./src/data/defaultBlueprint";
 import { validatePlanIR, PlanIR, PlanStep, calculateBlueprintHash, stableStringify, computeCanonicalHash } from "./src/core/plan-ir";
@@ -229,7 +228,7 @@ function ollamaOpenAiBaseUrl(customUrl: unknown): string {
 }
 
 function configuredOllamaModel(): string {
-  return (process.env.OLLAMA_MODEL || "llama3").trim() || "llama3";
+  return (process.env.OLLAMA_MODEL || "qwen2.5:1.5b").trim() || "qwen2.5:1.5b";
 }
 
 function defaultProvider(): string {
@@ -258,7 +257,7 @@ app.get("/api/integrations/status", (_req, res) => {
       wigolo: { configured: Boolean(env.WIGOLO_BASE_URL), verified: false },
       gptResearcher: { configured: Boolean(env.GPT_RESEARCHER_BASE_URL), verified: false },
       codeGraphRag: { configured: Boolean(env.CODE_GRAPH_RAG_URL), verified: false },
-      piExtensions: discoverPiExtensionsConfiguration({ env: env as Record<string, string | undefined> }),
+      piExtensions: { configured: false, verified: false },
     },
     verification: "configuration-only",
   });
@@ -420,16 +419,20 @@ function cosineSimilarity(v1: number[], v2: number[]): number {
 }
 
 // Helper to create embeddings using Gemini
-async function getEmbedding(ai: any, text: string): Promise<number[]> {
+async function getEmbedding(text: string): Promise<number[]> {
   try {
-    const result = await ai.models.embedContent({
-      model: "gemini-embedding-2-preview",
-      contents: text
+    const response = await fetch(ollamaOpenAiBaseUrl("") + "/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "mxbai-embed-large",
+        input: text
+      })
     });
-    if (result && result.embedding && result.embedding.values) {
-      return result.embedding.values;
+    const result = await response.json();
+    if (result && result.data && result.data[0] && result.data[0].embedding) {
+      return result.data[0].embedding;
     }
-    // Hash-based deterministic fallback vector (768 dimensions) if response format is unexpected
     return generateFallbackVector(text);
   } catch (err) {
     console.warn("Real embedding failed. Using deterministic fallback vector.", err);
@@ -1281,7 +1284,7 @@ ${emailToUse}`;
     }
 
     const latencyMs = Date.now() - startTime;
-    cacheManager.set(cacheKey, parsedData, modelName || "gemini-3.5-flash", jurisdictionProfileName, latencyMs);
+    cacheManager.set(cacheKey, parsedData, modelName || "llama3", jurisdictionProfileName, latencyMs);
     parsedData.cacheStatus = {
       hit: false,
       key: cacheKey,
@@ -1302,7 +1305,7 @@ ${emailToUse}`;
         constitutionVersion,
         constitutionState
       );
-      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "gemini-3.5-flash", jurisdictionProfileName, latencyMs);
+      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "qwen2.5:1.5b", jurisdictionProfileName, latencyMs);
       fallbackBlueprint.cacheStatus = {
         hit: false,
         key: cacheKey,
@@ -1667,36 +1670,11 @@ app.post("/api/test-connection", async (req, res) => {
     const selectedProvider = provider || defaultProvider();
     const testPrompt = "Respond only with the word 'OK'.";
 
-    if (selectedProvider === "gemini") {
-      const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-      if (!activeApiKey) {
-        throw new Error("Gemini API key is not configured.");
-      }
-
-      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const aiOptions: any = {
-        apiKey: activeApiKey,
-        httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-      };
-      if (geminiBaseUrl) {
-        aiOptions.baseUrl = geminiBaseUrl;
-      }
-
-      const ai = new GoogleGenAI(aiOptions);
-      const model = modelName || "gemini-3.5-flash";
-      await ai.models.generateContent({
-        model: model,
-        contents: testPrompt,
-        config: {
-          maxOutputTokens: 10,
-          temperature: 0.1,
-        },
-      });
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    if (selectedProvider === "openai" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
+      } else if (selectedProvider === "ollama") {
         openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
@@ -1819,10 +1797,10 @@ app.post("/api/academic/search", async (req, res) => {
       aiOptions.baseUrl = geminiBaseUrl;
     }
 
-    const ai = new GoogleGenAI(aiOptions);
+    
 
     // 1. Get embedding for the user search query
-    const queryVector = await getEmbedding(ai, query);
+    const queryVector = await getEmbedding(query);
 
     // 1.5 Optionally query arXiv live to fetch and inject real papers dynamically
     try {
@@ -1877,7 +1855,7 @@ app.post("/api/academic/search", async (req, res) => {
           };
 
           // Generate embedding for the new real paper
-          realPaper.vector = await getEmbedding(ai, `${title} ${summary}`);
+          realPaper.vector = await getEmbedding(`${title} ${summary}`);
           vectorDatabase.push(realPaper);
         }
       }
@@ -1888,7 +1866,7 @@ app.post("/api/academic/search", async (req, res) => {
     // 2. Check and generate embeddings lazily for papers that don't have them yet
     for (const paper of vectorDatabase) {
       if (!paper.vector) {
-        paper.vector = await getEmbedding(ai, `${paper.title} ${paper.summary}`);
+        paper.vector = await getEmbedding(`${paper.title} ${paper.summary}`);
       }
     }
 
@@ -2029,7 +2007,7 @@ app.post("/api/academic/scrape", async (req, res) => {
       if (geminiBaseUrl) {
         aiOptions.baseUrl = geminiBaseUrl;
       }
-      ai = new GoogleGenAI(aiOptions);
+      
     }
 
     while ((match = entryRegex.exec(xmlText)) !== null) {
@@ -2071,7 +2049,7 @@ app.post("/api/academic/scrape", async (req, res) => {
 
       // Create vector embedding on-the-fly if LLM is ready
       if (ai) {
-        newPaper.vector = await getEmbedding(ai, `${title} ${summary}`);
+        newPaper.vector = await getEmbedding(`${title} ${summary}`);
       }
 
       newEntries.push(newPaper);
@@ -2182,10 +2160,7 @@ app.post("/api/github/analyze", async (req, res) => {
       throw new Error("Gemini API Key is missing. Configure it in settings to analyze.");
     }
 
-    const ai = new GoogleGenAI({
-      apiKey: activeApiKey,
-      httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-    });
+    
 
     const crossRefPrompt = `You are an elite Software Ingress Analyst.
 We need to analyze the following GitHub codebase structure and cross-reference its alignment with the Proposed Business Logic.
@@ -2260,7 +2235,7 @@ You must return a valid JSON object matching this schema exactly:
 }`;
 
     const aiResponse = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "llama3",
       contents: crossRefPrompt,
       config: {
         responseMimeType: "application/json",
@@ -2609,38 +2584,12 @@ ${JSON.stringify(blueprint, null, 2)}`;
     const selectedProvider = provider || defaultProvider();
     let generatedCode = "";
 
-    if (selectedProvider === "gemini") {
-      const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-      if (!activeApiKey) {
-        throw new Error("Gemini API key is not configured.");
-      }
-
-      const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-      const aiOptions: any = {
-        apiKey: activeApiKey,
-        httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-      };
-      if (geminiBaseUrl) {
-        aiOptions.baseUrl = geminiBaseUrl;
-      }
-
-      const ai = new GoogleGenAI(aiOptions);
-      const model = modelName || "gemini-3.5-flash";
-      const response = await ai.models.generateContent({
-        model: model,
-        contents: [testHarnessSystemPrompt, testHarnessUserPrompt],
-        config: {
-          temperature: 0.2,
-          maxOutputTokens: 2500
-        }
-      });
-      generatedCode = response.text || "";
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    if (selectedProvider === "openai" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       // OpenAI/Ollama compatible endpoint
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
+      } else if (selectedProvider === "ollama") {
         openAiBaseUrl = ollamaOpenAiBaseUrl(customUrl);
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";

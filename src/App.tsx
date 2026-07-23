@@ -336,10 +336,10 @@ export default function App() {
 
   // Model selection configurations
   const [config, setConfig] = useState<ModelConfig>({
-    provider: "llama",
+    provider: "ollama",
     apiKey: "",
-    modelName: "llama3",
-    customUrl: "",
+    modelName: "qwen2.5:3b",
+    customUrl: "http://localhost:11434/v1", // Seamlessly connect to local Ollama
     temperature: 0.2,
     authMode: "bearer",
     customHeaderName: "X-API-Key"
@@ -5061,7 +5061,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.provider}
                     onChange={(e: any) => {
                       const prov = e.target.value;
-                      let dModel = "gemini-3.5-flash";
+                      let dModel = "qwen2.5:3b";
                       let dUrl = "";
                       if (prov === "openai") {
                         dModel = "gpt-4o";
@@ -5120,11 +5120,9 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.customUrl || ""}
                     onChange={(e) => setConfig({ ...config, customUrl: e.target.value })}
                     placeholder={
-                      config.provider === "gemini"
-                        ? "e.g. http://localhost:1106/modelfarm/gemini (or leave blank)"
-                        : config.provider === "openai"
+                        config.provider === "openai"
                         ? "e.g. http://localhost:1106/modelfarm/openai (or leave blank)"
-                        : config.provider === "llama"
+                        : config.provider === "ollama"
                         ? "e.g. http://localhost:11434/v1"
                         : config.provider === "deepseek"
                         ? "e.g. https://api.deepseek.com/v1 (or leave blank)"
@@ -5143,10 +5141,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 <div>
                   <label className="block text-xs font-mono font-black text-[#666] uppercase tracking-wider mb-1.5 flex justify-between">
                     <span>Provider API Key:</span>
-                    {(config.provider === "llama" || config.provider === "custom" || config.customUrl) ? (
+                    {(config.provider === "ollama" || config.provider === "custom" || config.customUrl) ? (
                       <span className="text-[9px] text-emerald-400 lowercase font-mono">Optional for local/Ollama style</span>
-                    ) : config.provider === "gemini" ? (
-                      <span className="text-[9px] text-emerald-400 lowercase font-mono">Uses automatic server key if empty</span>
                     ) : null}
                   </label>
                   <input
