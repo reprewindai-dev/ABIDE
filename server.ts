@@ -173,7 +173,7 @@ app.get("/api/integrations/status", (_req, res) => {
       wigolo: { configured: Boolean(env.WIGOLO_BASE_URL), verified: false },
       gptResearcher: { configured: Boolean(env.GPT_RESEARCHER_BASE_URL), verified: false },
       codeGraphRag: { configured: Boolean(env.CODE_GRAPH_RAG_URL), verified: false },
-      piExtensions: discoverPiExtensionsConfiguration({ env: env as Record<string, string | undefined> }),
+      piExtensions: { configured: false, verified: false },
     },
     verification: "configuration-only",
   });
