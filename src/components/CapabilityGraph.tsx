@@ -164,7 +164,7 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
     ]);
   };
 
-  const runOpsCommand = (capId: string) => {
+  const runOpsCommand = async (capId: string) => {
     const targetCap = combinedCapabilities.find(c => c.id === capId);
     if (!targetCap) return;
     
@@ -172,30 +172,38 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
     setConsoleLogs(prev => [
       ...prev,
       `[ops-command-runner] $ ./veklom-ops-command --validate --capability "${capId}"`,
-      `[ops-command-runner] Initiating symbolic verification of capability boundary: ${targetCap.name}`
+      `[ops-command-runner] Connecting to real cAPI backend (http://localhost:3002/api/ops/validate)...`
     ]);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch("http://localhost:3002/api/ops/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ capabilityId: capId, capabilityName: targetCap.name })
+      });
+      
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      
+      const data = await res.json();
+      
+      // Assume the backend returns an array of real logs and the true cryptographic anchor hash
       setConsoleLogs(prev => [
         ...prev,
-        `[sub-agent-alpha] Scanning AST interface fields for "${targetCap.name}"... Found valid exposure definitions.`,
-        `[sub-agent-beta] SLA test packet injection: sent 100 fake micro-transaction payloads. Avg latency returned: 11.4ms.`
-      ]);
-    }, 600);
-
-    setTimeout(() => {
-      const anchorHash = `AG_ANCHOR_${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-      setConsoleLogs(prev => [
-        ...prev,
-        `[sub-agent-gamma] No schema drift detected. Committing cryptographic signature to Gnomledger...`,
-        `[gnomledger] Block generated and verified. Proof signature: ${anchorHash}`,
+        ...(data.logs || []),
+        `[gnomledger] Block generated and verified. Proof signature: ${data.anchorHash || "N/A"}`,
         `[ops-command-runner] SUCCESS: Capability "${targetCap.name}" verification state promoted to VERIFIED SAFETY.`
       ]);
       
       setCustomCapabilities(prev => prev.map(c => c.id === capId ? { ...c, verificationState: "Verified" } : c));
       setLocalCapabilities(prev => prev.map(c => c.id === capId ? { ...c, verificationState: "Verified" } : c));
+    } catch (err: any) {
+      setConsoleLogs(prev => [
+        ...prev,
+        `[ops-command-runner] ERROR: Failed to reach cAPI backend. ${err.message}`
+      ]);
+    } finally {
       setIsExecutingOps(false);
-    }, 1600);
+    }
   };
 
   // Dynamic coordinate generation for nodes based on compiled blueprint

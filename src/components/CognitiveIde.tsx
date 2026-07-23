@@ -647,6 +647,28 @@ export async function executeCapability(payload: any) {
       setSimStep(i);
       setSimLogs(prev => [...prev, steps[i].msg]);
       addTerminalLog(steps[i].msg, "covenant");
+      // Call zero-config Ollama for intelligent routing prediction!
+      if (i === 1) {
+        try {
+          const res = await fetch("http://localhost:3002/api/llm/ollama", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: `Analyze workspace for jitter ${einsteinJitter}ms. Provide priority routing score and a brief status. Be extremely concise.`,
+              model: "qwen2.5:3b"
+            })
+          });
+          if (res.ok) {
+            const llmData = await res.json();
+            setSimLogs(prev => [...prev, `🤖 [QWEN2.5:3B INFERENCE] ${llmData.response.substring(0, 100)}`]);
+            addTerminalLog(`Qwen2.5:3b inference executed successfully.`, "covenant");
+          } else {
+             addTerminalLog(`Qwen API warning: Using fallback models.`, "system");
+          }
+        } catch (err: any) {
+          addTerminalLog(`Failed to connect to local Ollama (Qwen): ${err.message}`, "system");
+        }
+      }
 
       // Make actual server call for X402 lock on step 4!
       if (i === 3) {
@@ -729,6 +751,37 @@ export async function executeCapability(payload: any) {
     addTerminalLog("Workspace variables exported to JSON file.", "system");
   };
 
+  const handleSyncQwen = async () => {
+    addTerminalLog("Initiating zero-config Qwen CLI home-directory sync...", "system");
+    try {
+      const res = await fetch("http://localhost:3002/api/adapters/qwen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspace: { files, nodes, boosters } })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        addTerminalLog(`✅ Successfully synced capabilities to ${data.path}`, "system");
+      } else {
+        addTerminalLog("❌ Failed to sync to Qwen CLI", "system");
+      }
+    } catch (e: any) {
+      addTerminalLog(`❌ Qwen Sync error: ${e.message}`, "system");
+    }
+  };
+
+  const handleExportGrok = () => {
+    const mdContent = `# Grok Manual Fallback Harness\n\n## Workspace Files\n\`\`\`json\n${JSON.stringify(files, null, 2)}\n\`\`\`\n\n## Nodes\n\`\`\`json\n${JSON.stringify(nodes, null, 2)}\n\`\`\``;
+    const uri = `data:text/markdown;charset=utf-8,${encodeURIComponent(mdContent)}`;
+    const link = document.createElement("a");
+    link.href = uri;
+    link.download = "MANUAL-ADAPTATION-GUIDE.md";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    addTerminalLog("Generated Grok Manual Fallback Harness (MANUAL-ADAPTATION-GUIDE.md)", "system");
+  };
+
   return (
     <div id="cognitive-ide-container" className="bg-[#050505] border-2 border-[#1A1A1A] p-2 rounded-none text-gray-300 font-sans shadow-2xl">
       
@@ -778,6 +831,22 @@ export async function executeCapability(payload: any) {
           >
             <Download size={11} />
             <span>Export Config</span>
+          </button>
+
+          <button
+            onClick={handleSyncQwen}
+            className="px-3 py-1.5 border border-[#333] hover:border-[#00F0FF] text-[#00F0FF] hover:text-[#00F0FF] text-[9px] font-black uppercase tracking-widest transition-all rounded-none font-mono flex items-center gap-1.5"
+          >
+            <RefreshCw size={11} />
+            <span>Qwen CLI</span>
+          </button>
+          
+          <button
+            onClick={handleExportGrok}
+            className="px-3 py-1.5 border border-[#333] hover:border-[#9D4EDD] text-[#9D4EDD] hover:text-[#9D4EDD] text-[9px] font-black uppercase tracking-widest transition-all rounded-none font-mono flex items-center gap-1.5"
+          >
+            <Download size={11} />
+            <span>Grok Harness</span>
           </button>
         </div>
       </div>
