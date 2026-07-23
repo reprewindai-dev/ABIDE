@@ -18,7 +18,7 @@ import { dbConnector, x402Connector, verificationConnector, otelExporter } from 
 dotenv.config();
 
 export const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3009;
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -3565,6 +3565,30 @@ async function startServer() {
     }
   }
 
+  // Register with cAPI on boot as the secondary edge gateway
+  try {
+    console.log("[Abide] Registering presence and telemetry with cAPI...");
+    fetch("http://capi.veklom.com/api/registry/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        serviceName: "abide-node",
+        internalDomain: "abide.veklom.com",
+        port: 3000,
+        role: "secondary-edge-gateway",
+        capabilities: ["seked", "deterministic-routing", "cryptographic-signature-passing"],
+        status: "active",
+        timestamp: new Date().toISOString()
+      })
+    }).then(res => {
+      if (res.ok) console.log("[Abide] Successfully registered with cAPI.");
+      else console.warn("[Abide] Failed to register with cAPI. Status:", res.status);
+    }).catch(err => {
+      console.warn("[Abide] Failed to register with cAPI. Ensure capi-container is running.", err.message);
+    });
+  } catch (err) {
+    console.warn("[Abide] Failed to register with cAPI.", err);
+  }
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
