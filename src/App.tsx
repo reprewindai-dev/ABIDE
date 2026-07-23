@@ -336,9 +336,9 @@ export default function App() {
 
   // Model selection configurations
   const [config, setConfig] = useState<ModelConfig>({
-    provider: "gemini",
+    provider: "ollama",
     apiKey: "",
-    modelName: "gemini-3.5-flash",
+    modelName: "qwen2.5:1.5b",
     temperature: 0.2,
     authMode: "bearer",
     customHeaderName: "X-API-Key"
@@ -5059,7 +5059,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.provider}
                     onChange={(e: any) => {
                       const prov = e.target.value;
-                      let dModel = "gemini-3.5-flash";
+                      let dModel = "qwen2.5:1.5b";
                       let dUrl = "";
                       if (prov === "openai") {
                         dModel = "gpt-4o";

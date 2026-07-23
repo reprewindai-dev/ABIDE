@@ -1028,7 +1028,7 @@ ${emailToUse}`;
       };
 
       // Only pass JSON response format if using a provider known to support it natively
-      if (selectedProvider === "openai" || selectedProvider === "deepseek") {
+      if (selectedProvider === "openai" || selectedProvider === "deepseek" || selectedProvider === "ollama") {
         payload.response_format = { type: "json_object" };
       }
 
