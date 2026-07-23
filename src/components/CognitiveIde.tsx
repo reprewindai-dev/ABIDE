@@ -43,7 +43,7 @@ import {
   ShieldAlert,
   Key
 } from "lucide-react";
-import { BlueprintResult, VirtualFile } from "../types";
+import { BlueprintResult, ModelConfig, VirtualFile } from "../types";
 
 interface CognitiveIdeProps {
   blueprint: BlueprintResult | null;
@@ -54,6 +54,7 @@ interface CognitiveIdeProps {
   setEinsteinJitter: (val: number) => void;
   vnpUrl: string;
   gnomeledgerUrl: string;
+  config: ModelConfig;
 }
 
 interface WorkflowNode {
@@ -88,7 +89,8 @@ export default function CognitiveIde({
   einsteinJitter,
   setEinsteinJitter,
   vnpUrl,
-  gnomeledgerUrl
+  gnomeledgerUrl,
+  config
 }: CognitiveIdeProps) {
   // Mini IDE Main Tabs: Workspace, Workflow, Type Knowledge Graph, Compact Solver, Academic Hub, Compiler
   const [activePanel, setActivePanel] = useState<
@@ -532,6 +534,7 @@ export async function executeCapability(payload: any) {
     "[05:05:14] COVENANT: Loaded Three-Layer Symbolic Architecture (Rules, Logic, Ontology)."
   ]);
   const [cliInput, setCliInput] = useState("");
+  const [isAgentRunning, setIsAgentRunning] = useState(false);
   const [z3Output, setZ3Output] = useState<any>(null);
   const [isZ3Running, setIsZ3Running] = useState(false);
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
@@ -708,16 +711,76 @@ export async function executeCapability(payload: any) {
     addTerminalLog("Execution sequence finished. Compiled output verified as STABLE.", "system");
   };
 
+  const runAgent = async (instruction: string) => {
+    const trimmedInstruction = instruction.trim();
+    if (!trimmedInstruction || isAgentRunning) return;
+    setIsAgentRunning(true);
+    addTerminalLog(`[AGENT] Planning with ${config.provider}...`, "system");
+
+    try {
+      const response = await fetch("/api/ide/agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instruction: trimmedInstruction,
+          files,
+          provider: config.provider,
+          apiKey: config.apiKey,
+          modelName: config.modelName,
+          customUrl: config.customUrl,
+          authMode: config.authMode,
+          customHeaderName: config.customHeaderName,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      const operations = Array.isArray(data.operations) ? data.operations : [];
+      const firstWrittenPath = operations.find(
+        (operation: any) => operation.op === "create" || operation.op === "update"
+      )?.path;
+      setFiles(prev => {
+        const next = { ...prev };
+        operations.forEach((operation: any) => {
+          if (operation.op === "delete") delete next[operation.path];
+          else next[operation.path] = operation.content;
+        });
+        return next;
+      });
+      if (firstWrittenPath) {
+        setSelectedPath(firstWrittenPath);
+        setActivePanel("workspace");
+      }
+      operations.forEach((operation: any) => {
+        addTerminalLog(`[AGENT] wrote ${operation.path} (${operation.op})`, "poltergeist");
+      });
+      addTerminalLog(`[AGENT] ${data.summary || "Completed workspace changes."}`, "system");
+      if (data.attestation?.receiptId) {
+        addTerminalLog(
+          `[SEKED] Evidence sealed: ${data.attestation.receiptId} sig ${String(data.attestation.signature || "").slice(0, 12)}`,
+          "covenant"
+        );
+      }
+    } catch (error: any) {
+      addTerminalLog(`[AGENT] error: ${error?.message || "Agent request failed."}`, "system");
+    } finally {
+      setIsAgentRunning(false);
+    }
+  };
+
   const handleCliSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cliInput.trim()) return;
 
-    const cmd = cliInput.trim().toLowerCase();
+    const rawInput = cliInput.trim();
+    const cmd = rawInput.toLowerCase();
     setCliInput("");
-    addTerminalLog(`> ${cmd}`, "system");
+    addTerminalLog(`> ${rawInput}`, "system");
 
     if (cmd === "help") {
-      addTerminalLog("Available CLI Commands: help, verify, run, clear, list, boosters, ontology, solver", "system");
+      addTerminalLog("Available CLI Commands: help, verify, run, clear, list, boosters, ontology, solver, agent <task>", "system");
     } else if (cmd === "verify") {
       runZ3Verification();
     } else if (cmd === "run") {
@@ -734,7 +797,10 @@ export async function executeCapability(payload: any) {
     } else if (cmd === "solver") {
       runRecurrentSolverSimulation();
     } else {
-      addTerminalLog(`Command not recognized: '${cmd}'. Type 'help' for support.`, "system");
+      const agentInstruction = /^(agent|build|code)\s+/i.test(rawInput)
+        ? rawInput.replace(/^(agent|build|code)\s+/i, "")
+        : rawInput;
+      runAgent(agentInstruction);
     }
   };
 
@@ -1781,16 +1847,18 @@ export async function executeCapability(payload: any) {
           <form onSubmit={handleCliSubmit} className="mt-3 flex gap-1">
             <input
               type="text"
-              placeholder="help, verify, run, list, solver..."
+              placeholder="ask the agent to build something, or: verify, run, list..."
               value={cliInput}
+              disabled={isAgentRunning}
               onChange={(e) => setCliInput(e.target.value)}
               className="flex-1 px-2.5 py-1.5 bg-[#040404] border border-[#1A1A1A] text-[9px] text-white font-mono focus:outline-none focus:border-[#00F0FF] placeholder-gray-600 rounded-none"
             />
             <button
               type="submit"
+              disabled={isAgentRunning}
               className="px-2.5 py-1.5 bg-[#00F0FF] hover:bg-white text-black text-[9px] font-mono font-black uppercase rounded-none transition-all"
             >
-              <Send size={11} />
+              {isAgentRunning ? <RefreshCw size={11} className="animate-spin" /> : <Send size={11} />}
             </button>
           </form>
         </div>

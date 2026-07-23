@@ -4384,6 +4384,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     setEinsteinJitter={setEinsteinJitter}
                     vnpUrl={vnpUrl}
                     gnomeledgerUrl={gnomeledgerUrl}
+                    config={config}
                   />
                 </div>
               )}
@@ -5068,9 +5069,12 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                       } else if (prov === "anthropic") {
                         dModel = "claude-3-5-sonnet-20241022";
                         dUrl = "";
-                      } else if (prov === "ollama") {
-                        dModel = "qwen2.5:3b";
-                        dUrl = "http://localhost:11434/v1";
+                      } else if (prov === "deepseek") {
+                        dModel = "deepseek-chat";
+                        dUrl = "";
+                      } else if (prov === "llama") {
+                        dModel = "llama3";
+                        dUrl = "";
                       } else if (prov === "custom") {
                         dModel = "custom-model";
                         dUrl = "http://localhost:1234/v1";
@@ -5079,9 +5083,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     }}
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
                   >
-                    <option value="ollama">Veklom Ollama (Local/Native)</option>
+                    <option value="llama">Ollama / Local Llama API</option>
+                    <option value="gemini">Google Gemini AI</option>
                     <option value="openai">OpenAI (GPT Models)</option>
                     <option value="anthropic">Anthropic (Claude Models)</option>
+                    <option value="deepseek">DeepSeek AI</option>
                     <option value="custom">Custom OpenAI-Compatible</option>
                   </select>
                 </div>
