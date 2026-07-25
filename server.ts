@@ -1284,7 +1284,7 @@ ${emailToUse}`;
     }
 
     const latencyMs = Date.now() - startTime;
-    cacheManager.set(cacheKey, parsedData, modelName || "llama3", jurisdictionProfileName, latencyMs);
+    cacheManager.set(cacheKey, parsedData, modelName || process.env.OLLAMA_MODEL || "qwen2.5:3b", jurisdictionProfileName, latencyMs);
     parsedData.cacheStatus = {
       hit: false,
       key: cacheKey,
@@ -2235,7 +2235,7 @@ You must return a valid JSON object matching this schema exactly:
 }`;
 
     const aiResponse = await ai.models.generateContent({
-      model: "llama3",
+      model: process.env.OLLAMA_MODEL || "qwen2.5:3b",
       contents: crossRefPrompt,
       config: {
         responseMimeType: "application/json",
@@ -3574,7 +3574,7 @@ async function startServer() {
       body: JSON.stringify({
         serviceName: "abide-node",
         internalDomain: "abide.veklom.com",
-        port: 3000,
+        port: process.env.PORT ? parseInt(process.env.PORT) : 3009,
         role: "secondary-edge-gateway",
         capabilities: ["seked", "deterministic-routing", "cryptographic-signature-passing"],
         status: "active",
