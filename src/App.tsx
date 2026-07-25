@@ -874,13 +874,13 @@ export default function App() {
 
     const standardServices = [
       // CANONICAL — replaced from http://localhost:8081
-      { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8081, setter: setByosUrl },
+      { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8088, setter: setByosUrl },
       // CANONICAL — replaced from http://localhost:8082
-      { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8082, setter: setCappoUrl },
+      { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8002, setter: setCappoUrl },
       // CANONICAL — replaced from http://localhost:8083
-      { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8083, setter: setGnomeledgerUrl },
+      { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8001, setter: setGnomeledgerUrl },
       // CANONICAL — replaced from http://localhost:8084
-      { id: "vnp", name: "veklom-vnp Node", url: (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com", port: 8084, setter: setVnpUrl }
+      { id: "vnp", name: "veklom-vnp Node", url: (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com", port: 80, setter: setVnpUrl }
     ];
 
     for (const service of standardServices) {
