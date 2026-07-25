@@ -2481,24 +2481,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             transition={{ duration: 0.5 }}
             className="space-y-8 animate-fadeIn"
           >
-            {result.quota_fallback && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 font-mono text-[11px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-none uppercase"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-amber-500 animate-pulse text-lg">⚠️</span>
-                  <div>
-                    <span className="font-black text-amber-500">API QUOTA EXHAUSTED:</span>
-                    <span className="ml-1 text-gray-300">The Gemini API Free Tier rate-limit was reached (250K tokens/min). To keep your testing seamless, our local high-fidelity compiler compiled a fully validated blueprint tailored to your input!</span>
-                  </div>
-                </div>
-                <div className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 border border-amber-500/30 whitespace-nowrap font-bold">
-                  APEX COMPILER ACTIVE
-                </div>
-              </motion.div>
-            )}
 
             {/* Header Banner */}
             <div className="p-6 md:p-8 bg-[#080808] border-2 border-[#222] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 rounded-none">

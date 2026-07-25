@@ -202,7 +202,7 @@ function resolveSafeRemoteUrl(rawUrl: unknown, fallbackUrl: string, label: strin
 }
 
 function configuredOllamaBaseUrl(): string {
-  const value = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").trim().replace(/\/+$/, "");
+  const value = (process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434").trim().replace(/\/+$/, "");
   let parsed: URL;
   try {
     parsed = new URL(value);
@@ -418,7 +418,7 @@ function cosineSimilarity(v1: number[], v2: number[]): number {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// Helper to create embeddings using Gemini
+// Helper to create embeddings using Ollama
 async function getEmbedding(text: string): Promise<number[]> {
   try {
     const response = await fetch(ollamaOpenAiBaseUrl("") + "/embeddings", {
@@ -596,29 +596,7 @@ async function runProviderCompletion(params: ProviderCompletionParams): Promise<
     return callVeklom({ systemPrompt, userPrompt, model: modelName, apiKey });
   }
 
-  if (selectedProvider === "gemini") {
-    const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-    if (!activeApiKey) {
-      throw new Error("Gemini API key is not configured. Please supply a key or configure it in secrets.");
-    }
-    const aiOptions: any = {
-      apiKey: activeApiKey,
-      httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-    };
-    const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-    if (geminiBaseUrl) aiOptions.baseUrl = geminiBaseUrl;
-
-    const response = await new GoogleGenAI(aiOptions).models.generateContent({
-      model: modelName || "gemini-3.5-flash",
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
-    });
-    return response.text || "";
-  }
+  
 
   if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
     let openAiBaseUrl = "https://api.openai.com/v1";
@@ -705,26 +683,7 @@ async function runProviderCompletion(params: ProviderCompletionParams): Promise<
     });
   }
 
-  const activeApiKey = process.env.GEMINI_API_KEY;
-  if (!activeApiKey) {
-    throw new Error("Free server compilation key is currently exhausted. Please provide your own LLM Key under settings.");
-  }
-  const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini";
-  const aiOptions: any = {
-    apiKey: activeApiKey,
-    httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-  };
-  if (geminiBaseUrl) aiOptions.baseUrl = geminiBaseUrl;
-  const response = await new GoogleGenAI(aiOptions).models.generateContent({
-    model: "gemini-3.5-flash",
-    contents: userPrompt,
-    config: {
-      systemInstruction: systemPrompt,
-      responseMimeType: "application/json",
-      temperature: 0.2,
-    },
-  });
-  return response.text || "";
+  throw new Error("Free server compilation requires a running Ollama instance.");
 }
 
 // ==========================================
@@ -759,7 +718,7 @@ app.post("/api/generate", async (req, res) => {
   const constVersion = constitutionVersion || "v4.02.1";
   const constState = constitutionState || "LOCKED";
   const selectedProvider = provider || defaultProvider();
-  const cacheKey = cacheManager.generateKey(notes, jurisdictionProfileName, selectedProvider, modelName || "gemini-3.5-flash", constVersion);
+  const cacheKey = cacheManager.generateKey(notes, jurisdictionProfileName, selectedProvider, modelName || "qwen2.5:3b", constVersion);
   const bypassCache = req.body.bypassCache === true;
   const startTime = Date.now();
 
@@ -1294,241 +1253,10 @@ ${emailToUse}`;
 
     return res.json(parsedData);
   } catch (error: any) {
-    console.warn("Gemini API Error or Quota Exhaustion, generating local fallback blueprint:", error);
-    try {
-      const latencyMs = Date.now() - startTime;
-      const fallbackBlueprint = generateFallbackBlueprint(
-        notes,
-        targetPlatform,
-        userEmail,
-        selectedJurisdiction,
-        constitutionVersion,
-        constitutionState
-      );
-      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "qwen2.5:1.5b", jurisdictionProfileName, latencyMs);
-      fallbackBlueprint.cacheStatus = {
-        hit: false,
-        key: cacheKey,
-        type: "MEMORY",
-        latencyMs,
-        isFallback: true
-      };
-      return res.json(fallbackBlueprint);
-    } catch (fallbackErr: any) {
-      console.error("Local compilation fallback failed:", fallbackErr);
-      return res.status(500).json({ error: "Compilation failed: " + (error.message || "Internal Server Error") });
-    }
+    console.error("API Error:", error);
+    return res.status(500).json({ error: "Failed to generate blueprint." });
   }
 });
-
-// Helper to generate a high-fidelity local fallback blueprint when API fails
-function generateFallbackBlueprint(
-  notes: string,
-  targetPlatform?: string,
-  userEmail?: string,
-  selectedJurisdiction?: string,
-  constitutionVersion?: string,
-  constitutionState?: string
-) {
-  // Deep copy DEFAULT_BLUEPRINT
-  const blueprint = JSON.parse(JSON.stringify(DEFAULT_BLUEPRINT));
-  
-  blueprint.source = "fallback";
-  blueprint.quota_fallback = true;
-  blueprint.timestamp = new Date().toISOString();
-  
-  // Assign stable, canonical content-addressed hash based on actual content and notes
-  blueprint.hash = calculateCanonicalHash(blueprint, notes);
-
-  let title = "Sovereign Autonomous Platform";
-  let tagline = "A secure, capability-oriented infrastructure engineered for autonomous execution";
-
-  const lowercaseNotes = notes.toLowerCase();
-  
-  if (lowercaseNotes.includes("scooter") || lowercaseNotes.includes("fleet") || lowercaseNotes.includes("charging") || lowercaseNotes.includes("solar")) {
-    title = "Sovereign M2M Scooter Fleet";
-    tagline = "Electric micro-mobility units with automated solar re-charging via X402 payment settlements";
-    
-    blueprint.highLevelGoals = [
-      {
-        title: "Deploy Autonomous Solar Re-charging Pads",
-        description: "Equip local hubs with X402 micro-payment escrow terminals for vehicle docks.",
-        status: "Critical"
-      },
-      {
-        title: "Integrate Real-Time Battery-Adaptive Router",
-        description: "Scooters self-route to closest available solar pads when battery falls below 20%.",
-        status: "Planned"
-      },
-      {
-        title: "Configure Instant Cross-Border x402 Settlements",
-        description: "Direct machine-to-machine wallet payouts to solar provider nodes.",
-        status: "Critical"
-      }
-    ];
-
-    blueprint.competitiveMoat = [
-      {
-        capabilityName: "Autonomous Solar-Parity Escrow",
-        description: "Allows battery-depleted devices to lock, rent, and settle solar charging without a centralized payment gateway.",
-        advantageScore: 98
-      },
-      {
-        capabilityName: "Hardware-to-Hardware x402 Channels",
-        description: "Settles charging costs at sub-cent levels, optimizing operational profit margins directly on-chain.",
-        advantageScore: 96
-      }
-    ];
-    
-    blueprint.companyGraph.products = [
-      {
-        name: "Sovereign M2M Scooter Fleet",
-        domain: "Autonomous Orchestration",
-        businessValue: "Drives hardware independence, enabling vehicles to buy their own fuel and pay for maintenance.",
-        owner: "Dr. Evelyn Vance"
-      },
-      {
-        name: "Solar Escrow Ledger",
-        domain: "DeFi Ledger Settlements",
-        businessValue: "Instantly splits fees between vehicle owners and green energy solar providers.",
-        owner: "Maria Kostova"
-      }
-    ];
-  } else if (lowercaseNotes.includes("cdn") || lowercaseNotes.includes("cache") || lowercaseNotes.includes("bandwidth") || lowercaseNotes.includes("raspberry")) {
-    title = "Sovereign Edge CDN Network";
-    tagline = "Encrypted community web caches rewarded in real-time micro-payments per megabyte served";
-    
-    blueprint.highLevelGoals = [
-      {
-        title: "Implement ZK Bandwidth Completed Proofs",
-        description: "Enable zero-knowledge proof verification that content blocks were fully delivered before escrow payouts.",
-        status: "Critical"
-      },
-      {
-        title: "Establish Secure Hardware Enclave Caches",
-        description: "Operators cannot peer into cached payloads or track active client request histories.",
-        status: "Critical"
-      },
-      {
-        title: "Deploy Sub-Millisecond Bandwidth Ledgers",
-        description: "Micropayments executed on-the-fly per megabyte delivered via decentralized ledger.",
-        status: "Planned"
-      }
-    ];
-
-    blueprint.competitiveMoat = [
-      {
-        capabilityName: "Zero-Knowledge Delivery Verifier",
-        description: "Bypasses centralized CDN logs, allowing secure, anonymous reward distribution without falsification risks.",
-        advantageScore: 97
-      },
-      {
-        capabilityName: "Hardware Enclave Shielding",
-        description: "Protects enterprise data blocks on community-run Raspberry Pi and edge servers.",
-        advantageScore: 95
-      }
-    ];
-
-    blueprint.companyGraph.products = [
-      {
-        name: "Sovereign Edge Cache OS",
-        domain: "Autonomous Orchestration",
-        businessValue: "Secures edge cache pipelines, rewarding hosts based on verifiable byte delivery logs.",
-        owner: "Dr. Evelyn Vance"
-      },
-      {
-        name: "CDN Bandwidth Ledger",
-        domain: "DeFi Ledger Settlements",
-        businessValue: "Handles microsecond pay-as-you-go billing per downloaded content chunk.",
-        owner: "Maria Kostova"
-      }
-    ];
-  } else if (lowercaseNotes.includes("tutor") || lowercaseNotes.includes("vitals") || lowercaseNotes.includes("smartwatch") || lowercaseNotes.includes("heart") || lowercaseNotes.includes("student")) {
-    title = "Vitals-Adaptive AI Tutoring Platform";
-    tagline = "An AI-powered programming instructor that monitors focus levels and adapts teaching speeds dynamically";
-    
-    blueprint.highLevelGoals = [
-      {
-        title: "Deploy Vitals Cognitive Load Model",
-        description: "Process smartwatch telemetry data in secure enclaves to predict frustration indices.",
-        status: "Critical"
-      },
-      {
-        title: "Establish Dynamic Speed Regulators",
-        description: "Slow down educational prompts and introduce adaptive examples on high cognitive strain.",
-        status: "Critical"
-      },
-      {
-        title: "Integrate Prompt-Level Micro-billing",
-        description: "Allow students to pay micro-cents per successful prompt via autonomous X402 wallets.",
-        status: "Planned"
-      }
-    ];
-
-    blueprint.competitiveMoat = [
-      {
-        capabilityName: "Cognitive Load Speed Control",
-        description: "Boosts educational retention by 42% through bio-interactive, closed-loop instruction speeds.",
-        advantageScore: 99
-      },
-      {
-        capabilityName: "Prompt-by-Prompt Micro-billing",
-        description: "Enables users to pay only for exact value received, bypassing expensive monthly recurring subscriptions.",
-        advantageScore: 94
-      }
-    ];
-
-    blueprint.companyGraph.products = [
-      {
-        name: "Vitals Instruction Engine",
-        domain: "Autonomous Orchestration",
-        businessValue: "Guides the learning pace based on biometric focus feedback loop parameters.",
-        owner: "Dr. Evelyn Vance"
-      },
-      {
-        name: "Prompt Micropayment Vault",
-        domain: "DeFi Ledger Settlements",
-        businessValue: "Unlocks lessons sequentially based on micro-token transfers.",
-        owner: "Maria Kostova"
-      }
-    ];
-  } else {
-    // General Customizer
-    let derivedTitle = "";
-    const cleanLines = notes.replace(/[^\w\s-]/g, "").split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
-    if (cleanLines.length > 0 && cleanLines[0].length < 50) {
-      derivedTitle = cleanLines[0];
-    } else {
-      const words = notes.replace(/[^\w\s]/g, "").split(/\s+/).filter(w => w.length > 0);
-      if (words.length > 0) {
-        derivedTitle = words.slice(0, 4).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-      }
-    }
-
-    if (derivedTitle && derivedTitle.length > 4 && derivedTitle.length < 50) {
-      title = derivedTitle;
-      tagline = `Sovereign, capability-oriented infrastructure for ${derivedTitle.toLowerCase()} systems`;
-    }
-  }
-
-  blueprint.title = title;
-  blueprint.tagline = tagline;
-
-  if (selectedJurisdiction) {
-    blueprint.jurisdictionProfileName = selectedJurisdiction;
-  }
-  
-  blueprint.fallback_message = "Free-tier Gemini API token count limit exceeded (250K/min limit). Apex locally generated a validated blueprint for you to continue testing instantly!";
-
-  // Run formal SEKED triage heuristic engine on fallback blueprint
-  try {
-    blueprint.sekedTriage = triageBlueprintIntakeV1(blueprint);
-  } catch (triageError) {
-    console.warn("Failed to execute SEKED triage heuristic engine on fallback blueprint:", triageError);
-  }
-
-  return blueprint;
-}
 
 app.post("/api/ide/agent", async (req, res) => {
   const {
@@ -1783,19 +1511,7 @@ app.post("/api/academic/search", async (req, res) => {
       return res.status(400).json({ error: "Missing required query string." });
     }
 
-    const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-    if (!activeApiKey) {
-      throw new Error("Gemini API key is required to calculate search embeddings.");
-    }
-
-    const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-    const aiOptions: any = {
-      apiKey: activeApiKey,
-      httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-    };
-    if (geminiBaseUrl) {
-      aiOptions.baseUrl = geminiBaseUrl;
-    }
+    
 
     
 
@@ -1996,19 +1712,7 @@ app.post("/api/academic/scrape", async (req, res) => {
     const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
     let match;
 
-    const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-    const geminiBaseUrl = customUrl || process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
     let ai = null;
-    if (activeApiKey || geminiBaseUrl) {
-      const aiOptions: any = {
-        apiKey: activeApiKey || "none",
-        httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-      };
-      if (geminiBaseUrl) {
-        aiOptions.baseUrl = geminiBaseUrl;
-      }
-      
-    }
 
     while ((match = entryRegex.exec(xmlText)) !== null) {
       const content = match[1];
@@ -2154,11 +1858,7 @@ app.post("/api/github/analyze", async (req, res) => {
       technologiesFound = ["React/Node.js Framework", "Rust Edge Ledger", "Solidity Smart Contracts"];
     }
 
-    // Build the cross-reference query for Gemini
-    const activeApiKey = apiKey || process.env.GEMINI_API_KEY;
-    if (!activeApiKey) {
-      throw new Error("Gemini API Key is missing. Configure it in settings to analyze.");
-    }
+    // Build the cross-reference query
 
     
 
@@ -2234,16 +1934,13 @@ You must return a valid JSON object matching this schema exactly:
   ]
 }`;
 
-    const aiResponse = await ai.models.generateContent({
-      model: process.env.OLLAMA_MODEL || "qwen2.5:3b",
-      contents: crossRefPrompt,
-      config: {
-        responseMimeType: "application/json",
-        temperature: 0.1,
-      },
+    const aiText = await runProviderCompletion({
+      systemPrompt: "You are an elite Software Ingress Analyst.",
+      userPrompt: crossRefPrompt,
+      provider: "llama",
+      modelName: process.env.OLLAMA_MODEL || "qwen2.5:3b"
     });
 
-    const aiText = aiResponse.text || "{}";
     let parsedCrossRef;
     try {
       parsedCrossRef = JSON.parse(aiText);
@@ -3193,13 +2890,15 @@ app.post("/api/seked/compile", (req, res) => {
       compilation: enhancedCompilation
     };
     
+    const sekedHmacSecret = process.env.SEKED_HMAC_SECRET;
+    if (!sekedHmacSecret) throw new Error("CRITICAL: SEKED_HMAC_SECRET is missing");
     const signature = crypto
-      .createHmac("sha256", process.env.SEKED_HMAC_SECRET || "SEKED_SYSTEM_COVENANT_SECRET")
+      .createHmac("sha256", sekedHmacSecret)
       .update(JSON.stringify(signedPayload))
       .digest("hex");
 
     return res.json({
-      success: true,
+      compiled: true, signed: true, persisted: true, externally_verified: false,
       signature,
       payload: signedPayload
     });
@@ -3556,7 +3255,7 @@ async function startServer() {
   if (process.env.NODE_ENV === "production") {
     const isAbsOrDef = (v: string | undefined, def: string) => !v || v === def;
     if (
-      isAbsOrDef(process.env.SEKED_HMAC_SECRET, "SEKED_SYSTEM_COVENANT_SECRET") ||
+      (!process.env.SEKED_HMAC_SECRET ? (() => { throw new Error("CRITICAL: SEKED_HMAC_SECRET is missing") })() : false) ||
       isAbsOrDef(process.env.CONSTITUTION_SIGNING_KEY, "CONSTITUTION_GOVERNANCE_SECRET") ||
       isAbsOrDef(process.env.APPROVAL_TOKEN_SECRET, "COVENANT_APPROVAL_TOKEN_SECRET_2026")
     ) {
