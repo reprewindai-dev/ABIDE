@@ -13974,5 +13974,1039 @@
       }
     },
     "completedAt": "2026-07-27T16:29:03.568Z"
+  },
+  "job_blueprint_generation_84c5a4a3": {
+    "id": "job_blueprint_generation_84c5a4a3",
+    "type": "blueprint_generation",
+    "status": "completed",
+    "progress": 100,
+    "data": {
+      "notes": "Build a secure sovereign payment processing edge node.",
+      "provider": "veklom",
+      "modelName": "qwen2.5:3b"
+    },
+    "logs": [
+      "[2026-07-27T17:07:22.228Z] Job enqueued in Durable Filesystem Engine (anonymous).",
+      "[2026-07-27T17:07:22.279Z] Worker picked up job for processing.",
+      "[2026-07-27T17:07:22.284Z] Initializing blueprint compilation in worker pipeline...",
+      "[2026-07-27T17:07:22.316Z] Fallback blueprint generated",
+      "[2026-07-27T17:07:22.321Z] Job completed successfully."
+    ],
+    "createdAt": "2026-07-27T17:07:22.228Z",
+    "engine": "durable_local_fallback",
+    "startedAt": "2026-07-27T17:07:22.279Z",
+    "result": {
+      "source": "fallback",
+      "title": "Build A Secure Sovereign",
+      "tagline": "Sovereign, capability-oriented infrastructure for build a secure sovereign systems",
+      "timestamp": "2026-07-27T17:07:22.302Z",
+      "hash": "878b710640757affa32d65626af20745fd42447a6f767b5dc5108716777d3479",
+      "highLevelGoals": [
+        {
+          "title": "Deploy Sovereign Infrastructure for Build A Secure Sovereign",
+          "description": "Establish modular architecture and core capability boundaries derived strictly from user intent: \"Build a secure sovereign payment processing edge node....\"",
+          "status": "Critical"
+        },
+        {
+          "title": "Implement Real-Time Verification & Governance",
+          "description": "Enforce policy-as-code and deterministic state transitions aligned with Global Standard rules.",
+          "status": "Critical"
+        },
+        {
+          "title": "Deploy Autonomous Client & API Gateway",
+          "description": "Expose secure REST and event channels for seamless client interaction and telemetry monitoring.",
+          "status": "Planned"
+        }
+      ],
+      "competitiveMoat": [
+        {
+          "capabilityName": "Sovereign Build A Secure Sovereign Execution Engine",
+          "description": "Provides mathematically verifiable state execution tailored to build a secure sovereign without relying on unverified external dependencies.",
+          "advantageScore": 96
+        },
+        {
+          "capabilityName": "Automated Compliance & Audit Verification",
+          "description": "Continuous real-time policy verification against Global Standard standards.",
+          "advantageScore": 94
+        }
+      ],
+      "einsteinProbability": {
+        "modelName": "Build A Secure Sovereign Trend Probability Engine",
+        "successRate": 93.8,
+        "latencyMs": 11.5,
+        "variables": [
+          {
+            "name": "System Processing Variance",
+            "impact": "Low negative impact"
+          },
+          {
+            "name": "Local State Cache Hit Ratio",
+            "impact": "High positive impact"
+          },
+          {
+            "name": "Execution Pipeline Throughput",
+            "impact": "High positive impact"
+          }
+        ]
+      },
+      "academicGrounding": [
+        {
+          "title": "No citation available (Offline Quota Fallback)",
+          "author": "None",
+          "source": "no citation available",
+          "summary": "This blueprint was generated during offline quota fallback. Live academic verification against arXiv, OpenAlex, Semantic Scholar, and CrossRef could not be performed.",
+          "relevance": "Requires real-time API check before academic peer-review claims can be made.",
+          "verificationStatus": "NOT_FOUND"
+        }
+      ],
+      "companyGraph": {
+        "domains": [
+          {
+            "name": "Core Domain Execution",
+            "description": "Primary operational domain for Build A Secure Sovereign",
+            "products": [
+              "Build A Secure Sovereign Platform",
+              "Sovereign Audit Gate"
+            ]
+          },
+          {
+            "name": "Governance & Security",
+            "description": "Compliance and policy verification domain for Build A Secure Sovereign",
+            "products": [
+              "Sovereign Audit Gate"
+            ]
+          }
+        ],
+        "products": [
+          {
+            "name": "Build A Secure Sovereign Platform",
+            "domain": "Core Domain Execution",
+            "businessValue": "Delivers the primary capability architecture for Build A Secure Sovereign based strictly on ingested intent.",
+            "owner": "Sovereign Architect"
+          },
+          {
+            "name": "Sovereign Audit Gate",
+            "domain": "Governance & Security",
+            "businessValue": "Enforces jurisdictional rules and maintains immutable audit logs.",
+            "owner": "Compliance Officer"
+          }
+        ],
+        "canonicalSystems": [
+          {
+            "name": "Build A Secure Sovereign Core Engine",
+            "type": "Backend Execution Service",
+            "description": "Primary state transition and business logic service for Build A Secure Sovereign"
+          },
+          {
+            "name": "Sovereign State Store",
+            "type": "Persistence Ledger",
+            "description": "Tamper-proof event log and transaction ledger for Build A Secure Sovereign"
+          }
+        ],
+        "repositories": [
+          {
+            "name": "build-a-secure-sovereign-core",
+            "url": "https://github.com/sovereign-org/build-a-secure-sovereign-core",
+            "description": "Canonical code repository for Build A Secure Sovereign"
+          }
+        ],
+        "environments": [
+          {
+            "name": "Sovereign Production Enclave",
+            "url": "https://app.buildasecuresovereign.sovereign.local",
+            "status": "Active"
+          }
+        ],
+        "owners": [
+          {
+            "name": "Sovereign Architect",
+            "role": "Chief System Architect",
+            "contact": "Sovereign Architect"
+          }
+        ],
+        "revenueStreams": [
+          {
+            "name": "Capability Usage Billing",
+            "description": "Monetization structured around core capability execution value for Build A Secure Sovereign.",
+            "status": "Active"
+          }
+        ],
+        "policies": [
+          {
+            "name": "Global Standard Governance Profile",
+            "description": "Strict constitutional and legal compliance framework for Build A Secure Sovereign"
+          }
+        ],
+        "externalProviders": [
+          {
+            "name": "Sovereign Cloud Enclaves",
+            "service": "Isolated Hardware Execution",
+            "status": "Connected"
+          }
+        ]
+      },
+      "capabilities": [
+        {
+          "id": "cap-core-exec",
+          "name": "Build A Secure Sovereign Execution Engine",
+          "purpose": "Executes core domain logic, state transitions, and primary business workflows for build a secure sovereign.",
+          "canonicalDataDomain": "Domain Execution",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "POST /api/v1/execute",
+              "GET /api/v1/status"
+            ],
+            "events": [
+              "engine.started",
+              "engine.completed"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per Execution",
+            "priceFloor": "$0.001",
+            "targetMargin": "40%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 95,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.98,
+            "formalVerificationProof": "Z3-SAT-VERIFIED"
+          },
+          "governance": {
+            "budgetRules": "Max $500/day per tenant",
+            "requiredApprovals": "Sovereign Admin",
+            "autoShutdownThreshold": "99% error rate over 1m",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        },
+        {
+          "id": "cap-data-ingest",
+          "name": "Secure Ingestion Pipeline",
+          "purpose": "Validates, sanitizes, and ingests user input and external data streams for build a secure sovereign.",
+          "canonicalDataDomain": "Data Ingestion",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "POST /api/v1/ingest",
+              "GET /api/v1/ingest/logs"
+            ],
+            "events": [
+              "ingest.received",
+              "ingest.validated"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per MB",
+            "priceFloor": "$0.0005",
+            "targetMargin": "35%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 92,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.95,
+            "formalVerificationProof": "SCHEMA-VERIFIED"
+          },
+          "governance": {
+            "budgetRules": "Max 10GB/day per tenant",
+            "requiredApprovals": "System Automated",
+            "autoShutdownThreshold": "95% error rate",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        },
+        {
+          "id": "cap-policy-audit",
+          "name": "Sovereign Policy & Audit Gate",
+          "purpose": "Enforces jurisdictional governance, cryptographic signing, and audit trails for build a secure sovereign.",
+          "canonicalDataDomain": "Governance & Compliance",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "POST /api/v1/audit/verify",
+              "GET /api/v1/audit/trail"
+            ],
+            "events": [
+              "audit.logged",
+              "policy.enforced"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per Audit Event",
+            "priceFloor": "$0.0002",
+            "targetMargin": "50%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 98,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.99,
+            "formalVerificationProof": "POLICY-SAT"
+          },
+          "governance": {
+            "budgetRules": "Unlimited compliance logging",
+            "requiredApprovals": "Security Officer",
+            "autoShutdownThreshold": "Never shutdown compliance logging",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        },
+        {
+          "id": "cap-user-portal",
+          "name": "Interactive Portal & API Gateway",
+          "purpose": "Exposes client interfaces, authentication, and real-time query channels for users of build a secure sovereign.",
+          "canonicalDataDomain": "Client Interfaces",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "GET /api/v1/portal/session",
+              "POST /api/v1/portal/query"
+            ],
+            "events": [
+              "portal.session.created"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per Request",
+            "priceFloor": "$0.0001",
+            "targetMargin": "45%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 90,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.94,
+            "formalVerificationProof": "AUTH-VERIFIED"
+          },
+          "governance": {
+            "budgetRules": "Rate limited to 1000 req/min per IP",
+            "requiredApprovals": "None (Public API)",
+            "autoShutdownThreshold": "DDoS threshold reached",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        }
+      ],
+      "productOfferings": [
+        {
+          "id": "off-core-platform",
+          "name": "Build A Secure Sovereign Enterprise Bundle",
+          "targetAudience": "Enterprise Operators & Systems Integrators",
+          "coreCapabilities": [
+            "cap-core-exec",
+            "cap-data-ingest",
+            "cap-policy-audit",
+            "cap-user-portal"
+          ],
+          "bundledPrice": "$499/month + usage",
+          "SLA": "99.99% uptime with 15ms guaranteed latency floor",
+          "jurisdictionConstraints": "Global Standard"
+        }
+      ],
+      "gapsReport": [
+        {
+          "capabilityId": "cap-core-exec",
+          "gapType": "PERFORMANCE",
+          "description": "Real-time load testing under extreme concurrent traffic pending edge enclave deployment.",
+          "severity": "MEDIUM",
+          "mitigation": "Deploy automated horizontal scaling and rate limiting circuit breakers."
+        }
+      ],
+      "files": [
+        {
+          "path": "README.md",
+          "content": "# Build A Secure Sovereign Compiler Output Workspace\n\nWelcome to the compiled enterprise constitution for **Build A Secure Sovereign**.\n\nSovereign, capability-oriented infrastructure for build a secure sovereign systems\n\n## Ingested User Intent\n> \"Build a secure sovereign payment processing edge node.\"\n\nThis workspace has been structured using the **Gold Standard 12-Pack Folder Layout**, representing a locked, publishable, and agent-executable specification authority tailored strictly to your ingested requirements. Notice: All demo reference citations and sample data have been purged.\n\n## Workspace Layout Index\n1. **00_workspace_manifest/manifest.md** - Dynamic manifest and safety assertions.\n2. **01_executive_pack/thesis_and_boundaries.md** - Vision statement and scope bounds.\n3. **02_product_requirements/prd.md** - Functional requirements and workflows.\n4. **03_capability_registry/registry.md** - Profile of platform Capabilities.\n5. **04_architecture_pack/system_topology.md** - System topology models and diagrams.\n6. **05_contract_pack/interfaces_and_schemas.md** - API contracts and schemas.\n7. **06_economics_pack/pricing_and_quotes.md** - Settlement rules and unit economics.\n8. **07_evidence_validation_pack/grounding_and_gaps.md** - Grounding logs and gaps.\n9. **08_github_alignment_pack/repo_sync.md** - Codebase alignment results.\n10. **09_agent_execution_pack/work_orders.md** - Implementation packets for coding agents.\n11. **10_publishing_pack/academic_paper.md** - Whitepaper specification draft.\n12. **11_appendix_explorer/glossary_and_ledgers.md** - Glossary and assumptions.\n\n---\n*Lock Hash: 878b710640757affa32d65626af20745fd42447a6f767b5dc5108716777d3479*"
+        },
+        {
+          "path": "00_workspace_manifest/manifest.md",
+          "content": "# Workspace Manifest\n\n## Metadata Registry\n- **Project Title**: `Build A Secure Sovereign`\n- **Version**: `v1.0.0`\n- **Timestamp**: `2026-07-27T17:07:22.302Z`\n- **Owner**: `Sovereign Architect`\n- **Selected Jurisdiction**: `Global Standard`\n- **Platform Target**: `Multi-Platform Web/Cloud`\n\n## Compilation Metrics\n- **Total Ingested Notes Length**: 54 characters\n- **Active Capabilities**: 4 Verified Domain Capabilities\n- **High-Level Goals Mapped**: 3\n- **Cryptographic Signature Hash**: `878b710640757affa32d65626af20745fd42447a6f767b5dc5108716777d3479`\n\n## Verification Status\n- **Demo Purge Status**: [COMPLETE] All demo reference samples (Lamport, Nakamoto, Veklom) have been removed.\n- **Ingested Intent Grounding**: [STRICT] Built strictly from user-provided notes.\n- **Academic Grounding**: [OFFLINE FALLBACK] Live citation query offline; no mock citations injected."
+        },
+        {
+          "path": "01_executive_pack/thesis_and_boundaries.md",
+          "content": "# Executive Pack\n\n## 1. Vision Summary\n**Build A Secure Sovereign** is architected around the capability-first principle: API is merely an implementation surface—Capability is the true product.\n\n## 2. Ingested User Requirements\nBuild a secure sovereign payment processing edge node.\n\n## 3. Sovereign Scope Boundaries\nAll service boundaries, database schemas, and execution packets are constrained strictly to the operational domain of Build A Secure Sovereign. No unsolicited third-party tracking or unverified external dependencies are permitted."
+        },
+        {
+          "path": "02_product_requirements/prd.md",
+          "content": "# Product Requirements Document (PRD)\n\n## 1. Functional Scope\nDerived strictly from user intent for Build A Secure Sovereign:\n- Implement modular execution workflows.\n- Enforce strict jurisdictional compliance under Global Standard.\n- Ensure deterministic data ingestion and processing.\n\n## 2. User Workflows\n- **Ingestion Workflow**: Client submits data via secure API gateway.\n- **Execution Workflow**: Core engine processes state transitions.\n- **Audit Workflow**: All actions are logged to immutable state storage."
+        },
+        {
+          "path": "03_capability_registry/registry.md",
+          "content": "# Capability Registry\n\nCanonical inventory of capabilities defined for **Build A Secure Sovereign**:\n\n### 1. Build A Secure Sovereign Execution Engine (`cap-core-exec`)\n- **Purpose**: Executes core domain logic, state transitions, and primary business workflows for build a secure sovereign.\n- **Domain**: Domain Execution\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.001\n\n### 2. Secure Ingestion Pipeline (`cap-data-ingest`)\n- **Purpose**: Validates, sanitizes, and ingests user input and external data streams for build a secure sovereign.\n- **Domain**: Data Ingestion\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.0005\n\n### 3. Sovereign Policy & Audit Gate (`cap-policy-audit`)\n- **Purpose**: Enforces jurisdictional governance, cryptographic signing, and audit trails for build a secure sovereign.\n- **Domain**: Governance & Compliance\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.0002\n\n### 4. Interactive Portal & API Gateway (`cap-user-portal`)\n- **Purpose**: Exposes client interfaces, authentication, and real-time query channels for users of build a secure sovereign.\n- **Domain**: Client Interfaces\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.0001\n"
+        },
+        {
+          "path": "04_architecture_pack/system_topology.md",
+          "content": "# System Topology\n\n## Execution Architecture for Build A Secure Sovereign\n1. **API Gateway & Portal**: Handles ingress, TLS termination, and authentication.\n2. **Core Execution Engine**: Processes domain rules and state transitions.\n3. **Policy & Audit Gate**: Enforces Global Standard rules and writes immutable logs.\n4. **State Storage**: Tamper-proof persistence for system events and user data."
+        },
+        {
+          "path": "05_contract_pack/interfaces_and_schemas.md",
+          "content": "# Interfaces & Schemas\n\n## API Contract Specifications for Build A Secure Sovereign\n\n### REST Endpoints\n- `POST /api/v1/execute`: Trigger core execution workflow.\n- `POST /api/v1/ingest`: Submit data payloads for processing.\n- `POST /api/v1/audit/verify`: Query cryptographic proof of transaction compliance.\n- `GET /api/v1/status`: Monitor system health and active budget margins."
+        },
+        {
+          "path": "06_economics_pack/pricing_and_quotes.md",
+          "content": "# Economics & Settlement\n\n## Unit Economics for Build A Secure Sovereign\n\n| Capability | Billing Unit | Price Floor | Target Margin |\n| :--- | :--- | :--- | :--- |\n| **Build A Secure Sovereign Execution Engine** | Per Execution | $0.001 | 40% |\n| **Secure Ingestion Pipeline** | Per MB | $0.0005 | 35% |\n| **Sovereign Policy & Audit Gate** | Per Audit Event | $0.0002 | 50% |\n| **Interactive Portal & API Gateway** | Per Request | $0.0001 | 45% |\n\nAll settlements execute cleanly without unverified third-party fee markups."
+        },
+        {
+          "path": "07_evidence_validation_pack/grounding_and_gaps.md",
+          "content": "# Evidence & Validation Pack\n\n## Academic Grounding & Citations\n- **Status**: Offline Quota Fallback Active.\n- **Citations**: No citation available. Per strict ABIDE governance rules, when offline fallback occurs, no mock or demo citations (such as Lamport or Nakamoto reference samples) are inherited. Live verification will resume upon API reconnection.\n\n## Identified System Gaps\n- **PERFORMANCE**: Real-time load testing under extreme concurrent traffic pending edge enclave deployment. (Severity: MEDIUM)"
+        },
+        {
+          "path": "08_github_alignment_pack/repo_sync.md",
+          "content": "# Repository Alignment\n\n## Codebase Structure for Build A Secure Sovereign\n- **Repository**: `build-a-secure-sovereign-core`\n- **Target Platform**: `Multi-Platform Web/Cloud`\n- **Compliance Profile**: `Global Standard`\n\nAll code modules must pass linting, compilation, and formal verification tests prior to merge."
+        },
+        {
+          "path": "09_agent_execution_pack/work_orders.md",
+          "content": "# Agent Work Orders\n\nDeterministic implementation packets for coding agents executing **Build A Secure Sovereign**:\n\n## Packet: pkt-core-1 (Implement Build A Secure Sovereign Core Engine)\n- **Role**: Senior Backend Specialist\n- **Objective**: Build deterministic service layer with full policy enforcement.\n- **Target Files**: src/core/engine.ts, src/api/routes.ts\n- **Definition of Done**: All unit tests pass; Zero policy drift\n\n\n## Packet: pkt-audit-2 (Implement Sovereign Audit Gate for Build A Secure Sovereign)\n- **Role**: Compliance Engineer\n- **Objective**: Ensure 100% auditability of all transactions.\n- **Target Files**: src/security/audit.ts, src/api/auditRoutes.ts\n- **Definition of Done**: Audit logs verified; Compliance checks pass\n"
+        },
+        {
+          "path": "10_publishing_pack/academic_paper.md",
+          "content": "# Architectural Specification Paper\n\n## Title: Build A Secure Sovereign: Capability-Oriented System Architecture\n**Author**: Sovereign Architect\n**Date**: 2026-07-27\n\n### Abstract\nThis specification formalizes the architecture for **Build A Secure Sovereign**, derived directly from ingested user requirements. By decoupling capabilities from ephemeral API endpoints, the system ensures deterministic execution, tamper-proof audit trails, and compliance with Global Standard governance."
+        },
+        {
+          "path": "11_appendix_explorer/glossary_and_ledgers.md",
+          "content": "# Glossary & Assumption Ledger\n\n## Core Terminology for Build A Secure Sovereign\n- **Capability**: A self-contained, verifiable business outcome with attached pricing and governance.\n- **Sovereign Execution**: Deterministic processing that does not leak data to unverified external providers.\n- **Ingested Intent**: The raw user notes and requirements that define the absolute boundary of this system."
+        }
+      ],
+      "quota_fallback": true,
+      "agentPackets": [
+        {
+          "id": "pkt-core-1",
+          "title": "Implement Build A Secure Sovereign Core Engine",
+          "targetRole": "Senior Backend Specialist",
+          "summary": "Develop the primary execution engine and state handlers for Build A Secure Sovereign strictly based on ingested user intent.",
+          "objective": "Build deterministic service layer with full policy enforcement.",
+          "scope": "Core backend modules and API handlers.",
+          "files": [
+            "src/core/engine.ts",
+            "src/api/routes.ts"
+          ],
+          "contracts": "POST /api/v1/execute",
+          "dependencies": [
+            "express",
+            "zod"
+          ],
+          "tests": [
+            "tests/engine.test.ts"
+          ],
+          "migrations": "Initial schema setup",
+          "performanceTargets": "< 50ms latency",
+          "securityConstraints": "Zero unvalidated input",
+          "docsToUpdate": [
+            "02_product_requirements/prd.md"
+          ],
+          "definitionOfDone": [
+            "All unit tests pass",
+            "Zero policy drift"
+          ],
+          "rollbackNotes": "Revert to previous git tag if tests fail"
+        },
+        {
+          "id": "pkt-audit-2",
+          "title": "Implement Sovereign Audit Gate for Build A Secure Sovereign",
+          "targetRole": "Compliance Engineer",
+          "summary": "Construct immutable logging and policy verification pipeline.",
+          "objective": "Ensure 100% auditability of all transactions.",
+          "scope": "Audit logging middleware and compliance verification routes.",
+          "files": [
+            "src/security/audit.ts",
+            "src/api/auditRoutes.ts"
+          ],
+          "contracts": "POST /api/v1/audit/verify",
+          "dependencies": [
+            "crypto"
+          ],
+          "tests": [
+            "tests/audit.test.ts"
+          ],
+          "migrations": "Audit log schema",
+          "performanceTargets": "< 10ms overhead",
+          "securityConstraints": "Tamper-proof log append",
+          "docsToUpdate": [
+            "07_evidence_validation_pack/grounding_and_gaps.md"
+          ],
+          "definitionOfDone": [
+            "Audit logs verified",
+            "Compliance checks pass"
+          ],
+          "rollbackNotes": "Disable audit enforcement flag in safe mode"
+        }
+      ],
+      "fallback_message": "Free-tier Gemini API token count limit exceeded (250K/min limit). ABIDE locally generated an offline fallback blueprint. NOTE: Human-readable exports and verified packs are mechanically blocked until live API compilation is restored.",
+      "sekedTriage": {
+        "scores": {
+          "E": {
+            "score": 8.5,
+            "reasoning": "Efficiency compilation: latency 11.5ms, success rate 9380%, with 0/4 capabilities specifying exact latency SLO goals."
+          },
+          "R": {
+            "score": 0,
+            "reasoning": "[ABIDE Gate] Offline quota fallback detected. No live academic verification could be performed. SEKED R score mechanically clamped to 0/10."
+          },
+          "C": {
+            "score": 6.5,
+            "reasoning": "Compliance analysis: detected 0 declared tests across 4 capabilities. Drift prevention mechanisms active in 0/4 modules."
+          },
+          "D": {
+            "score": 5.3,
+            "reasoning": "Sovereignty check complete. Evaluated 4/4 capability jurisdiction profiles and 1 global policies. 0 profiles are missing."
+          },
+          "S": {
+            "score": 3.5,
+            "reasoning": "Settlement audit complete. Evaluated 4/4 capability pricing parameters. 0 capabilities are strictly machine-to-machine x402 settlement compliant."
+          }
+        },
+        "compositeScore": 4.88,
+        "directive": "DEGRADE_AND_WARN",
+        "timestamp": "2026-07-27T17:07:22.315Z",
+        "signature": "67c287c0f56737f7e15f1c550cda09e929967403a66aa81def98ea875732f7fa"
+      },
+      "cacheStatus": {
+        "hit": false,
+        "key": "f6918f13eee7b669076d73238d712ea569044177fdd7fbf462548702dd6c2448",
+        "type": "MEMORY",
+        "latencyMs": 10,
+        "isFallback": true
+      }
+    },
+    "completedAt": "2026-07-27T17:07:22.321Z"
+  },
+  "job_blueprint_generation_57b1c322": {
+    "id": "job_blueprint_generation_57b1c322",
+    "type": "blueprint_generation",
+    "status": "completed",
+    "progress": 100,
+    "data": {
+      "notes": "Build a secure sovereign payment processing edge node.",
+      "provider": "veklom",
+      "modelName": "qwen2.5:3b"
+    },
+    "logs": [
+      "[2026-07-27T17:10:33.087Z] Job enqueued in Durable Filesystem Engine (anonymous).",
+      "[2026-07-27T17:10:33.094Z] Worker picked up job for processing.",
+      "[2026-07-27T17:10:33.102Z] Initializing blueprint compilation in worker pipeline...",
+      "[2026-07-27T17:10:33.138Z] Fallback blueprint generated",
+      "[2026-07-27T17:10:33.145Z] Job completed successfully."
+    ],
+    "createdAt": "2026-07-27T17:10:33.087Z",
+    "engine": "durable_local_fallback",
+    "startedAt": "2026-07-27T17:10:33.094Z",
+    "result": {
+      "source": "fallback",
+      "title": "Build A Secure Sovereign",
+      "tagline": "Sovereign, capability-oriented infrastructure for build a secure sovereign systems",
+      "timestamp": "2026-07-27T17:10:33.119Z",
+      "hash": "878b710640757affa32d65626af20745fd42447a6f767b5dc5108716777d3479",
+      "highLevelGoals": [
+        {
+          "title": "Deploy Sovereign Infrastructure for Build A Secure Sovereign",
+          "description": "Establish modular architecture and core capability boundaries derived strictly from user intent: \"Build a secure sovereign payment processing edge node....\"",
+          "status": "Critical"
+        },
+        {
+          "title": "Implement Real-Time Verification & Governance",
+          "description": "Enforce policy-as-code and deterministic state transitions aligned with Global Standard rules.",
+          "status": "Critical"
+        },
+        {
+          "title": "Deploy Autonomous Client & API Gateway",
+          "description": "Expose secure REST and event channels for seamless client interaction and telemetry monitoring.",
+          "status": "Planned"
+        }
+      ],
+      "competitiveMoat": [
+        {
+          "capabilityName": "Sovereign Build A Secure Sovereign Execution Engine",
+          "description": "Provides mathematically verifiable state execution tailored to build a secure sovereign without relying on unverified external dependencies.",
+          "advantageScore": 96
+        },
+        {
+          "capabilityName": "Automated Compliance & Audit Verification",
+          "description": "Continuous real-time policy verification against Global Standard standards.",
+          "advantageScore": 94
+        }
+      ],
+      "einsteinProbability": {
+        "modelName": "Build A Secure Sovereign Trend Probability Engine",
+        "successRate": 93.8,
+        "latencyMs": 11.5,
+        "variables": [
+          {
+            "name": "System Processing Variance",
+            "impact": "Low negative impact"
+          },
+          {
+            "name": "Local State Cache Hit Ratio",
+            "impact": "High positive impact"
+          },
+          {
+            "name": "Execution Pipeline Throughput",
+            "impact": "High positive impact"
+          }
+        ]
+      },
+      "academicGrounding": [
+        {
+          "title": "No citation available (Offline Quota Fallback)",
+          "author": "None",
+          "source": "no citation available",
+          "summary": "This blueprint was generated during offline quota fallback. Live academic verification against arXiv, OpenAlex, Semantic Scholar, and CrossRef could not be performed.",
+          "relevance": "Requires real-time API check before academic peer-review claims can be made.",
+          "verificationStatus": "NOT_FOUND"
+        }
+      ],
+      "companyGraph": {
+        "domains": [
+          {
+            "name": "Core Domain Execution",
+            "description": "Primary operational domain for Build A Secure Sovereign",
+            "products": [
+              "Build A Secure Sovereign Platform",
+              "Sovereign Audit Gate"
+            ]
+          },
+          {
+            "name": "Governance & Security",
+            "description": "Compliance and policy verification domain for Build A Secure Sovereign",
+            "products": [
+              "Sovereign Audit Gate"
+            ]
+          }
+        ],
+        "products": [
+          {
+            "name": "Build A Secure Sovereign Platform",
+            "domain": "Core Domain Execution",
+            "businessValue": "Delivers the primary capability architecture for Build A Secure Sovereign based strictly on ingested intent.",
+            "owner": "Sovereign Architect"
+          },
+          {
+            "name": "Sovereign Audit Gate",
+            "domain": "Governance & Security",
+            "businessValue": "Enforces jurisdictional rules and maintains immutable audit logs.",
+            "owner": "Compliance Officer"
+          }
+        ],
+        "canonicalSystems": [
+          {
+            "name": "Build A Secure Sovereign Core Engine",
+            "type": "Backend Execution Service",
+            "description": "Primary state transition and business logic service for Build A Secure Sovereign"
+          },
+          {
+            "name": "Sovereign State Store",
+            "type": "Persistence Ledger",
+            "description": "Tamper-proof event log and transaction ledger for Build A Secure Sovereign"
+          }
+        ],
+        "repositories": [
+          {
+            "name": "build-a-secure-sovereign-core",
+            "url": "https://github.com/sovereign-org/build-a-secure-sovereign-core",
+            "description": "Canonical code repository for Build A Secure Sovereign"
+          }
+        ],
+        "environments": [
+          {
+            "name": "Sovereign Production Enclave",
+            "url": "https://app.buildasecuresovereign.sovereign.local",
+            "status": "Active"
+          }
+        ],
+        "owners": [
+          {
+            "name": "Sovereign Architect",
+            "role": "Chief System Architect",
+            "contact": "Sovereign Architect"
+          }
+        ],
+        "revenueStreams": [
+          {
+            "name": "Capability Usage Billing",
+            "description": "Monetization structured around core capability execution value for Build A Secure Sovereign.",
+            "status": "Active"
+          }
+        ],
+        "policies": [
+          {
+            "name": "Global Standard Governance Profile",
+            "description": "Strict constitutional and legal compliance framework for Build A Secure Sovereign"
+          }
+        ],
+        "externalProviders": [
+          {
+            "name": "Sovereign Cloud Enclaves",
+            "service": "Isolated Hardware Execution",
+            "status": "Connected"
+          }
+        ]
+      },
+      "capabilities": [
+        {
+          "id": "cap-core-exec",
+          "name": "Build A Secure Sovereign Execution Engine",
+          "purpose": "Executes core domain logic, state transitions, and primary business workflows for build a secure sovereign.",
+          "canonicalDataDomain": "Domain Execution",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "POST /api/v1/execute",
+              "GET /api/v1/status"
+            ],
+            "events": [
+              "engine.started",
+              "engine.completed"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per Execution",
+            "priceFloor": "$0.001",
+            "targetMargin": "40%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 95,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.98,
+            "formalVerificationProof": "Z3-SAT-VERIFIED"
+          },
+          "governance": {
+            "budgetRules": "Max $500/day per tenant",
+            "requiredApprovals": "Sovereign Admin",
+            "autoShutdownThreshold": "99% error rate over 1m",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        },
+        {
+          "id": "cap-data-ingest",
+          "name": "Secure Ingestion Pipeline",
+          "purpose": "Validates, sanitizes, and ingests user input and external data streams for build a secure sovereign.",
+          "canonicalDataDomain": "Data Ingestion",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "POST /api/v1/ingest",
+              "GET /api/v1/ingest/logs"
+            ],
+            "events": [
+              "ingest.received",
+              "ingest.validated"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per MB",
+            "priceFloor": "$0.0005",
+            "targetMargin": "35%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 92,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.95,
+            "formalVerificationProof": "SCHEMA-VERIFIED"
+          },
+          "governance": {
+            "budgetRules": "Max 10GB/day per tenant",
+            "requiredApprovals": "System Automated",
+            "autoShutdownThreshold": "95% error rate",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        },
+        {
+          "id": "cap-policy-audit",
+          "name": "Sovereign Policy & Audit Gate",
+          "purpose": "Enforces jurisdictional governance, cryptographic signing, and audit trails for build a secure sovereign.",
+          "canonicalDataDomain": "Governance & Compliance",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "POST /api/v1/audit/verify",
+              "GET /api/v1/audit/trail"
+            ],
+            "events": [
+              "audit.logged",
+              "policy.enforced"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per Audit Event",
+            "priceFloor": "$0.0002",
+            "targetMargin": "50%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 98,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.99,
+            "formalVerificationProof": "POLICY-SAT"
+          },
+          "governance": {
+            "budgetRules": "Unlimited compliance logging",
+            "requiredApprovals": "Security Officer",
+            "autoShutdownThreshold": "Never shutdown compliance logging",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        },
+        {
+          "id": "cap-user-portal",
+          "name": "Interactive Portal & API Gateway",
+          "purpose": "Exposes client interfaces, authentication, and real-time query channels for users of build a secure sovereign.",
+          "canonicalDataDomain": "Client Interfaces",
+          "maturityState": "Sovereign Production",
+          "lifecycleState": "Production",
+          "verificationState": "Verified",
+          "pricingState": "Active Pricing",
+          "deprecationState": "None",
+          "jurisdictionPolicy": "Global Standard",
+          "exposedInterfaces": {
+            "rest": [
+              "GET /api/v1/portal/session",
+              "POST /api/v1/portal/query"
+            ],
+            "events": [
+              "portal.session.created"
+            ]
+          },
+          "pricingModel": {
+            "billingUnit": "Per Request",
+            "priceFloor": "$0.0001",
+            "targetMargin": "45%",
+            "currency": "USD",
+            "paymentMethod": "Direct / Token"
+          },
+          "evidence": {
+            "testCoveragePercent": 90,
+            "verifiedOnChain": true,
+            "trustDecayFactor": 0.94,
+            "formalVerificationProof": "AUTH-VERIFIED"
+          },
+          "governance": {
+            "budgetRules": "Rate limited to 1000 req/min per IP",
+            "requiredApprovals": "None (Public API)",
+            "autoShutdownThreshold": "DDoS threshold reached",
+            "jurisdictionConstraints": "Global Standard"
+          }
+        }
+      ],
+      "productOfferings": [
+        {
+          "id": "off-core-platform",
+          "name": "Build A Secure Sovereign Enterprise Bundle",
+          "targetAudience": "Enterprise Operators & Systems Integrators",
+          "coreCapabilities": [
+            "cap-core-exec",
+            "cap-data-ingest",
+            "cap-policy-audit",
+            "cap-user-portal"
+          ],
+          "bundledPrice": "$499/month + usage",
+          "SLA": "99.99% uptime with 15ms guaranteed latency floor",
+          "jurisdictionConstraints": "Global Standard"
+        }
+      ],
+      "gapsReport": [
+        {
+          "capabilityId": "cap-core-exec",
+          "gapType": "PERFORMANCE",
+          "description": "Real-time load testing under extreme concurrent traffic pending edge enclave deployment.",
+          "severity": "MEDIUM",
+          "mitigation": "Deploy automated horizontal scaling and rate limiting circuit breakers."
+        }
+      ],
+      "files": [
+        {
+          "path": "README.md",
+          "content": "# Build A Secure Sovereign Compiler Output Workspace\n\nWelcome to the compiled enterprise constitution for **Build A Secure Sovereign**.\n\nSovereign, capability-oriented infrastructure for build a secure sovereign systems\n\n## Ingested User Intent\n> \"Build a secure sovereign payment processing edge node.\"\n\nThis workspace has been structured using the **Gold Standard 12-Pack Folder Layout**, representing a locked, publishable, and agent-executable specification authority tailored strictly to your ingested requirements. Notice: All demo reference citations and sample data have been purged.\n\n## Workspace Layout Index\n1. **00_workspace_manifest/manifest.md** - Dynamic manifest and safety assertions.\n2. **01_executive_pack/thesis_and_boundaries.md** - Vision statement and scope bounds.\n3. **02_product_requirements/prd.md** - Functional requirements and workflows.\n4. **03_capability_registry/registry.md** - Profile of platform Capabilities.\n5. **04_architecture_pack/system_topology.md** - System topology models and diagrams.\n6. **05_contract_pack/interfaces_and_schemas.md** - API contracts and schemas.\n7. **06_economics_pack/pricing_and_quotes.md** - Settlement rules and unit economics.\n8. **07_evidence_validation_pack/grounding_and_gaps.md** - Grounding logs and gaps.\n9. **08_github_alignment_pack/repo_sync.md** - Codebase alignment results.\n10. **09_agent_execution_pack/work_orders.md** - Implementation packets for coding agents.\n11. **10_publishing_pack/academic_paper.md** - Whitepaper specification draft.\n12. **11_appendix_explorer/glossary_and_ledgers.md** - Glossary and assumptions.\n\n---\n*Lock Hash: 878b710640757affa32d65626af20745fd42447a6f767b5dc5108716777d3479*"
+        },
+        {
+          "path": "00_workspace_manifest/manifest.md",
+          "content": "# Workspace Manifest\n\n## Metadata Registry\n- **Project Title**: `Build A Secure Sovereign`\n- **Version**: `v1.0.0`\n- **Timestamp**: `2026-07-27T17:10:33.119Z`\n- **Owner**: `Sovereign Architect`\n- **Selected Jurisdiction**: `Global Standard`\n- **Platform Target**: `Multi-Platform Web/Cloud`\n\n## Compilation Metrics\n- **Total Ingested Notes Length**: 54 characters\n- **Active Capabilities**: 4 Verified Domain Capabilities\n- **High-Level Goals Mapped**: 3\n- **Cryptographic Signature Hash**: `878b710640757affa32d65626af20745fd42447a6f767b5dc5108716777d3479`\n\n## Verification Status\n- **Demo Purge Status**: [COMPLETE] All demo reference samples (Lamport, Nakamoto, Veklom) have been removed.\n- **Ingested Intent Grounding**: [STRICT] Built strictly from user-provided notes.\n- **Academic Grounding**: [OFFLINE FALLBACK] Live citation query offline; no mock citations injected."
+        },
+        {
+          "path": "01_executive_pack/thesis_and_boundaries.md",
+          "content": "# Executive Pack\n\n## 1. Vision Summary\n**Build A Secure Sovereign** is architected around the capability-first principle: API is merely an implementation surface—Capability is the true product.\n\n## 2. Ingested User Requirements\nBuild a secure sovereign payment processing edge node.\n\n## 3. Sovereign Scope Boundaries\nAll service boundaries, database schemas, and execution packets are constrained strictly to the operational domain of Build A Secure Sovereign. No unsolicited third-party tracking or unverified external dependencies are permitted."
+        },
+        {
+          "path": "02_product_requirements/prd.md",
+          "content": "# Product Requirements Document (PRD)\n\n## 1. Functional Scope\nDerived strictly from user intent for Build A Secure Sovereign:\n- Implement modular execution workflows.\n- Enforce strict jurisdictional compliance under Global Standard.\n- Ensure deterministic data ingestion and processing.\n\n## 2. User Workflows\n- **Ingestion Workflow**: Client submits data via secure API gateway.\n- **Execution Workflow**: Core engine processes state transitions.\n- **Audit Workflow**: All actions are logged to immutable state storage."
+        },
+        {
+          "path": "03_capability_registry/registry.md",
+          "content": "# Capability Registry\n\nCanonical inventory of capabilities defined for **Build A Secure Sovereign**:\n\n### 1. Build A Secure Sovereign Execution Engine (`cap-core-exec`)\n- **Purpose**: Executes core domain logic, state transitions, and primary business workflows for build a secure sovereign.\n- **Domain**: Domain Execution\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.001\n\n### 2. Secure Ingestion Pipeline (`cap-data-ingest`)\n- **Purpose**: Validates, sanitizes, and ingests user input and external data streams for build a secure sovereign.\n- **Domain**: Data Ingestion\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.0005\n\n### 3. Sovereign Policy & Audit Gate (`cap-policy-audit`)\n- **Purpose**: Enforces jurisdictional governance, cryptographic signing, and audit trails for build a secure sovereign.\n- **Domain**: Governance & Compliance\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.0002\n\n### 4. Interactive Portal & API Gateway (`cap-user-portal`)\n- **Purpose**: Exposes client interfaces, authentication, and real-time query channels for users of build a secure sovereign.\n- **Domain**: Client Interfaces\n- **Maturity State**: Sovereign Production\n- **Verification State**: Verified\n- **Pricing Floor**: $0.0001\n"
+        },
+        {
+          "path": "04_architecture_pack/system_topology.md",
+          "content": "# System Topology\n\n## Execution Architecture for Build A Secure Sovereign\n1. **API Gateway & Portal**: Handles ingress, TLS termination, and authentication.\n2. **Core Execution Engine**: Processes domain rules and state transitions.\n3. **Policy & Audit Gate**: Enforces Global Standard rules and writes immutable logs.\n4. **State Storage**: Tamper-proof persistence for system events and user data."
+        },
+        {
+          "path": "05_contract_pack/interfaces_and_schemas.md",
+          "content": "# Interfaces & Schemas\n\n## API Contract Specifications for Build A Secure Sovereign\n\n### REST Endpoints\n- `POST /api/v1/execute`: Trigger core execution workflow.\n- `POST /api/v1/ingest`: Submit data payloads for processing.\n- `POST /api/v1/audit/verify`: Query cryptographic proof of transaction compliance.\n- `GET /api/v1/status`: Monitor system health and active budget margins."
+        },
+        {
+          "path": "06_economics_pack/pricing_and_quotes.md",
+          "content": "# Economics & Settlement\n\n## Unit Economics for Build A Secure Sovereign\n\n| Capability | Billing Unit | Price Floor | Target Margin |\n| :--- | :--- | :--- | :--- |\n| **Build A Secure Sovereign Execution Engine** | Per Execution | $0.001 | 40% |\n| **Secure Ingestion Pipeline** | Per MB | $0.0005 | 35% |\n| **Sovereign Policy & Audit Gate** | Per Audit Event | $0.0002 | 50% |\n| **Interactive Portal & API Gateway** | Per Request | $0.0001 | 45% |\n\nAll settlements execute cleanly without unverified third-party fee markups."
+        },
+        {
+          "path": "07_evidence_validation_pack/grounding_and_gaps.md",
+          "content": "# Evidence & Validation Pack\n\n## Academic Grounding & Citations\n- **Status**: Offline Quota Fallback Active.\n- **Citations**: No citation available. Per strict ABIDE governance rules, when offline fallback occurs, no mock or demo citations (such as Lamport or Nakamoto reference samples) are inherited. Live verification will resume upon API reconnection.\n\n## Identified System Gaps\n- **PERFORMANCE**: Real-time load testing under extreme concurrent traffic pending edge enclave deployment. (Severity: MEDIUM)"
+        },
+        {
+          "path": "08_github_alignment_pack/repo_sync.md",
+          "content": "# Repository Alignment\n\n## Codebase Structure for Build A Secure Sovereign\n- **Repository**: `build-a-secure-sovereign-core`\n- **Target Platform**: `Multi-Platform Web/Cloud`\n- **Compliance Profile**: `Global Standard`\n\nAll code modules must pass linting, compilation, and formal verification tests prior to merge."
+        },
+        {
+          "path": "09_agent_execution_pack/work_orders.md",
+          "content": "# Agent Work Orders\n\nDeterministic implementation packets for coding agents executing **Build A Secure Sovereign**:\n\n## Packet: pkt-core-1 (Implement Build A Secure Sovereign Core Engine)\n- **Role**: Senior Backend Specialist\n- **Objective**: Build deterministic service layer with full policy enforcement.\n- **Target Files**: src/core/engine.ts, src/api/routes.ts\n- **Definition of Done**: All unit tests pass; Zero policy drift\n\n\n## Packet: pkt-audit-2 (Implement Sovereign Audit Gate for Build A Secure Sovereign)\n- **Role**: Compliance Engineer\n- **Objective**: Ensure 100% auditability of all transactions.\n- **Target Files**: src/security/audit.ts, src/api/auditRoutes.ts\n- **Definition of Done**: Audit logs verified; Compliance checks pass\n"
+        },
+        {
+          "path": "10_publishing_pack/academic_paper.md",
+          "content": "# Architectural Specification Paper\n\n## Title: Build A Secure Sovereign: Capability-Oriented System Architecture\n**Author**: Sovereign Architect\n**Date**: 2026-07-27\n\n### Abstract\nThis specification formalizes the architecture for **Build A Secure Sovereign**, derived directly from ingested user requirements. By decoupling capabilities from ephemeral API endpoints, the system ensures deterministic execution, tamper-proof audit trails, and compliance with Global Standard governance."
+        },
+        {
+          "path": "11_appendix_explorer/glossary_and_ledgers.md",
+          "content": "# Glossary & Assumption Ledger\n\n## Core Terminology for Build A Secure Sovereign\n- **Capability**: A self-contained, verifiable business outcome with attached pricing and governance.\n- **Sovereign Execution**: Deterministic processing that does not leak data to unverified external providers.\n- **Ingested Intent**: The raw user notes and requirements that define the absolute boundary of this system."
+        }
+      ],
+      "quota_fallback": true,
+      "agentPackets": [
+        {
+          "id": "pkt-core-1",
+          "title": "Implement Build A Secure Sovereign Core Engine",
+          "targetRole": "Senior Backend Specialist",
+          "summary": "Develop the primary execution engine and state handlers for Build A Secure Sovereign strictly based on ingested user intent.",
+          "objective": "Build deterministic service layer with full policy enforcement.",
+          "scope": "Core backend modules and API handlers.",
+          "files": [
+            "src/core/engine.ts",
+            "src/api/routes.ts"
+          ],
+          "contracts": "POST /api/v1/execute",
+          "dependencies": [
+            "express",
+            "zod"
+          ],
+          "tests": [
+            "tests/engine.test.ts"
+          ],
+          "migrations": "Initial schema setup",
+          "performanceTargets": "< 50ms latency",
+          "securityConstraints": "Zero unvalidated input",
+          "docsToUpdate": [
+            "02_product_requirements/prd.md"
+          ],
+          "definitionOfDone": [
+            "All unit tests pass",
+            "Zero policy drift"
+          ],
+          "rollbackNotes": "Revert to previous git tag if tests fail"
+        },
+        {
+          "id": "pkt-audit-2",
+          "title": "Implement Sovereign Audit Gate for Build A Secure Sovereign",
+          "targetRole": "Compliance Engineer",
+          "summary": "Construct immutable logging and policy verification pipeline.",
+          "objective": "Ensure 100% auditability of all transactions.",
+          "scope": "Audit logging middleware and compliance verification routes.",
+          "files": [
+            "src/security/audit.ts",
+            "src/api/auditRoutes.ts"
+          ],
+          "contracts": "POST /api/v1/audit/verify",
+          "dependencies": [
+            "crypto"
+          ],
+          "tests": [
+            "tests/audit.test.ts"
+          ],
+          "migrations": "Audit log schema",
+          "performanceTargets": "< 10ms overhead",
+          "securityConstraints": "Tamper-proof log append",
+          "docsToUpdate": [
+            "07_evidence_validation_pack/grounding_and_gaps.md"
+          ],
+          "definitionOfDone": [
+            "Audit logs verified",
+            "Compliance checks pass"
+          ],
+          "rollbackNotes": "Disable audit enforcement flag in safe mode"
+        }
+      ],
+      "fallback_message": "Free-tier Gemini API token count limit exceeded (250K/min limit). ABIDE locally generated an offline fallback blueprint. NOTE: Human-readable exports and verified packs are mechanically blocked until live API compilation is restored.",
+      "sekedTriage": {
+        "scores": {
+          "E": {
+            "score": 8.5,
+            "reasoning": "Efficiency compilation: latency 11.5ms, success rate 9380%, with 0/4 capabilities specifying exact latency SLO goals."
+          },
+          "R": {
+            "score": 0,
+            "reasoning": "[ABIDE Gate] Offline quota fallback detected. No live academic verification could be performed. SEKED R score mechanically clamped to 0/10."
+          },
+          "C": {
+            "score": 6.5,
+            "reasoning": "Compliance analysis: detected 0 declared tests across 4 capabilities. Drift prevention mechanisms active in 0/4 modules."
+          },
+          "D": {
+            "score": 5.3,
+            "reasoning": "Sovereignty check complete. Evaluated 4/4 capability jurisdiction profiles and 1 global policies. 0 profiles are missing."
+          },
+          "S": {
+            "score": 3.5,
+            "reasoning": "Settlement audit complete. Evaluated 4/4 capability pricing parameters. 0 capabilities are strictly machine-to-machine x402 settlement compliant."
+          }
+        },
+        "compositeScore": 4.88,
+        "directive": "DEGRADE_AND_WARN",
+        "timestamp": "2026-07-27T17:10:33.137Z",
+        "signature": "591beea8a4221eb34e87452184832f1266428c46dbd2d5c488d1d29998d877c7"
+      },
+      "cacheStatus": {
+        "hit": false,
+        "key": "f6918f13eee7b669076d73238d712ea569044177fdd7fbf462548702dd6c2448",
+        "type": "MEMORY",
+        "latencyMs": 9,
+        "isFallback": true
+      }
+    },
+    "completedAt": "2026-07-27T17:10:33.145Z"
   }
 }

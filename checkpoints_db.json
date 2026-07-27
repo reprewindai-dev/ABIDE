@@ -2168,5 +2168,75 @@
     },
     "unresolvedWork": "None. Telemetry buffering complete.",
     "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-1514e0b0f5213011",
+    "timestamp": "2026-07-27T17:07:19.866Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-488bbb0c09698723",
+    "timestamp": "2026-07-27T17:07:19.868Z",
+    "parentCheckpointId": "chk-1514e0b0f5213011",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-165efeae578e2cd4",
+    "timestamp": "2026-07-27T17:10:30.807Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-a48d3085926ca3d9",
+    "timestamp": "2026-07-27T17:10:30.808Z",
+    "parentCheckpointId": "chk-165efeae578e2cd4",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
   }
 ]

@@ -382,5 +382,29 @@
     "merkleRoot": "0x_b251a08162f55dc6e58369352e4e2ba43880535c3b7782a1c239ba4a2f25529e",
     "slsaLevel": "SLSA_BUILD_LEVEL_3",
     "status": "SEALED_PERSISTENT"
+  },
+  {
+    "receiptId": "pgl-rec-C7209B5E3625",
+    "planId": "1ab380f9-db36-4d95-b6b0-c5fd358fafd4",
+    "stepId": "a696f241-a573-4e5e-8731-7d8d8d0a1b4b",
+    "capability": "mint-settlement-evidence",
+    "compositeHash": "16f0f98fc0e05f1dbc61e48c278a26c8a08f8b5c8394afab66f4bccbca062172",
+    "signature": "b38187eb43572218d4a3c10833a1d7ee7398b7e59e6e9641b57dc4295b8edc21",
+    "timestamp": "2026-07-27T17:07:16.966Z",
+    "merkleRoot": "0x_7a9ca24c6499f37b26e54ab5d857ba7beae74d484e12452c0e6b529139b7a744",
+    "slsaLevel": "SLSA_BUILD_LEVEL_3",
+    "status": "SEALED_PERSISTENT"
+  },
+  {
+    "receiptId": "pgl-rec-DEDCE49A8CEA",
+    "planId": "5b328c8d-18bd-450e-8a61-a65448313f49",
+    "stepId": "f6b0228d-042b-4d2d-a349-05b10d371e27",
+    "capability": "mint-settlement-evidence",
+    "compositeHash": "f585edaad6fd9ef6ac860e8c67770ecb7f6cde94cf96cd12ca54e171464f2144",
+    "signature": "854bf94777461d8fdab0038128fda0d421522af0fa20f96d120b045a2a6e4238",
+    "timestamp": "2026-07-27T17:10:28.075Z",
+    "merkleRoot": "0x_f4bd8c2ec78bc40db8df1f81b1800a98bc7851fd6baf601df4411177b98411a3",
+    "slsaLevel": "SLSA_BUILD_LEVEL_3",
+    "status": "SEALED_PERSISTENT"
   }
 ]

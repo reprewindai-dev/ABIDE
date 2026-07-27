@@ -100,6 +100,7 @@ describe("SMT Solver: Z3 Integration Tests", () => {
 
   it("should check VERIFICATION_SERVICE_URL availability and mark PlanIR as UNVERIFIED if Z3 service is unreachable", async () => {
     const { verifyPlanIRWithZ3, checkZ3ServiceAvailability } = await import("../compiler/seked");
+    const { enforceLane3Z3AndDegradedGuard } = await import("../core/m2m-verifier");
     const mockPlan: any = {
       planId: "test-plan-unverified",
       verificationStatus: "PENDING",
@@ -121,6 +122,12 @@ describe("SMT Solver: Z3 Integration Tests", () => {
     assert.strictEqual(resultPlan.verificationStatus, "UNVERIFIED");
     assert.strictEqual(resultPlan.z3Proof.verified, false);
     assert.ok(resultPlan.z3Proof.error.includes("unreachable") || resultPlan.z3Proof.error.includes("offline"));
+
+    assert.throws(
+      () => enforceLane3Z3AndDegradedGuard(resultPlan),
+      /CAPPO HALT — Formal verifier was unavailable or degraded \(UNVERIFIED\)/,
+      "Must programmatically block Lane 3 execution when Z3 verifier status is marked UNVERIFIED"
+    );
   });
 
   after(() => {
