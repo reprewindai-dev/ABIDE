@@ -518,5 +518,25 @@
       "slsaLevel": "SLSA_BUILD_LEVEL_3",
       "timestamp": "2026-07-27T17:10:28.075Z"
     }
+  },
+  "pgl-anchor-pgl-rec-CFB7032E8CB7": {
+    "planId": "f2f43480-e20d-49fc-9533-ed9211596b35",
+    "stepId": "faa17248-41a6-4b53-a0da-7ecdba327fa2",
+    "receipt": {
+      "receiptId": "pgl-rec-CFB7032E8CB7",
+      "planId": "f2f43480-e20d-49fc-9533-ed9211596b35",
+      "stepId": "faa17248-41a6-4b53-a0da-7ecdba327fa2",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "6f40ff5292dc24f2df9c6157d23de3e6eeec3caae5c62331ce3b72d1e207414b",
+      "signature": "711f11cf3a206a84b6223a9afa8c3c980835b06f290b3855b28d87f41c7ddd35",
+      "timestamp": "2026-07-27T17:27:23.659Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-CFB7032E8CB7",
+      "merkleRoot": "0x_aa0d4a539d9e2e26636fcf58f8fddeae2d5465703eeb8ba5a0ad66c1f80acd22",
+      "blockHeight": 178517324,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T17:27:23.660Z"
+    }
   }
 }

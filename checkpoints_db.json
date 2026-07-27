@@ -2238,5 +2238,40 @@
     },
     "unresolvedWork": "None. Telemetry buffering complete.",
     "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-6d51760bb2c77abc",
+    "timestamp": "2026-07-27T17:27:26.280Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-a1f67ef00c7f2fad",
+    "timestamp": "2026-07-27T17:27:26.282Z",
+    "parentCheckpointId": "chk-6d51760bb2c77abc",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
   }
 ]
