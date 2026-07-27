@@ -8,7 +8,7 @@ async function runDiagnostics() {
   console.log(`Runtime: Node.js ${process.version}`);
   console.log("----------------------------------------------------------------------\n");
 
-  const LOCAL_SERVER_URL = "http://localhost:3009";
+  const LOCAL_SERVER_URL = "http://localhost:3000";
   let failures = 0;
 
   // 1. Schema Validation on Compiled Blueprints

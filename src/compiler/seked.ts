@@ -318,9 +318,13 @@ export function scoreComplianceDriftV1(blueprint: any): MetricScore {
  * Evaluates academic grounding verification attributes to mitigate the credibility risk of unverified papers.
  */
 export function scoreResourceReputationV1(blueprint: any): MetricScore {
+  if (blueprint?.quota_fallback) {
+    return { score: 0.0, reasoning: "[ABIDE Gate] Offline quota fallback detected. No live academic verification could be performed. SEKED R score mechanically clamped to 0/10." };
+  }
+
   const academic = blueprint?.academicGrounding || [];
-  if (academic.length === 0) {
-    return { score: 1.0, reasoning: "Blueprint intake missing required academic grounding peer-review validation." };
+  if (academic.length === 0 || academic.some((p: any) => p.source === "no citation available" || p.verificationStatus === "NOT_FOUND" || p.verificationStatus === "TITLE_AUTHOR_MISMATCH")) {
+    return { score: 0.0, reasoning: "Blueprint intake missing verified academic grounding or contains unverified/mismatched citations. SEKED R score: 0/10." };
   }
 
   let totalPoints = 4.0; // Default
@@ -364,6 +368,9 @@ export function scoreResourceReputationV1(blueprint: any): MetricScore {
     totalPoints += (paperPoints / academic.length) * 3.5;
   }
 
+  if (validCitations === 0) {
+    return { score: 0.0, reasoning: `Academic validation failed: 0/${academic.length} citations passed peer-review verification criteria. SEKED R score: 0/10.` };
+  }
   const finalScore = Number(Math.max(0, Math.min(9, totalPoints)).toFixed(2));
   return {
     score: finalScore,

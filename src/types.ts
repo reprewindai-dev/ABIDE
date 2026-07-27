@@ -28,6 +28,7 @@ export interface AcademicPaper {
   source: string;
   summary: string;
   relevance: string;
+  url?: string;
   resolvableIdentifier?: string;
   retrievalTimestamp?: string;
   quotedClaimLocation?: string;

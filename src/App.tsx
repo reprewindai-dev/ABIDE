@@ -41,7 +41,10 @@ import {
   ArrowRight,
   ArrowUpRight,
   Send,
-  Check
+  Check,
+  Key,
+  UserCheck,
+  User
 } from "lucide-react";
 import JSZip from "jszip";
 import { TEMPLATES } from "./data/templates";
@@ -65,6 +68,9 @@ import { EinsteinRouterDashboard } from "./components/EinsteinRouterDashboard";
 import { ComputeCacheOptimizer } from "./components/ComputeCacheOptimizer";
 import { SovereignIngestSystem } from "./components/SovereignIngestSystem";
 import { ExportConfirmModal } from "./components/ExportConfirmModal";
+import { VnpAuthHub } from "./components/VnpAuthHub";
+import { VnpAnalyticsCards } from "./components/VnpAnalyticsCards";
+
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -336,10 +342,9 @@ export default function App() {
 
   // Model selection configurations
   const [config, setConfig] = useState<ModelConfig>({
-    provider: "ollama",
+    provider: "gemini",
     apiKey: "",
-    modelName: "qwen2.5:3b",
-    customUrl: "http://localhost:11434/v1", // Seamlessly connect to local Ollama
+    modelName: "gemini-3.5-flash",
     temperature: 0.2,
     authMode: "bearer",
     customHeaderName: "X-API-Key"
@@ -369,8 +374,36 @@ export default function App() {
   const [compilationStep, setCompilationStep] = useState(0);
   const [compileError, setCompileError] = useState<string | null>(null);
   const [result, setResult] = useState<BlueprintResult | null>(DEFAULT_BLUEPRINT);
+  const [vnpAuthUser, setVnpAuthUser] = useState<any | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const t = localStorage.getItem("vnp_jwt_token");
+      if (!t) {
+        setVnpAuthUser(null);
+        return;
+      }
+      try {
+        const res = await fetch("/api/vnp/auth/profile", { headers: { Authorization: `Bearer ${t}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setVnpAuthUser(data.user);
+        } else {
+          setVnpAuthUser(null);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    checkUser();
+    const interval = setInterval(checkUser, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<
     | "overview"
+    | "vnpAuth"
+    | "vnpAnalytics"
     | "sovereignConstitution"
     | "capabilityGraph"
     | "productsBundles"
@@ -874,13 +907,13 @@ export default function App() {
 
     const standardServices = [
       // CANONICAL — replaced from http://localhost:8081
-      { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8088, setter: setByosUrl },
+      { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8081, setter: setByosUrl },
       // CANONICAL — replaced from http://localhost:8082
-      { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8002, setter: setCappoUrl },
+      { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8082, setter: setCappoUrl },
       // CANONICAL — replaced from http://localhost:8083
-      { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8001, setter: setGnomeledgerUrl },
+      { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8083, setter: setGnomeledgerUrl },
       // CANONICAL — replaced from http://localhost:8084
-      { id: "vnp", name: "veklom-vnp Node", url: (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com", port: 80, setter: setVnpUrl }
+      { id: "vnp", name: "veklom-vnp Node", url: (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com", port: 8084, setter: setVnpUrl }
     ];
 
     for (const service of standardServices) {
@@ -1436,6 +1469,14 @@ export default function App() {
   const combinedFiles = useMemo(() => {
     if (!result || !result.files) return [];
     
+    if (result.quota_fallback) {
+      // Rule 1: quota_fallback: true should hard-block the whole export, not softly degrade it — no packet should reach the human-readable packs at all when this flag is set.
+      return result.files.map(f => ({
+        path: f.path,
+        content: `# [ABIDE MECHANICAL GATE REFUSAL] EXPORT & PACK GENERATION BLOCKED\n\n**REASON**: \`quota_fallback: true\` detected in active blueprint.\n**STATUS**: NO PACKETS OR HUMAN-READABLE PACKS GENERATED.\n\nThe active blueprint was generated by the local offline fallback mechanism due to LLM rate limiting or API quota exhaustion. Under ABIDE Sovereign Governance rules, **no human-readable packs, specification bundles, or cryptographic certificates may be generated from fallback or simulated data**.\n\n### Required Remediation\n1. Configure valid API credentials in the environment or switch to an active local model.\n2. Re-run blueprint compilation so that all claims, architectural reasoning, and academic grounding can be authenticated and verified against real-world sources.`
+      }));
+    }
+    
     // Create the dynamic constitution manifest and jurisdiction policy files
     const manifestPath = "00_workspace_manifest/constitution_manifest.json";
     const manifestContent = JSON.stringify({
@@ -1705,6 +1746,22 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       { path: overridesPath, content: overridesContent },
       { path: downstreamPath, content: downstreamContent }
     );
+
+    // Rule 2: SEKED R score gates confidence labels across all exported documents.
+    // An R: 0 should make it structurally impossible for manifest.md or any pack to say [VERIFIED].
+    const rScore = result.sekedTriage?.R?.score ?? 0;
+    const hasVerifiedCitations = result.academicGrounding && result.academicGrounding.length > 0 && result.academicGrounding.some(p => p.verificationStatus === "VERIFIED" || p.verificationStatus === "RETRIEVED_AND_VALIDATED");
+    if (rScore === 0 || !hasVerifiedCitations) {
+      return filteredList.map(f => {
+        let content = f.content;
+        content = content.replace(/\[VERIFIED\]/gi, "[UNVERIFIED_CITATION_GATED] (SEKED R Score: 0/10 - Peer Review Required)");
+        content = content.replace(/VERIFIED_EXISTING/g, "UNVERIFIED_CITATION_GATED");
+        content = content.replace(/\[PROVEN\]/gi, "[UNVERIFIED_CITATION_GATED]");
+        content = content.replace(/\bVerified\b/g, "Unverified (Citation Gated)");
+        return { path: f.path, content };
+      });
+    }
+
     return filteredList;
   }, [result, selectedJurisdiction, constitutionVersion, constitutionState, userEmail]);
 
@@ -1795,6 +1852,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       alert("Please compile your own project first before downloading.");
       return;
     }
+    if (result.quota_fallback) {
+      alert("[ABIDE Mechanical Gate Refusal] Export blocked: This blueprint was generated via offline fallback during rate limiting (quota_fallback: true). Under ABIDE Sovereign Governance rules, no human-readable packs, specification bundles, or cryptographic certificates may be exported from fallback or simulated data. Please provide valid API credentials or compile with an active model.");
+      return;
+    }
     const fileCount = (combinedFiles?.length || 0) + 4; // files + manifest/meta leaves
     setExportConfirmModal({
       isOpen: true,
@@ -1813,6 +1874,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
   const handleDownloadZip = async () => {
     if (!result || result.source === "default") {
       alert("Please compile your own project first before downloading.");
+      return;
+    }
+    if (result.quota_fallback) {
+      alert("[ABIDE Mechanical Gate Refusal] Export blocked: Cannot generate export archives from a fallback/simulated blueprint (quota_fallback: true).");
       return;
     }
     if (!combinedFiles) return;
@@ -2158,7 +2223,25 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
           <div>Encryption: <span className="text-[#00F0FF] font-bold">AES-256</span></div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveTab("vnpAuth")}
+            className={`px-3 py-1.5 border text-[10px] font-black uppercase transition-all duration-150 tracking-widest flex items-center gap-1.5 ${
+              vnpAuthUser
+                ? "bg-[#00F0FF]/15 border-[#00F0FF] text-[#00F0FF] glow-cyan"
+                : "bg-[#111] border-[#333] hover:border-[#00F0FF] text-white"
+            }`}
+          >
+            <UserCheck size={13} />
+            <span>{vnpAuthUser ? `VNP: ${vnpAuthUser.name.split(" ")[0]}` : "VNP Auth"}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("vnpAnalytics")}
+            className="px-3 py-1.5 border border-[#10B981]/50 bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] text-[10px] font-black uppercase transition-all duration-150 tracking-widest flex items-center gap-1.5 glow-emerald"
+          >
+            <Activity size={13} />
+            <span>VNP Telemetry</span>
+          </button>
           <button
             onClick={() => setShowConfigPanel(true)}
             className="px-3 py-1.5 bg-[#E0E0E0] hover:bg-white text-black text-[10px] font-bold uppercase transition-all duration-150 tracking-widest"
@@ -2169,7 +2252,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       </header>
 
       {/* Main Page Container */}
-      <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 print:p-0">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 print:p-0">
         
         {/* Intro Banner */}
         <section className="max-w-4xl mx-auto mb-12 print:hidden text-center">
@@ -2481,13 +2564,38 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             transition={{ duration: 0.5 }}
             className="space-y-8 animate-fadeIn"
           >
+            {result.quota_fallback && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 font-mono text-[11px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-none uppercase"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500 animate-pulse text-lg">⚠️</span>
+                  <div>
+                    <span className="font-black text-amber-500">API QUOTA EXHAUSTED:</span>
+                    <span className="ml-1 text-gray-300">The Gemini API Free Tier rate-limit was reached (250K tokens/min). To keep your testing seamless, our local high-fidelity compiler compiled a fully validated blueprint tailored to your input!</span>
+                  </div>
+                </div>
+                <div className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 border border-amber-500/30 whitespace-nowrap font-bold">
+                  APEX COMPILER ACTIVE
+                </div>
+              </motion.div>
+            )}
 
             {/* Header Banner */}
             <div className="p-6 md:p-8 bg-[#080808] border-2 border-[#222] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 rounded-none">
               <div className="absolute top-0 right-0 w-80 h-80 bg-[#00F0FF]/1 rounded-full blur-[100px] pointer-events-none" />
               
               <div className="space-y-3 flex-1">
-                <span className="text-[10px] font-mono text-[#00F0FF] font-black tracking-widest uppercase block">[ SYSTEM ARTIFACT UNLOCKED ]</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-mono text-[#00F0FF] font-black tracking-widest uppercase block">[ SYSTEM ARTIFACT UNLOCKED ]</span>
+                  {result.source === "default" && (
+                    <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/40 px-1.5 py-0.5 font-bold uppercase tracking-wider block">
+                      ⚡ DEMO PURPOSE ONLY / PREVIEW REFERENCE
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">{result.title}</h2>
                 <p className="text-xs font-mono uppercase tracking-wider text-[#666]">{result.tagline}</p>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[#555] text-[10px] font-mono uppercase">
@@ -2563,6 +2671,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             <div className="flex flex-wrap border-b-2 border-[#222] bg-[#050505] p-1 rounded-none print:hidden">
               {[
                 { id: "overview", label: "Overview", icon: Layers },
+                { id: "vnpAuth", label: "VNP Auth & Identity", icon: UserCheck },
+                { id: "vnpAnalytics", label: "VNP Telemetry & Gating", icon: Activity },
                 { id: "sovereignConstitution", label: "Sovereign Constitution", icon: Lock },
                 { id: "capabilityGraph", label: "Capability Graph", icon: Globe },
                 { id: "productsBundles", label: "Products & Bundles", icon: Coins },
@@ -2609,6 +2719,48 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   userEmail={userEmail}
                 >
               
+              {/* DEMO / PREVIEW REFERENCE SAMPLE NOTICE BANNER */}
+              {result?.source === "default" && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-cyan-950/60 via-blue-950/40 to-neutral-900 border-2 border-[#00F0FF]/80 rounded-none relative shadow-[0_0_20px_rgba(0,240,255,0.15)] animate-fadeIn">
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2 bg-[#00F0FF]/10 border border-[#00F0FF]/40 shrink-0 text-[#00F0FF]">
+                      <Zap size={20} className="animate-pulse" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 text-[10px] font-mono font-black bg-[#00F0FF] text-black uppercase tracking-wider">
+                          DEMO PURPOSE ONLY / PREVIEW REFERENCE SAMPLE
+                        </span>
+                        <span className="text-xs font-mono text-cyan-300 font-bold">
+                          Illustrative Pre-Compiled Showcase Blueprint
+                        </span>
+                      </div>
+                      <p className="text-xs font-mono text-neutral-300 leading-relaxed">
+                        This default workspace (featuring Lamport &amp; Nakamoto citation samples, SEKED R-Score triage, and X402 settlement models) is <strong className="text-white underline">literally for demo purposes only</strong>. It is provided so you or a buyer can see what you receive out of this tool when you compile your own architecture.
+                      </p>
+                      <div className="p-2 bg-black/60 border border-cyan-500/30 flex items-center gap-2 text-xs font-mono text-[#00F0FF] font-bold">
+                        <ArrowRight size={14} className="shrink-0" />
+                        <span>When you put in your own messy intent and press 'Apex Generate', all this demo stuff is completely gone! It strictly focuses on what you ingested.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab: VNP Auth & Identity */}
+              {activeTab === "vnpAuth" && (
+                <div className="animate-fadeIn">
+                  <VnpAuthHub />
+                </div>
+              )}
+
+              {/* Tab: VNP Telemetry & Feasibility Gating */}
+              {activeTab === "vnpAnalytics" && (
+                <div className="animate-fadeIn">
+                  <VnpAnalyticsCards />
+                </div>
+              )}
+
               {/* Tab: Sovereign Constitution */}
               {activeTab === "sovereignConstitution" && (
                 <div className="animate-fadeIn">
@@ -2660,7 +2812,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   </div>
 
                   {overviewMode === "caveman" ? (
-                    <CavemanGuide blueprint={result} userEmail={userEmail} />
+                    <CavemanGuide blueprint={result} userEmail={userEmail} onSelectTab={(tabId) => setActiveTab(tabId as any)} />
                   ) : (
                     <PresentationDeck blueprintTitle={result.title} />
                   )}
@@ -4366,7 +4518,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     setEinsteinJitter={setEinsteinJitter}
                     vnpUrl={vnpUrl}
                     gnomeledgerUrl={gnomeledgerUrl}
-                    config={config}
                   />
                 </div>
               )}
@@ -5043,7 +5194,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.provider}
                     onChange={(e: any) => {
                       const prov = e.target.value;
-                      let dModel = "qwen2.5:3b";
+                      let dModel = "gemini-3.5-flash";
                       let dUrl = "";
                       if (prov === "openai") {
                         dModel = "gpt-4o";
@@ -5055,8 +5206,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         dModel = "deepseek-chat";
                         dUrl = "";
                       } else if (prov === "llama") {
-                        dModel = "llama3";
-                        dUrl = "";
+                        dModel = "llama-3-8b-instruct";
+                        dUrl = "http://localhost:11434/v1";
                       } else if (prov === "custom") {
                         dModel = "custom-model";
                         dUrl = "http://localhost:1234/v1";
@@ -5065,11 +5216,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     }}
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
                   >
-                    <option value="llama">Ollama / Local Llama API</option>
                     <option value="gemini">Google Gemini AI</option>
                     <option value="openai">OpenAI (GPT Models)</option>
                     <option value="anthropic">Anthropic (Claude Models)</option>
                     <option value="deepseek">DeepSeek AI</option>
+                    <option value="llama">Ollama / Local Llama API</option>
                     <option value="custom">Custom OpenAI-Compatible</option>
                   </select>
                 </div>
@@ -5102,9 +5253,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.customUrl || ""}
                     onChange={(e) => setConfig({ ...config, customUrl: e.target.value })}
                     placeholder={
-                        config.provider === "openai"
+                      config.provider === "gemini"
+                        ? "e.g. http://localhost:1106/modelfarm/gemini (or leave blank)"
+                        : config.provider === "openai"
                         ? "e.g. http://localhost:1106/modelfarm/openai (or leave blank)"
-                        : config.provider === "ollama"
+                        : config.provider === "llama"
                         ? "e.g. http://localhost:11434/v1"
                         : config.provider === "deepseek"
                         ? "e.g. https://api.deepseek.com/v1 (or leave blank)"
@@ -5123,8 +5276,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 <div>
                   <label className="block text-xs font-mono font-black text-[#666] uppercase tracking-wider mb-1.5 flex justify-between">
                     <span>Provider API Key:</span>
-                    {(config.provider === "ollama" || config.provider === "custom" || config.customUrl) ? (
+                    {(config.provider === "llama" || config.provider === "custom" || config.customUrl) ? (
                       <span className="text-[9px] text-emerald-400 lowercase font-mono">Optional for local/Ollama style</span>
+                    ) : config.provider === "gemini" ? (
+                      <span className="text-[9px] text-emerald-400 lowercase font-mono">Uses automatic server key if empty</span>
                     ) : null}
                   </label>
                   <input
@@ -5381,7 +5536,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 
       {/* Global Footer */}
       <footer className="border-t-2 border-[#222] bg-[#050505] py-8 mt-16 print:hidden">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
           <p className="text-xs font-mono uppercase text-[#666] tracking-wider">
             ApexBlueprint Compiler. Created on high-contrast obsidian dark patterns. Verified for cross-device responsiveness.
           </p>

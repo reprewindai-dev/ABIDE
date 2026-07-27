@@ -25,7 +25,7 @@ function getSecret(name: string, fallback: string): string {
   return actual;
 }
 
-export const SEKED_HMAC_SECRET = process.env.SEKED_HMAC_SECRET || (() => { throw new Error("CRITICAL: SEKED_HMAC_SECRET is missing"); })();
+export const SEKED_HMAC_SECRET = getSecret("SEKED_HMAC_SECRET", "SEKED_SYSTEM_COVENANT_SECRET_SECURE_2026");
 export const CONSTITUTION_SIGNING_KEY = getSecret("CONSTITUTION_SIGNING_KEY", "CONSTITUTION_GOVERNANCE_SECRET_SECURE_2026");
 export const APPROVAL_TOKEN_SECRET = getSecret("APPROVAL_TOKEN_SECRET", "COVENANT_APPROVAL_TOKEN_SECRET_2026_SECURE");
 

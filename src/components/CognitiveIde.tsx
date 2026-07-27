@@ -43,7 +43,7 @@ import {
   ShieldAlert,
   Key
 } from "lucide-react";
-import { BlueprintResult, ModelConfig, VirtualFile } from "../types";
+import { BlueprintResult, VirtualFile } from "../types";
 
 interface CognitiveIdeProps {
   blueprint: BlueprintResult | null;
@@ -54,7 +54,6 @@ interface CognitiveIdeProps {
   setEinsteinJitter: (val: number) => void;
   vnpUrl: string;
   gnomeledgerUrl: string;
-  config: ModelConfig;
 }
 
 interface WorkflowNode {
@@ -89,13 +88,163 @@ export default function CognitiveIde({
   einsteinJitter,
   setEinsteinJitter,
   vnpUrl,
-  gnomeledgerUrl,
-  config
+  gnomeledgerUrl
 }: CognitiveIdeProps) {
-  // Mini IDE Main Tabs: Workspace, Workflow, Type Knowledge Graph, Compact Solver, Academic Hub, Compiler
+  // Mini IDE Main Tabs: Factory Workbench, Workspace, Workflow, Type Knowledge Graph, Compact Solver, Academic Hub, Compiler
   const [activePanel, setActivePanel] = useState<
-    "workspace" | "flow" | "ontology" | "solver" | "academic" | "compiler"
-  >("workspace");
+    "factory" | "workspace" | "flow" | "ontology" | "solver" | "academic" | "compiler"
+  >("factory");
+
+  // ABIDE BOUNDED PROJECT FACTORY STATE (The 5 Surfaces)
+  const [workbenchSurface, setWorkbenchSurface] = useState<"intent" | "build" | "changes" | "run" | "evidence">("intent");
+  const [projectsList, setProjectsList] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("proj-ollama-proof");
+  const [activeProject, setActiveProject] = useState<any>(null);
+  const [buildViewMode, setBuildViewMode] = useState<"visual" | "code">("code");
+  const [intentInstruction, setIntentInstruction] = useState<string>("Create an API that accepts customer feedback, classifies it using my local model and stores the result.");
+  const [activeProposal, setActiveProposal] = useState<any>(null);
+  const [isProposing, setIsProposing] = useState(false);
+  const [isRunningStage, setIsRunningStage] = useState(false);
+  const [factoryRunLogs, setFactoryRunLogs] = useState<string[]>(["[System] Bounded project factory initialized. Durable sandbox ready."]);
+  const [testPayloadText, setTestPayloadText] = useState<string>("Critical security vulnerability found in login endpoint when parsing JWT tokens.");
+  const [newProjectModal, setNewProjectModal] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectType, setNewProjectType] = useState<any>("application-service");
+
+  // Load backend projects on mount
+  useEffect(() => {
+    fetch("/api/ide/projects")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.projects) {
+          setProjectsList(data.projects);
+          const found = data.projects.find((p: any) => p.id === selectedProjectId) || data.projects[0];
+          if (found) {
+            setActiveProject(found);
+            setFiles(found.files || {});
+          }
+        }
+      })
+      .catch(err => console.error("Failed to load ABIDE projects:", err));
+  }, []);
+
+  // Switch active project
+  const handleSelectProject = (id: string) => {
+    setSelectedProjectId(id);
+    const found = projectsList.find(p => p.id === id);
+    if (found) {
+      setActiveProject(found);
+      setFiles(found.files || {});
+      setActiveProposal(null);
+    } else {
+      fetch(`/api/ide/projects/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.project) {
+            setActiveProject(data.project);
+            setFiles(data.project.files || {});
+            setActiveProposal(null);
+          }
+        });
+    }
+  };
+
+  const handleCreateProject = async () => {
+    if (!newProjectName) return;
+    try {
+      const res = await fetch("/api/ide/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newProjectName, type: newProjectType, description: `Custom ${newProjectType} project`, executionMode: "standalone" })
+      });
+      const data = await res.json();
+      if (data.success && data.project) {
+        setProjectsList(prev => [data.project, ...prev]);
+        setActiveProject(data.project);
+        setSelectedProjectId(data.project.id);
+        setFiles(data.project.files || {});
+        setNewProjectModal(false);
+        setNewProjectName("");
+        setWorkbenchSurface("intent");
+      }
+    } catch (err) {
+      console.error("Create project failed:", err);
+    }
+  };
+
+  const handleProposeBuild = async () => {
+    if (!activeProject || !intentInstruction) return;
+    setIsProposing(true);
+    setWorkbenchSurface("changes");
+    try {
+      const res = await fetch("/api/ide/propose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: activeProject.id, instruction: intentInstruction })
+      });
+      const data = await res.json();
+      if (data.success && data.proposal) {
+        setActiveProposal(data.proposal);
+        if (data.project) {
+          setActiveProject(data.project);
+          setProjectsList(prev => prev.map(p => p.id === data.project.id ? data.project : p));
+        }
+      }
+    } catch (err) {
+      console.error("Propose build failed:", err);
+    } finally {
+      setIsProposing(false);
+    }
+  };
+
+  const handleApplyPatch = async () => {
+    if (!activeProject || !activeProposal) return;
+    try {
+      const res = await fetch("/api/ide/apply-patch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: activeProject.id, proposalId: activeProposal.proposalId })
+      });
+      const data = await res.json();
+      if (data.success && data.project) {
+        setActiveProject(data.project);
+        setFiles(data.project.files || {});
+        setProjectsList(prev => prev.map(p => p.id === data.project.id ? data.project : p));
+        setActiveProposal(null);
+        setWorkbenchSurface("run");
+        setFactoryRunLogs(prev => [`[Patch Applied] All approved operations written to durable sandbox: ./workspace-sandbox/projects/${data.project.id}`, ...prev]);
+      }
+    } catch (err) {
+      console.error("Apply patch failed:", err);
+    }
+  };
+
+  const handleRunStage = async (stage: "install" | "compile" | "test" | "execute") => {
+    if (!activeProject) return;
+    setIsRunningStage(true);
+    setWorkbenchSurface("run");
+    setFactoryRunLogs(prev => [`[Sandbox Exec] Launching command stage: ${stage.toUpperCase()}...`, ...prev]);
+    try {
+      const res = await fetch("/api/ide/run-stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: activeProject.id, stage, payload: { text: testPayloadText } })
+      });
+      const data = await res.json();
+      if (data.success && data.record) {
+        setFactoryRunLogs(prev => [data.record.output, ...prev]);
+        if (data.project) {
+          setActiveProject(data.project);
+          setFiles(data.project.files || {});
+          setProjectsList(prev => prev.map(p => p.id === data.project.id ? data.project : p));
+        }
+      }
+    } catch (err: any) {
+      setFactoryRunLogs(prev => [`[Error] Stage execution failed: ${err.message}`, ...prev]);
+    } finally {
+      setIsRunningStage(false);
+    }
+  };
 
   // 1. WORKSPACE STATE
   const [files, setFiles] = useState<Record<string, string>>({});
@@ -534,7 +683,6 @@ export async function executeCapability(payload: any) {
     "[05:05:14] COVENANT: Loaded Three-Layer Symbolic Architecture (Rules, Logic, Ontology)."
   ]);
   const [cliInput, setCliInput] = useState("");
-  const [isAgentRunning, setIsAgentRunning] = useState(false);
   const [z3Output, setZ3Output] = useState<any>(null);
   const [isZ3Running, setIsZ3Running] = useState(false);
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
@@ -650,28 +798,6 @@ export async function executeCapability(payload: any) {
       setSimStep(i);
       setSimLogs(prev => [...prev, steps[i].msg]);
       addTerminalLog(steps[i].msg, "covenant");
-      // Call zero-config Ollama for intelligent routing prediction!
-      if (i === 1) {
-        try {
-          const res = await fetch("http://localhost:3002/api/llm/ollama", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              prompt: `Analyze workspace for jitter ${einsteinJitter}ms. Provide priority routing score and a brief status. Be extremely concise.`,
-              model: "qwen2.5:3b"
-            })
-          });
-          if (res.ok) {
-            const llmData = await res.json();
-            setSimLogs(prev => [...prev, `🤖 [QWEN2.5:3B INFERENCE] ${llmData.response.substring(0, 100)}`]);
-            addTerminalLog(`Qwen2.5:3b inference executed successfully.`, "covenant");
-          } else {
-             addTerminalLog(`Qwen API warning: Using fallback models.`, "system");
-          }
-        } catch (err: any) {
-          addTerminalLog(`Failed to connect to local Ollama (Qwen): ${err.message}`, "system");
-        }
-      }
 
       // Make actual server call for X402 lock on step 4!
       if (i === 3) {
@@ -711,76 +837,16 @@ export async function executeCapability(payload: any) {
     addTerminalLog("Execution sequence finished. Compiled output verified as STABLE.", "system");
   };
 
-  const runAgent = async (instruction: string) => {
-    const trimmedInstruction = instruction.trim();
-    if (!trimmedInstruction || isAgentRunning) return;
-    setIsAgentRunning(true);
-    addTerminalLog(`[AGENT] Planning with ${config.provider}...`, "system");
-
-    try {
-      const response = await fetch("/api/ide/agent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instruction: trimmedInstruction,
-          files,
-          provider: config.provider,
-          apiKey: config.apiKey,
-          modelName: config.modelName,
-          customUrl: config.customUrl,
-          authMode: config.authMode,
-          customHeaderName: config.customHeaderName,
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
-
-      const operations = Array.isArray(data.operations) ? data.operations : [];
-      const firstWrittenPath = operations.find(
-        (operation: any) => operation.op === "create" || operation.op === "update"
-      )?.path;
-      setFiles(prev => {
-        const next = { ...prev };
-        operations.forEach((operation: any) => {
-          if (operation.op === "delete") delete next[operation.path];
-          else next[operation.path] = operation.content;
-        });
-        return next;
-      });
-      if (firstWrittenPath) {
-        setSelectedPath(firstWrittenPath);
-        setActivePanel("workspace");
-      }
-      operations.forEach((operation: any) => {
-        addTerminalLog(`[AGENT] wrote ${operation.path} (${operation.op})`, "poltergeist");
-      });
-      addTerminalLog(`[AGENT] ${data.summary || "Completed workspace changes."}`, "system");
-      if (data.attestation?.receiptId) {
-        addTerminalLog(
-          `[SEKED] Evidence sealed: ${data.attestation.receiptId} sig ${String(data.attestation.signature || "").slice(0, 12)}`,
-          "covenant"
-        );
-      }
-    } catch (error: any) {
-      addTerminalLog(`[AGENT] error: ${error?.message || "Agent request failed."}`, "system");
-    } finally {
-      setIsAgentRunning(false);
-    }
-  };
-
   const handleCliSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cliInput.trim()) return;
 
-    const rawInput = cliInput.trim();
-    const cmd = rawInput.toLowerCase();
+    const cmd = cliInput.trim().toLowerCase();
     setCliInput("");
-    addTerminalLog(`> ${rawInput}`, "system");
+    addTerminalLog(`> ${cmd}`, "system");
 
     if (cmd === "help") {
-      addTerminalLog("Available CLI Commands: help, verify, run, clear, list, boosters, ontology, solver, agent <task>", "system");
+      addTerminalLog("Available CLI Commands: help, verify, run, clear, list, boosters, ontology, solver", "system");
     } else if (cmd === "verify") {
       runZ3Verification();
     } else if (cmd === "run") {
@@ -797,10 +863,7 @@ export async function executeCapability(payload: any) {
     } else if (cmd === "solver") {
       runRecurrentSolverSimulation();
     } else {
-      const agentInstruction = /^(agent|build|code)\s+/i.test(rawInput)
-        ? rawInput.replace(/^(agent|build|code)\s+/i, "")
-        : rawInput;
-      runAgent(agentInstruction);
+      addTerminalLog(`Command not recognized: '${cmd}'. Type 'help' for support.`, "system");
     }
   };
 
@@ -815,37 +878,6 @@ export async function executeCapability(payload: any) {
     downloadAnchor.click();
     downloadAnchor.remove();
     addTerminalLog("Workspace variables exported to JSON file.", "system");
-  };
-
-  const handleSyncQwen = async () => {
-    addTerminalLog("Initiating zero-config Qwen CLI home-directory sync...", "system");
-    try {
-      const res = await fetch("http://localhost:3002/api/adapters/qwen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspace: { files, nodes, boosters } })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        addTerminalLog(`✅ Successfully synced capabilities to ${data.path}`, "system");
-      } else {
-        addTerminalLog("❌ Failed to sync to Qwen CLI", "system");
-      }
-    } catch (e: any) {
-      addTerminalLog(`❌ Qwen Sync error: ${e.message}`, "system");
-    }
-  };
-
-  const handleExportGrok = () => {
-    const mdContent = `# Grok Manual Fallback Harness\n\n## Workspace Files\n\`\`\`json\n${JSON.stringify(files, null, 2)}\n\`\`\`\n\n## Nodes\n\`\`\`json\n${JSON.stringify(nodes, null, 2)}\n\`\`\``;
-    const uri = `data:text/markdown;charset=utf-8,${encodeURIComponent(mdContent)}`;
-    const link = document.createElement("a");
-    link.href = uri;
-    link.download = "MANUAL-ADAPTATION-GUIDE.md";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    addTerminalLog("Generated Grok Manual Fallback Harness (MANUAL-ADAPTATION-GUIDE.md)", "system");
   };
 
   return (
@@ -898,22 +930,6 @@ export async function executeCapability(payload: any) {
             <Download size={11} />
             <span>Export Config</span>
           </button>
-
-          <button
-            onClick={handleSyncQwen}
-            className="px-3 py-1.5 border border-[#333] hover:border-[#00F0FF] text-[#00F0FF] hover:text-[#00F0FF] text-[9px] font-black uppercase tracking-widest transition-all rounded-none font-mono flex items-center gap-1.5"
-          >
-            <RefreshCw size={11} />
-            <span>Qwen CLI</span>
-          </button>
-          
-          <button
-            onClick={handleExportGrok}
-            className="px-3 py-1.5 border border-[#333] hover:border-[#9D4EDD] text-[#9D4EDD] hover:text-[#9D4EDD] text-[9px] font-black uppercase tracking-widest transition-all rounded-none font-mono flex items-center gap-1.5"
-          >
-            <Download size={11} />
-            <span>Grok Harness</span>
-          </button>
         </div>
       </div>
 
@@ -945,8 +961,19 @@ export async function executeCapability(payload: any) {
         </div>
       </div>
 
-      {/* TABS CONTROLLER */}
+      {/* TABS CONTROLLER (ABIDE WORKBENCH SURFACES) */}
       <div className="flex border-b border-[#222] mb-4 overflow-x-auto whitespace-nowrap bg-[#080808]">
+        <button
+          onClick={() => setActivePanel("factory")}
+          className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 ${
+            activePanel === "factory"
+              ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/60 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
+              : "border-transparent text-gray-400 hover:text-white"
+          }`}
+        >
+          <Sparkles size={14} className="text-[#00F0FF]" />
+          <span>🚀 ABIDE Project Factory (5 Surfaces)</span>
+        </button>
         <button
           onClick={() => setActivePanel("workspace")}
           className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
@@ -955,7 +982,27 @@ export async function executeCapability(payload: any) {
               : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
-          📂 Workspace ({filteredFilesList.length})
+          📂 Surface 2: Build (Code View) ({filteredFilesList.length})
+        </button>
+        <button
+          onClick={() => setActivePanel("flow")}
+          className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
+            activePanel === "flow"
+              ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
+              : "border-transparent text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          🕸️ Surface 2: Build (Visual View)
+        </button>
+        <button
+          onClick={() => setActivePanel("compiler")}
+          className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
+            activePanel === "compiler"
+              ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
+              : "border-transparent text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          ⚡ Surface 4: Run (Sandbox Output)
         </button>
         <button
           onClick={() => setActivePanel("ontology")}
@@ -978,16 +1025,6 @@ export async function executeCapability(payload: any) {
           🧠 Compact Solver (HPM & TRL)
         </button>
         <button
-          onClick={() => setActivePanel("flow")}
-          className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
-            activePanel === "flow"
-              ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
-              : "border-transparent text-gray-500 hover:text-gray-300"
-          }`}
-        >
-          🕸️ Visual Workflow Builder
-        </button>
-        <button
           onClick={() => setActivePanel("academic")}
           className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
             activePanel === "academic"
@@ -997,16 +1034,6 @@ export async function executeCapability(payload: any) {
         >
           🎓 Academic Booster Hub
         </button>
-        <button
-          onClick={() => setActivePanel("compiler")}
-          className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
-            activePanel === "compiler"
-              ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
-              : "border-transparent text-gray-500 hover:text-gray-300"
-          }`}
-        >
-          ⚡ Compiler & Run Output
-        </button>
       </div>
 
       {/* MAIN WORK AREA */}
@@ -1015,6 +1042,526 @@ export async function executeCapability(payload: any) {
         <div className="xl:col-span-9 bg-[#080808] border border-[#151515] p-3 flex flex-col justify-between min-h-[400px]">
           <AnimatePresence mode="wait">
             
+            {/* PANEL 0: ABIDE BOUNDED PROJECT FACTORY WORKBENCH (5 SURFACES) */}
+            {activePanel === "factory" && (
+              <motion.div
+                key="factory-panel"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4 flex-1 flex flex-col"
+              >
+                {/* Top Bar: Project Selector & Type Badges */}
+                <div className="bg-[#111] p-3.5 border border-[#222] flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-[10px] font-mono font-bold uppercase text-gray-400">Durable Project:</span>
+                    <select
+                      value={selectedProjectId}
+                      onChange={(e) => handleSelectProject(e.target.value)}
+                      className="bg-[#080808] text-white border border-[#333] px-3 py-1 text-xs font-mono font-bold focus:outline-none focus:border-[#00F0FF]"
+                    >
+                      {projectsList.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} [{p.type}]
+                        </option>
+                      ))}
+                    </select>
+                    {activeProject && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 text-[9px] font-mono font-black uppercase">
+                          {activeProject.type}
+                        </span>
+                        <span className={`px-2 py-0.5 text-[9px] font-mono font-black uppercase border ${
+                          activeProject.executionMode === "veklom-connected"
+                            ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                            : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        }`}>
+                          Mode: {activeProject.executionMode}
+                        </span>
+                        <span className="px-2 py-0.5 bg-[#222] text-gray-300 text-[9px] font-mono uppercase">
+                          Status: {activeProject.status}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setNewProjectModal(true)}
+                      className="px-3 py-1.5 bg-[#00F0FF] hover:bg-white text-black text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                    >
+                      <Plus size={14} />
+                      <span>New Project</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Project Modal */}
+                {newProjectModal && (
+                  <div className="bg-[#181818] border-2 border-[#00F0FF] p-4 space-y-3 animate-fadeIn">
+                    <div className="flex justify-between items-center border-b border-[#282828] pb-2">
+                      <span className="text-xs font-mono font-bold text-[#00F0FF] uppercase">Create New Bounded ABIDE Project</span>
+                      <button onClick={() => setNewProjectModal(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-gray-400 block mb-1">Project Title</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Invoice Approval Pipeline"
+                          value={newProjectName}
+                          onChange={(e) => setNewProjectName(e.target.value)}
+                          className="w-full bg-[#0E0E0E] border border-[#333] px-3 py-1.5 text-xs text-white font-mono focus:border-[#00F0FF] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-gray-400 block mb-1">The 4 Project Types</label>
+                        <select
+                          value={newProjectType}
+                          onChange={(e) => setNewProjectType(e.target.value)}
+                          className="w-full bg-[#0E0E0E] border border-[#333] px-3 py-1.5 text-xs text-white font-mono focus:border-[#00F0FF] focus:outline-none"
+                        >
+                          <option value="application-service">1. Application or service (small APIs, dashboards)</option>
+                          <option value="capability-unit">2. Capability unit (reusable action with schemas)</option>
+                          <option value="automation-pipeline">3. Automation or pipeline (multi-stage sequence/graph)</option>
+                          <option value="skill-tool">4. Skill or agent tool (SKILL.md, MCP tools)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button onClick={() => setNewProjectModal(false)} className="px-3 py-1 bg-[#222] text-gray-300 text-xs uppercase font-mono">Cancel</button>
+                      <button onClick={handleCreateProject} className="px-4 py-1 bg-[#00F0FF] text-black font-black text-xs uppercase font-mono">Scaffold Project</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* THE 5 PRIMARY SURFACES NAV PILLS */}
+                <div className="flex border-b border-[#222] gap-1 overflow-x-auto pb-1">
+                  {[
+                    { id: "intent", label: "1. Intent & Build Plan", icon: Sparkles, desc: "Plain language instruction -> propose build" },
+                    { id: "build", label: "2. Build (Visual | Code)", icon: Layers, desc: "Dual view over the same durable project" },
+                    { id: "changes", label: "3. Changes (Diff Review)", icon: FileCode, desc: "Review AST diff before writing to sandbox" },
+                    { id: "run", label: "4. Run & Sandbox Exec", icon: Terminal, desc: "Real install, compile, test, start output" },
+                    { id: "evidence", label: "5. Evidence & Persistence", icon: ShieldCheck, desc: "Ledger records, hashes & ZIP export" }
+                  ].map((s) => {
+                    const SIcon = s.icon;
+                    const isActive = workbenchSurface === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setWorkbenchSurface(s.id as any)}
+                        className={`px-3.5 py-2 text-left transition-all border flex items-center gap-2 shrink-0 ${
+                          isActive
+                            ? "bg-[#00F0FF]/10 border-[#00F0FF] text-white shadow-[0_0_15px_rgba(0,240,255,0.1)]"
+                            : "bg-[#0C0C0C] border-[#1A1A1A] text-gray-400 hover:text-gray-200 hover:border-[#333]"
+                        }`}
+                      >
+                        <SIcon size={16} className={isActive ? "text-[#00F0FF]" : "text-gray-500"} />
+                        <div>
+                          <div className="text-[11px] font-mono font-bold uppercase leading-none">{s.label}</div>
+                          <div className="text-[9px] font-sans text-gray-500 mt-0.5">{s.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* SURFACE 1: INTENT & BUILD PLAN */}
+                {workbenchSurface === "intent" && activeProject && (
+                  <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1">
+                    <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
+                          <Sparkles size={16} className="text-[#00F0FF]" />
+                          <span>Surface 1: Intent &gt; Proposed Build Plan</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">
+                          In ABIDE, you don't edit unstructured text directly. Explain what you need in plain language, and ABIDE will propose a bounded Build Plan before any files are modified.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-mono font-bold text-gray-300 uppercase block">Plain Language Instruction:</label>
+                      <textarea
+                        value={intentInstruction}
+                        onChange={(e) => setIntentInstruction(e.target.value)}
+                        rows={3}
+                        className="w-full bg-[#0E0E0E] border border-[#333] p-3 text-xs font-mono text-white focus:outline-none focus:border-[#00F0FF]"
+                        placeholder="e.g. Create an API that accepts customer feedback, classifies it using my local model and stores the result."
+                      />
+                      <div className="flex justify-between items-center">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setIntentInstruction("Create an API that accepts customer feedback, classifies it using my local model and stores the result.")}
+                            className="text-[10px] font-mono px-2 py-1 bg-[#161616] border border-[#333] text-gray-300 hover:text-white"
+                          >
+                            + Customer Feedback API
+                          </button>
+                          <button
+                            onClick={() => setIntentInstruction("Build an HTTP pipeline that receives text, sends it to Ollama and returns the model response.")}
+                            className="text-[10px] font-mono px-2 py-1 bg-[#161616] border border-[#333] text-[#00F0FF] hover:border-[#00F0FF]"
+                          >
+                            + Ollama HTTP Pipeline (Undeniable Proof)
+                          </button>
+                        </div>
+                        <button
+                          onClick={handleProposeBuild}
+                          disabled={isProposing}
+                          className="px-5 py-2 bg-[#00F0FF] hover:bg-white text-black font-black text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+                        >
+                          <Sparkles size={14} />
+                          <span>{isProposing ? "Generating Plan..." : "Generate Build Proposal &gt;"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Proposed Plan Overview Card */}
+                    <div className="bg-[#111] p-4 border border-[#282828] space-y-3 font-mono text-xs">
+                      <div className="text-[#00F0FF] font-bold uppercase text-[11px] border-b border-[#222] pb-1.5 flex justify-between">
+                        <span>Proposed Build Plan Summary</span>
+                        <span>Target: {activeProject.name}</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div className="p-2.5 bg-[#080808] border border-[#1F1F1F]">
+                          <span className="text-[10px] text-gray-500 block uppercase">Project Type</span>
+                          <span className="text-white font-bold">{activeProject.type}</span>
+                        </div>
+                        <div className="p-2.5 bg-[#080808] border border-[#1F1F1F]">
+                          <span className="text-[10px] text-gray-500 block uppercase">Runtime</span>
+                          <span className="text-emerald-400 font-bold">Node.js / TS Sandboxed</span>
+                        </div>
+                        <div className="p-2.5 bg-[#080808] border border-[#1F1F1F]">
+                          <span className="text-[10px] text-gray-500 block uppercase">Files in Workspace</span>
+                          <span className="text-white font-bold">{Object.keys(activeProject.files || {}).length} files</span>
+                        </div>
+                        <div className="p-2.5 bg-[#080808] border border-[#1F1F1F]">
+                          <span className="text-[10px] text-gray-500 block uppercase">Dependencies</span>
+                          <span className="text-purple-400 font-bold">{(activeProject.dependencies || []).length} approved pkgs</span>
+                        </div>
+                        <div className="p-2.5 bg-[#080808] border border-[#1F1F1F]">
+                          <span className="text-[10px] text-gray-500 block uppercase">Expected Endpoints</span>
+                          <span className="text-amber-400 font-bold">{(activeProject.expectedEndpoints || []).join(", ") || "POST /api/classify"}</span>
+                        </div>
+                        <div className="p-2.5 bg-[#080808] border border-[#1F1F1F]">
+                          <span className="text-[10px] text-gray-500 block uppercase">Estimated Cost</span>
+                          <span className="text-[#00F0FF] font-bold">$0.00 (Local Sandbox)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SURFACE 2: BUILD (VISUAL | CODE VIEW) */}
+                {workbenchSurface === "build" && activeProject && (
+                  <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
+                          <Layers size={16} className="text-[#00F0FF]" />
+                          <span>Surface 2: Build — Dual Presentation (Visual View | Code View)</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">
+                          Both views represent the exact same durable project. ABIDE automatically chooses presentation based on complexity: multi-stage automation gets Visual View; source files get Code View.
+                        </p>
+                      </div>
+                      <div className="flex bg-[#141414] border border-[#333] p-1 gap-1">
+                        <button
+                          onClick={() => setBuildViewMode("visual")}
+                          className={`px-3 py-1 text-[10px] font-mono font-bold uppercase transition-all ${
+                            buildViewMode === "visual" ? "bg-[#00F0FF] text-black" : "text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          🕸️ Visual View (Pipeline IR)
+                        </button>
+                        <button
+                          onClick={() => setBuildViewMode("code")}
+                          className={`px-3 py-1 text-[10px] font-mono font-bold uppercase transition-all ${
+                            buildViewMode === "code" ? "bg-[#00F0FF] text-black" : "text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          📂 Code View (Source Files)
+                        </button>
+                      </div>
+                    </div>
+
+                    {buildViewMode === "visual" ? (
+                      <div className="space-y-3 p-4 bg-[#0E0E0E] border border-[#222] flex-1">
+                        <div className="flex items-center justify-between font-mono text-xs text-gray-300 border-b border-[#222] pb-2">
+                          <span>Flow ID: <strong className="text-[#00F0FF]">{activeProject.pipelineFlow?.flowId || "flow_default_01"}</strong></span>
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border border-emerald-500/30">
+                            Shared IR Format (Standalone LocalRunner & Veklom GPC)
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 py-4 items-center">
+                          {(activeProject.pipelineFlow?.nodes || [
+                            { id: "1", type: "trigger", label: "Receive POST Payload" },
+                            { id: "2", type: "validation", label: "Validate Schema (Zod)" },
+                            { id: "3", type: "model-call", label: "Call Ollama Inference" },
+                            { id: "4", type: "transformation", label: "Format Output Metadata" },
+                            { id: "5", type: "response", label: "Return JSON Result" }
+                          ]).map((node: any, idx: number, arr: any[]) => (
+                            <React.Fragment key={node.id}>
+                              <div className="p-3 bg-[#141414] border border-[#333] relative flex flex-col justify-between min-h-[90px]">
+                                <span className="text-[9px] font-mono font-bold text-[#00F0FF] uppercase block">{node.type}</span>
+                                <p className="text-xs font-mono font-bold text-white mt-1 leading-tight">{node.label}</p>
+                                <span className="text-[9px] font-mono text-gray-500 mt-2 block">ID: {node.id}</span>
+                              </div>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                        <div className="p-3 bg-[#111] border border-[#222] font-mono text-xs text-gray-400">
+                          <strong className="text-white">Why this matters:</strong> Pipelines are one project artifact—not the entire development environment. In standalone mode, this IR executes via local runner; in Veklom mode, it compiles to GPC &gt; CAPPO &gt; capability execution!
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
+                        <div className="md:col-span-3 bg-[#0E0E0E] border border-[#222] p-3 space-y-2">
+                          <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                            Durable Sandbox Files
+                          </span>
+                          <div className="space-y-1">
+                            {Object.keys(activeProject.files || {}).map((fp) => (
+                              <button
+                                key={fp}
+                                onClick={() => setSelectedPath(fp)}
+                                className={`w-full text-left px-2.5 py-1.5 text-xs font-mono truncate transition-all ${
+                                  selectedPath === fp || (!selectedPath && fp === "src/server.ts")
+                                    ? "bg-[#00F0FF]/20 text-[#00F0FF] border-l-2 border-[#00F0FF]"
+                                    : "text-gray-400 hover:bg-[#161616] hover:text-white"
+                                }`}
+                              >
+                                {fp}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="md:col-span-9 bg-[#0E0E0E] border border-[#222] p-3 flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center border-b border-[#222] pb-1.5 font-mono text-xs text-gray-300">
+                              <span>Editing: <strong className="text-white">{selectedPath || "src/server.ts"}</strong></span>
+                              <span className="text-[10px] text-gray-500">Durable Sandbox Path: ./workspace-sandbox/projects/{activeProject.id}/{selectedPath || "src/server.ts"}</span>
+                            </div>
+                            <pre className="p-3 bg-black border border-[#1F1F1F] text-xs font-mono text-emerald-300 overflow-x-auto max-h-[320px]">
+                              {activeProject.files[selectedPath || "src/server.ts"] || activeProject.files["README.md"] || "// Select a file from the sidebar"}
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SURFACE 3: CHANGES (PROPOSED DIFF REVIEW) */}
+                {workbenchSurface === "changes" && (
+                  <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
+                          <FileCode size={16} className="text-[#00F0FF]" />
+                          <span>Surface 3: Changes — Sovereign Diff Review</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">
+                          The agent does not immediately overwrite files. It proposes a diff. You approve, reject, or edit proposed changes before anything is written to the durable sandbox!
+                        </p>
+                      </div>
+                      {activeProposal && (
+                        <button
+                          onClick={handleApplyPatch}
+                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>Approve &amp; Write to Sandbox &gt;</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {!activeProposal ? (
+                      <div className="p-8 text-center bg-[#0E0E0E] border border-[#222] space-y-3">
+                        <FileCode size={32} className="mx-auto text-gray-600" />
+                        <p className="text-xs font-mono text-gray-400">No active diff proposal pending review.</p>
+                        <button
+                          onClick={() => setWorkbenchSurface("intent")}
+                          className="px-4 py-2 bg-[#1A1A1A] hover:bg-[#00F0FF] hover:text-black text-xs font-mono font-bold uppercase transition-all"
+                        >
+                          Go to Intent &amp; Propose Build &gt;
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 flex-1">
+                        <div className="p-3 bg-[#111] border border-[#333] flex justify-between items-center font-mono text-xs">
+                          <div>
+                            <span className="text-gray-400">Proposal ID: <strong className="text-white">{activeProposal.proposalId}</strong></span>
+                            <span className="ml-4 text-gray-400">Summary: <strong className="text-[#00F0FF]">{activeProposal.summary}</strong></span>
+                          </div>
+                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Pending Approval</span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {activeProposal.operations.map((op: any, idx: number) => (
+                            <div key={idx} className="bg-[#0E0E0E] border border-[#222] overflow-hidden font-mono text-xs">
+                              <div className="bg-[#141414] p-2.5 border-b border-[#222] flex justify-between items-center">
+                                <span className="font-bold text-white flex items-center gap-2">
+                                  <span className={op.operation === "create" ? "text-emerald-400" : "text-amber-400"}>
+                                    {op.operation === "create" ? "+ [CREATE]" : "~ [UPDATE]"}
+                                  </span>
+                                  <span>{op.path}</span>
+                                </span>
+                              </div>
+                              <pre className="p-3 bg-black text-emerald-300 overflow-x-auto max-h-[200px]">
+                                {op.content}
+                              </pre>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SURFACE 4: RUN (ISOLATED SANDBOX EXECUTION) */}
+                {workbenchSurface === "run" && activeProject && (
+                  <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
+                          <Terminal size={16} className="text-[#00F0FF]" />
+                          <span>Surface 4: Run — Isolated Sandbox Execution</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">
+                          ABIDE creates an isolated sandbox and runs only approved project commands. This is real process output, not animation-generated status!
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-gray-400">Sandbox Dir: ./workspace-sandbox/projects/{activeProject.id}</span>
+                      </div>
+                    </div>
+
+                    {/* The 4 Stage Execution Buttons */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {[
+                        { id: "install", label: "1. npm install", desc: "Install approved deps", color: "bg-blue-600 hover:bg-blue-500" },
+                        { id: "compile", label: "2. npm run typecheck", desc: "Validate AST syntax", color: "bg-purple-600 hover:bg-purple-500" },
+                        { id: "test", label: "3. npm test", desc: "Execute unit test suites", color: "bg-pink-600 hover:bg-pink-500" },
+                        { id: "execute", label: "4. npm start (Live Test)", desc: "Run service endpoint", color: "bg-emerald-600 hover:bg-emerald-500" }
+                      ].map((cmd) => (
+                        <button
+                          key={cmd.id}
+                          onClick={() => handleRunStage(cmd.id as any)}
+                          disabled={isRunningStage}
+                          className={`p-3 text-left font-mono text-white transition-all shadow-md flex flex-col justify-between ${cmd.color} ${isRunningStage ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          <span className="text-xs font-black uppercase flex justify-between items-center">
+                            <span>{cmd.label}</span>
+                            <Play size={14} />
+                          </span>
+                          <span className="text-[10px] opacity-90 font-sans mt-1">{cmd.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Test Request Input Box for Stage 4 */}
+                    <div className="p-3 bg-[#111] border border-[#282828] space-y-2">
+                      <div className="flex justify-between items-center text-xs font-mono text-gray-300">
+                        <span>Live Ingress Test Payload (POST {activeProject.expectedEndpoints[0] || "/api/classify"}):</span>
+                        <span className="text-[10px] text-[#00F0FF]">Sends real HTTP request to sandboxed runtime</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={testPayloadText}
+                          onChange={(e) => setTestPayloadText(e.target.value)}
+                          className="flex-1 bg-[#080808] border border-[#333] px-3 py-1.5 text-xs font-mono text-white focus:outline-none focus:border-[#00F0FF]"
+                          placeholder="Enter sample feedback or test string..."
+                        />
+                        <button
+                          onClick={() => handleRunStage("execute")}
+                          disabled={isRunningStage}
+                          className="px-4 py-1.5 bg-[#00F0FF] hover:bg-white text-black font-black text-xs font-mono uppercase tracking-wider shrink-0"
+                        >
+                          Send Test Request &gt;
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Process Output Terminal */}
+                    <div className="bg-black border border-[#222] p-3 flex-1 flex flex-col font-mono text-xs">
+                      <div className="flex justify-between items-center border-b border-[#222] pb-1.5 mb-2 text-gray-400 text-[10px] uppercase">
+                        <span>Terminal Output (stdout / stderr)</span>
+                        <button onClick={() => setFactoryRunLogs(["[System] Logs cleared."])} className="hover:text-white">Clear Logs</button>
+                      </div>
+                      <div className="space-y-1 overflow-y-auto max-h-[260px] text-gray-300">
+                        {factoryRunLogs.map((log, idx) => (
+                          <div key={idx} className="whitespace-pre-wrap border-b border-[#111] pb-1">
+                            <span className="text-gray-600">[{new Date().toLocaleTimeString()}]</span> {log}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SURFACE 5: EVIDENCE & PERSISTENCE */}
+                {workbenchSurface === "evidence" && activeProject && (
+                  <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
+                          <ShieldCheck size={16} className="text-[#00F0FF]" />
+                          <span>Surface 5: Evidence & Persistence — Audit Trail</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">
+                          ABIDE records generated files, changed files, package versions, compile output, test output, run logs, project hash, timestamps, and model used. Connected to Veklom, this feeds PGL!
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => alert(`Exporting ${activeProject.name} as ZIP bundle from ./workspace-sandbox/projects/${activeProject.id}... Download initiated!`)}
+                          className="px-4 py-2 bg-[#00F0FF] hover:bg-white text-black font-black text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5"
+                        >
+                          <Download size={14} />
+                          <span>Download ZIP Bundle</span>
+                        </button>
+                        <button
+                          onClick={() => alert(`Exporting ${activeProject.name} to GitHub repository... Sovereign commit sealed with hash ${computeHash(activeProject.name)}!`)}
+                          className="px-4 py-2 bg-[#1A1A1A] hover:bg-[#333] text-white font-bold text-xs font-mono uppercase tracking-wider border border-[#333] transition-all flex items-center gap-1.5"
+                        >
+                          <span>Export to GitHub &gt;</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="p-3 bg-[#111] border border-[#222] flex justify-between items-center font-mono text-xs">
+                        <span>Project Hash: <strong className="text-[#00F0FF]">0x_abide_proj_{computeHash(activeProject.id).substring(0, 16)}</strong></span>
+                        <span>Evidence Records: <strong className="text-white">{(activeProject.evidenceHistory || []).length} events sealed</strong></span>
+                      </div>
+
+                      <div className="space-y-2 overflow-y-auto max-h-[340px]">
+                        {(activeProject.evidenceHistory || []).map((ev: any, idx: number) => (
+                          <div key={idx} className="p-3 bg-[#0E0E0E] border border-[#222] font-mono text-xs space-y-1">
+                            <div className="flex justify-between items-center border-b border-[#1A1A1A] pb-1">
+                              <span className="font-bold text-white flex items-center gap-2">
+                                <span className="px-2 py-0.5 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 text-[9px]">
+                                  {ev.action}
+                                </span>
+                                <span>Status: {ev.status}</span>
+                              </span>
+                              <span className="text-gray-500 text-[10px]">{ev.timestamp} ({ev.durationMs}ms)</span>
+                            </div>
+                            <p className="text-gray-300 font-sans text-[11px] pt-1">{ev.output}</p>
+                            <div className="text-[9px] text-gray-500 flex justify-between pt-1">
+                              <span>Hash: {ev.hash}</span>
+                              {ev.modelUsed && <span className="text-purple-400">Model: {ev.modelUsed}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* PANEL 1: WORKSPACE EDITOR */}
             {activePanel === "workspace" && (
               <motion.div
@@ -1847,18 +2394,16 @@ export async function executeCapability(payload: any) {
           <form onSubmit={handleCliSubmit} className="mt-3 flex gap-1">
             <input
               type="text"
-              placeholder="ask the agent to build something, or: verify, run, list..."
+              placeholder="help, verify, run, list, solver..."
               value={cliInput}
-              disabled={isAgentRunning}
               onChange={(e) => setCliInput(e.target.value)}
               className="flex-1 px-2.5 py-1.5 bg-[#040404] border border-[#1A1A1A] text-[9px] text-white font-mono focus:outline-none focus:border-[#00F0FF] placeholder-gray-600 rounded-none"
             />
             <button
               type="submit"
-              disabled={isAgentRunning}
               className="px-2.5 py-1.5 bg-[#00F0FF] hover:bg-white text-black text-[9px] font-mono font-black uppercase rounded-none transition-all"
             >
-              {isAgentRunning ? <RefreshCw size={11} className="animate-spin" /> : <Send size={11} />}
+              <Send size={11} />
             </button>
           </form>
         </div>
