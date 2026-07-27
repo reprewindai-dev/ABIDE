@@ -15,6 +15,6 @@ View your app in AI Studio: https://ai.studio/apps/12adbbc2-9ab0-4f1e-8b65-57b75
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Configure Ollama with `OLLAMA_BASE_URL` and `OLLAMA_MODEL` in [.env.local](.env.local)
 3. Run the app:
    `npm run dev`

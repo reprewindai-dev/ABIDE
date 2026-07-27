@@ -71,7 +71,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       resolvableIdentifier: "doi:10.1145/359545.359563",
       retrievalTimestamp: "2026-07-20T00:00:00Z",
       quotedClaimLocation: "Section 3 (Logical Clocks)",
-      verificationStatus: "VERIFIED"
+      verificationStatus: "UNVERIFIED"
     },
     {
       title: "Bitcoin: A Peer-to-Peer Electronic Cash System [DEMO REFERENCE SAMPLE]",
@@ -83,7 +83,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       resolvableIdentifier: "urn:doi:10.1000/bitcoin-whitepaper-2008",
       retrievalTimestamp: "2026-07-20T00:00:00Z",
       quotedClaimLocation: "Section 2 (Transactions)",
-      verificationStatus: "VERIFIED"
+      verificationStatus: "UNVERIFIED"
     }
   ],
   companyGraph: {

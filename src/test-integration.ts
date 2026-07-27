@@ -8,7 +8,7 @@ async function runDiagnostics() {
   console.log(`Runtime: Node.js ${process.version}`);
   console.log("----------------------------------------------------------------------\n");
 
-  const LOCAL_SERVER_URL = "http://localhost:3000";
+  const LOCAL_SERVER_URL = "http://localhost:3009";
   let failures = 0;
 
   // 1. Schema Validation on Compiled Blueprints
@@ -63,9 +63,9 @@ async function runDiagnostics() {
     
     // Create a mock payload matching the App.tsx configuration structure
     const payload = {
-      provider: "gemini",
+      provider: "llama",
       apiKey: "MOCK_KEY_FOR_DIAGNOSTICS_123",
-      modelName: "gemini-3.5-flash",
+      modelName: "llama3",
       authMode: "bearer"
     };
 

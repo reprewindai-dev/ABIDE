@@ -43,7 +43,6 @@ import {
   Send,
   Check,
   Key,
-  UserCheck,
   User
 } from "lucide-react";
 import JSZip from "jszip";
@@ -68,7 +67,6 @@ import { EinsteinRouterDashboard } from "./components/EinsteinRouterDashboard";
 import { ComputeCacheOptimizer } from "./components/ComputeCacheOptimizer";
 import { SovereignIngestSystem } from "./components/SovereignIngestSystem";
 import { ExportConfirmModal } from "./components/ExportConfirmModal";
-import { VnpAuthHub } from "./components/VnpAuthHub";
 import { VnpAnalyticsCards } from "./components/VnpAnalyticsCards";
 
 
@@ -342,9 +340,10 @@ export default function App() {
 
   // Model selection configurations
   const [config, setConfig] = useState<ModelConfig>({
-    provider: "gemini",
+    provider: "llama",
     apiKey: "",
-    modelName: "gemini-3.5-flash",
+    modelName: "llama3",
+    customUrl: "",
     temperature: 0.2,
     authMode: "bearer",
     customHeaderName: "X-API-Key"
@@ -374,35 +373,8 @@ export default function App() {
   const [compilationStep, setCompilationStep] = useState(0);
   const [compileError, setCompileError] = useState<string | null>(null);
   const [result, setResult] = useState<BlueprintResult | null>(DEFAULT_BLUEPRINT);
-  const [vnpAuthUser, setVnpAuthUser] = useState<any | null>(null);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const t = localStorage.getItem("vnp_jwt_token");
-      if (!t) {
-        setVnpAuthUser(null);
-        return;
-      }
-      try {
-        const res = await fetch("/api/vnp/auth/profile", { headers: { Authorization: `Bearer ${t}` } });
-        if (res.ok) {
-          const data = await res.json();
-          setVnpAuthUser(data.user);
-        } else {
-          setVnpAuthUser(null);
-        }
-      } catch (e) {
-        // ignore
-      }
-    };
-    checkUser();
-    const interval = setInterval(checkUser, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
   const [activeTab, setActiveTab] = useState<
     | "overview"
-    | "vnpAuth"
     | "vnpAnalytics"
     | "sovereignConstitution"
     | "capabilityGraph"
@@ -446,11 +418,11 @@ export default function App() {
 
   // Assumption & Grounding Ledger State
   const [assumptions, setAssumptions] = useState([
-    { id: "asm-1", claim: "M2M Stable Settlements will perform under high latency network environments", status: "VERIFIED", confidence: 92, reference: "Dr. Evelyn Vance (SSRN)" },
-    { id: "asm-2", claim: "Sub-15ms local latency in decentralized liquidity pool handshakes", status: "VERIFIED", confidence: 95, reference: "Nakagawa (arXiv:2403)" },
+    { id: "asm-1", claim: "M2M Stable Settlements will perform under high latency network environments", status: "UNVERIFIED", confidence: 92, reference: "Dr. Evelyn Vance (SSRN)" },
+    { id: "asm-2", claim: "Sub-15ms local latency in decentralized liquidity pool handshakes", status: "UNVERIFIED", confidence: 95, reference: "Nakagawa (arXiv:2403)" },
     { id: "asm-3", claim: "Hardware enclaves (TPM / SGX) can isolate decryption keys inside browser sandboxes", status: "ASSUMED", confidence: 45, reference: "Local simulation trials" },
     { id: "asm-4", claim: "Layer-2 mainnet gas-optimized batched rollups can reduce fees to under $0.001", status: "PROJECTED", confidence: 72, reference: "Rollup contract assumptions" },
-    { id: "asm-5", claim: "High-frequency task routing Einstein algorithms can forecast node packet drop clusters", status: "VERIFIED", confidence: 88, reference: "Albert Chen (SSRN)" }
+    { id: "asm-5", claim: "High-frequency task routing Einstein algorithms can forecast node packet drop clusters", status: "UNVERIFIED", confidence: 88, reference: "Albert Chen (SSRN)" }
   ]);
 
   // GitHub Integration States
@@ -1728,7 +1700,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 ## Inspected Repository Profile
 - **Repository Directory**: Active Local Workspace Container
 - **Inspected Files**: \`package.json\`, \`server.ts\`, \`src/App.tsx\`, \`src/types.ts\`
-- **Discovered Source Code Tree**: Node/Express fullstack platform on Port 3000
+- **Discovered Source Code Tree**: Node/Express fullstack platform on Port 3009
 - **Framework**: React 18 with Vite and Express
 - **Identified Routes**: 
   - \`POST /api/generate\` (Blueprint Hierarchical Reasoning compilation)
@@ -2239,17 +2211,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveTab("vnpAuth")}
-            className={`px-3 py-1.5 border text-[10px] font-black uppercase transition-all duration-150 tracking-widest flex items-center gap-1.5 ${
-              vnpAuthUser
-                ? "bg-[#00F0FF]/15 border-[#00F0FF] text-[#00F0FF] glow-cyan"
-                : "bg-[#111] border-[#333] hover:border-[#00F0FF] text-white"
-            }`}
-          >
-            <UserCheck size={13} />
-            <span>{vnpAuthUser ? `VNP: ${vnpAuthUser.name.split(" ")[0]}` : "VNP Auth"}</span>
-          </button>
-          <button
             onClick={() => setActiveTab("vnpAnalytics")}
             className="px-3 py-1.5 border border-[#10B981]/50 bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] text-[10px] font-black uppercase transition-all duration-150 tracking-widest flex items-center gap-1.5 glow-emerald"
           >
@@ -2588,7 +2549,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   <span className="text-amber-500 animate-pulse text-lg">⚠️</span>
                   <div>
                     <span className="font-black text-amber-500">API QUOTA EXHAUSTED:</span>
-                    <span className="ml-1 text-gray-300">The Gemini API Free Tier rate-limit was reached (250K tokens/min). To keep your testing seamless, our local high-fidelity compiler compiled a fully validated blueprint tailored to your input!</span>
+                    <span className="ml-1 text-gray-300">The configured LLM was unavailable. To keep your testing seamless, the local fallback compiler prepared a blueprint tailored to your input.</span>
                   </div>
                 </div>
                 <div className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 border border-amber-500/30 whitespace-nowrap font-bold">
@@ -2685,7 +2646,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             <div className="flex flex-wrap border-b-2 border-[#222] bg-[#050505] p-1 rounded-none print:hidden">
               {[
                 { id: "overview", label: "Overview", icon: Layers },
-                { id: "vnpAuth", label: "VNP Auth & Identity", icon: UserCheck },
                 { id: "vnpAnalytics", label: "VNP Telemetry & Gating", icon: Activity },
                 { id: "sovereignConstitution", label: "Sovereign Constitution", icon: Lock },
                 { id: "capabilityGraph", label: "Capability Graph", icon: Globe },
@@ -2759,13 +2719,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Tab: VNP Auth & Identity */}
-              {activeTab === "vnpAuth" && (
-                <div className="animate-fadeIn">
-                  <VnpAuthHub />
                 </div>
               )}
 
@@ -4537,6 +4490,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     setEinsteinJitter={setEinsteinJitter}
                     vnpUrl={vnpUrl}
                     gnomeledgerUrl={gnomeledgerUrl}
+                    config={config}
                   />
                 </div>
               )}
@@ -5251,7 +5205,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.provider}
                     onChange={(e: any) => {
                       const prov = e.target.value;
-                      let dModel = "gemini-3.5-flash";
+                      let dModel = "llama3";
                       let dUrl = "";
                       if (prov === "openai") {
                         dModel = "gpt-4o";
@@ -5263,8 +5217,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         dModel = "deepseek-chat";
                         dUrl = "";
                       } else if (prov === "llama") {
-                        dModel = "llama-3-8b-instruct";
-                        dUrl = "http://localhost:11434/v1";
+                        dModel = "llama3";
+                        dUrl = "";
                       } else if (prov === "custom") {
                         dModel = "custom-model";
                         dUrl = "http://localhost:1234/v1";
@@ -5273,7 +5227,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     }}
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
                   >
-                    <option value="gemini">Google Gemini AI</option>
                     <option value="openai">OpenAI (GPT Models)</option>
                     <option value="anthropic">Anthropic (Claude Models)</option>
                     <option value="deepseek">DeepSeek AI</option>
@@ -5291,7 +5244,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     type="text"
                     value={config.modelName}
                     onChange={(e) => setConfig({ ...config, modelName: e.target.value })}
-                    placeholder="e.g. gemini-3.5-flash, gpt-4o, llama3"
+                    placeholder="e.g. llama3, gpt-4o, deepseek-chat"
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
                   />
                   <span className="text-[9px] font-mono text-[#444] uppercase tracking-wider mt-1 block">Specify the target reasoning endpoint identifier.</span>
@@ -5310,12 +5263,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.customUrl || ""}
                     onChange={(e) => setConfig({ ...config, customUrl: e.target.value })}
                     placeholder={
-                      config.provider === "gemini"
-                        ? "e.g. http://localhost:1106/modelfarm/gemini (or leave blank)"
-                        : config.provider === "openai"
+                      config.provider === "openai"
                         ? "e.g. http://localhost:1106/modelfarm/openai (or leave blank)"
                         : config.provider === "llama"
-                        ? "e.g. http://localhost:11434/v1"
+                        ? "e.g. http://127.0.0.1:11434/v1 (or leave blank)"
                         : config.provider === "deepseek"
                         ? "e.g. https://api.deepseek.com/v1 (or leave blank)"
                         : config.provider === "custom"
@@ -5335,8 +5286,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     <span>Provider API Key:</span>
                     {(config.provider === "llama" || config.provider === "custom" || config.customUrl) ? (
                       <span className="text-[9px] text-emerald-400 lowercase font-mono">Optional for local/Ollama style</span>
-                    ) : config.provider === "gemini" ? (
-                      <span className="text-[9px] text-emerald-400 lowercase font-mono">Uses automatic server key if empty</span>
                     ) : null}
                   </label>
                   <input
@@ -5346,8 +5295,6 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     placeholder={
                       (config.provider === "llama" || config.provider === "custom")
                         ? "Not required for local connections (Ollama)"
-                        : config.provider === "gemini"
-                        ? "•••••••• (Or leave blank to use free server key)"
                         : "Enter third-party provider API key"
                     }
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
