@@ -2607,7 +2607,7 @@ app.get("/api/backends/status", async (req, res) => {
       id: "delyn-backend",
       name: "DELYN Sovereign Intelligence Backend",
       role: "Sovereign Cognitive Reasoning & Neurosymbolic Engine",
-      owner: "Velum / Delyn Intelligence",
+      owner: "reprewindai-dev/delyn-backend",
       // CANONICAL — replaced from http://localhost:8085
       url: delynUrl || process.env.DELYN_URL || "https://delyn.veklom.com",
       status: "Configured",
@@ -2619,7 +2619,7 @@ app.get("/api/backends/status", async (req, res) => {
       id: "cipher-backend",
       name: "LOCK THE CIPHER Cryptographic Engine",
       role: "Zero-Knowledge Gateways, Groth16/PLONK Verifiers & Enclaves",
-      owner: "Velum / Lock The Cipher",
+      owner: "reprewindai-dev/lockerphycer",
       // CANONICAL — replaced from http://localhost:8086
       url: cipherUrl || process.env.CIPHER_URL || "https://cipher.veklom.com",
       status: "Configured",
@@ -2631,7 +2631,7 @@ app.get("/api/backends/status", async (req, res) => {
       id: "gnomeledger",
       name: "Gnome Ledger (PGL Receipts Store)",
       role: "Canonical Lineage, Evidence Packets & Verification Ledger",
-      owner: "PGL / Gnome Ledger",
+      owner: "reprewindai-dev/gnomledger",
       // CANONICAL — replaced from http://localhost:8083
       url: gnomeledgerUrl || process.env.GNOMELEDGER_URL || "https://pgl.veklom.com",
       status: "Configured",
@@ -2650,6 +2650,39 @@ app.get("/api/backends/status", async (req, res) => {
       latencyMs: null,
       error: null,
       capabilities: ["vnp-us-ashburn-1", "vnp-us-hillsboro-1", "vnp-eu-nuremberg-1", "vnp-eu-falkenstein-1", "vnp-ap-singapore-1"]
+    },
+    {
+      id: "abide-compiler",
+      name: "ABIDE Planning & Intent Compiler",
+      role: "Planning & Intent Compilation Layer (ABIDE Proposes, CAPPO Disposes)",
+      owner: "reprewindai-dev/ABIDE",
+      url: process.env.ABIDE_URL || "https://abide.veklom.com",
+      status: "Configured",
+      latencyMs: null,
+      error: null,
+      capabilities: ["intent.compile", "graph.synthesize", "smt.bound.verify"]
+    },
+    {
+      id: "interlink-capi",
+      name: "interlink-cAPI (Unified MCP & API Asset)",
+      role: "Discovery, Negotiation & Composition Supergraph Router",
+      owner: "reprewindai-dev/interlink-cAPI",
+      url: process.env.INTERLINK_CAPI_URL || "https://capi.veklom.com",
+      status: "Configured",
+      latencyMs: null,
+      error: null,
+      capabilities: ["capability.discover", "mcp.tool.route", "snapshot.verify"]
+    },
+    {
+      id: "uacpv5-terminal",
+      name: "UACPV5 Sovereign Terminal Console",
+      role: "Real-Time PTY Command & Telemetry Execution Interface",
+      owner: "reprewindai-dev/UACPV5-TERMINAL/",
+      url: process.env.TERMINAL_URL || "https://terminal.veklom.com",
+      status: "Configured",
+      latencyMs: null,
+      error: null,
+      capabilities: ["terminal.exec", "telemetry.stream", "console.interactive"]
     }
   ];
 

@@ -2731,6 +2731,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   setDepthMode={setDepthMode}
                   result={result}
                   userEmail={userEmail}
+                  revisions={revisions}
                 >
               
               {/* DEMO / PREVIEW REFERENCE SAMPLE NOTICE BANNER */}
@@ -3356,11 +3357,14 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         />
                         <div className="flex flex-wrap gap-1.5">
                           {[
-                            { name: "cappo-backend (CAPPO)", url: "https://github.com/reprewindai-dev/cappo-backend" },
-                            { name: "delyn-backend (DELYN)", url: "https://github.com/reprewindai-dev/delyn-backend" },
-                            { name: "lockerphycer (LOCK THE CIPHER)", url: "https://github.com/reprewindai-dev/lockerphycer" },
-                            { name: "gnomledger (GENOME LEDGER / PGL)", url: "https://github.com/reprewindai-dev/gnomledger" },
-                            { name: "byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" }
+                            { name: "ABIDE (Proposer)", url: "https://github.com/reprewindai-dev/ABIDE" },
+                            { name: "cappo-backend (Disposer)", url: "https://github.com/reprewindai-dev/cappo-backend" },
+                            { name: "veklom-byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" },
+                            { name: "lockerphycer (Security Layer)", url: "https://github.com/reprewindai-dev/lockerphycer" },
+                            { name: "gnomledger (PGL)", url: "https://github.com/reprewindai-dev/gnomledger" },
+                            { name: "interlink-cAPI (Unified Asset)", url: "https://github.com/reprewindai-dev/interlink-cAPI" },
+                            { name: "UACPV5-TERMINAL", url: "https://github.com/reprewindai-dev/UACPV5-TERMINAL/" },
+                            { name: "delyn-backend (DELYN)", url: "https://github.com/reprewindai-dev/delyn-backend" }
                           ].map((r) => (
                             <button
                               key={r.name}
@@ -4984,11 +4988,15 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                             <div className="text-gray-500 font-bold">Repository Gates:</div>
                             <div className="flex flex-col gap-1 pl-2 text-gray-300 select-all leading-normal normal-case">
                               <a href="https://github.com/reprewindai-dev/interlink-cAPI" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
-                                <span>[ interlink-cAPI Repository ]</span>
+                                <span>[ interlink-cAPI (Unified MCP &amp; API Asset) ]</span>
                                 <ExternalLink size={10} />
                               </a>
-                              <a href="https://github.com/reprewindai-dev/cAPI" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
-                                <span>[ cAPI Core Gateway Repository ]</span>
+                              <a href="https://github.com/reprewindai-dev/UACPV5-TERMINAL/" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
+                                <span>[ UACPV5-TERMINAL (Sovereign Command Console) ]</span>
+                                <ExternalLink size={10} />
+                              </a>
+                              <a href="https://github.com/reprewindai-dev/ABIDE" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
+                                <span>[ ABIDE (Planning &amp; Intent Compiler Layer) ]</span>
                                 <ExternalLink size={10} />
                               </a>
                             </div>

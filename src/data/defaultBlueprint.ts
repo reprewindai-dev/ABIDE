@@ -132,27 +132,51 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
     ],
     repositories: [
       {
+        name: "ABIDE",
+        url: "https://github.com/reprewindai-dev/ABIDE",
+        capabilities: ["compile-human-intent", "synthesize-execution-graph", "evaluate-smt-constraints"],
+        status: "Active"
+      },
+      {
         name: "cappo-backend",
         url: "https://github.com/reprewindai-dev/cappo-backend",
-        capabilities: ["govern-agent-session", "score-api-eligibility"],
+        capabilities: ["govern-agent-session", "score-api-eligibility", "evaluate-policy"],
         status: "Active"
       },
       {
         name: "veklom-byos-backend",
         url: "https://github.com/reprewindai-dev/veklom-byos-backend",
-        capabilities: ["resolve-capability-plan"],
+        capabilities: ["resolve-capability-plan", "govern-agent-session", "byos-postgres-store"],
         status: "Active"
       },
       {
         name: "lockerphycer",
         url: "https://github.com/reprewindai-dev/lockerphycer",
-        capabilities: ["verify-provider-ownership"],
+        capabilities: ["verify-provider-ownership", "zk-groth16-verify", "enclave-seal-issue"],
         status: "Active"
       },
       {
         name: "gnomledger",
         url: "https://github.com/reprewindai-dev/gnomledger",
-        capabilities: ["mint-settlement-evidence", "issue-verification-badge"],
+        capabilities: ["mint-settlement-evidence", "issue-verification-badge", "anchor-merkle-root"],
+        status: "Active"
+      },
+      {
+        name: "interlink-cAPI",
+        url: "https://github.com/reprewindai-dev/interlink-cAPI",
+        capabilities: ["discover-local-capabilities", "route-mcp-tool", "verify-signed-snapshot"],
+        status: "Active"
+      },
+      {
+        name: "UACPV5-TERMINAL",
+        url: "https://github.com/reprewindai-dev/UACPV5-TERMINAL/",
+        capabilities: ["execute-terminal-process", "stream-telemetry-logs", "interactive-console"],
+        status: "Active"
+      },
+      {
+        name: "delyn-backend",
+        url: "https://github.com/reprewindai-dev/delyn-backend",
+        capabilities: ["cognitive-reasoning-trace", "neurosymbolic-eval", "agent-skill-synthesize"],
         status: "Active"
       }
     ],
