@@ -40,9 +40,14 @@ import {
   Search,
   HelpCircle,
   GitFork,
+  GitBranch,
   ShieldAlert,
   Key,
-  GitCommit
+  GitCommit,
+  Boxes,
+  Workflow,
+  Folder,
+  Filter
 } from "lucide-react";
 import { BlueprintResult, VirtualFile } from "../types";
 
@@ -55,6 +60,194 @@ function computeHash(str: string): string {
   }
   return Math.abs(hash).toString(16).padStart(8, "0");
 }
+
+export interface FileConstructionMeta {
+  icon: any;
+  color: string;
+  bg: string;
+  border: string;
+  badge: string;
+  typeLabel: string;
+  constructionType: "pipeline" | "source" | "capability" | "skill" | "manifest" | "test" | "smt" | "docs";
+}
+
+export function getFileConstructionMeta(filePath: string, projectType?: string): FileConstructionMeta {
+  const path = filePath.toLowerCase();
+
+  // 1. Pipeline & Automation Files (Distinct construction type vs standard source)
+  if (
+    path.includes("flow") ||
+    path.endsWith(".flow.yaml") ||
+    path.endsWith(".flow.yml") ||
+    path.endsWith(".dag") ||
+    path === "abide.flow.json"
+  ) {
+    return {
+      icon: GitBranch,
+      color: "text-[#00F0FF]",
+      bg: "bg-[#00F0FF]/15",
+      border: "border-[#00F0FF]/40",
+      badge: "FLOW DAG",
+      typeLabel: "Flow / DAG Automation Pipeline",
+      constructionType: "pipeline"
+    };
+  }
+
+  if (
+    path.includes("pipeline") ||
+    path.endsWith(".pipeline.json") ||
+    path.endsWith(".pipeline.yaml") ||
+    path.endsWith(".pipeline.yml") ||
+    path.endsWith(".ir") ||
+    path === "pipeline.json" ||
+    (projectType === "automation-pipeline" && (path.endsWith(".json") || path.endsWith(".yaml") || path.endsWith(".yml")) && !path.includes("package.json") && !path.includes("tsconfig.json") && !path.includes("abide.project.json") && !path.includes("metadata.json"))
+  ) {
+    return {
+      icon: Workflow,
+      color: "text-[#00F0FF]",
+      bg: "bg-[#00F0FF]/15",
+      border: "border-[#00F0FF]/40",
+      badge: "PIPELINE IR",
+      typeLabel: "Pipeline / Automation Construction Type",
+      constructionType: "pipeline"
+    };
+  }
+
+  // 2. Capability & Schema Contract Files
+  if (
+    path.includes("capability") ||
+    path.includes("schema") ||
+    path.includes("contract") ||
+    path.includes("zod") ||
+    path.endsWith(".schema.json")
+  ) {
+    return {
+      icon: Boxes,
+      color: "text-[#9D4EDD]",
+      bg: "bg-[#9D4EDD]/15",
+      border: "border-[#9D4EDD]/40",
+      badge: "CAPABILITY",
+      typeLabel: "Capability Unit Construction Type",
+      constructionType: "capability"
+    };
+  }
+
+  // 3. Skill & Agent Tool Files
+  if (
+    path === "skill.md" ||
+    path.includes("skill") ||
+    path.includes("mcp") ||
+    path.includes("tool") ||
+    path.includes("agent") ||
+    (projectType === "skill-tool" && path.endsWith(".md") && !path.includes("readme.md"))
+  ) {
+    return {
+      icon: Sparkles,
+      color: "text-amber-400",
+      bg: "bg-amber-400/15",
+      border: "border-amber-400/40",
+      badge: "SKILL TOOL",
+      typeLabel: "Skill / Agent Tool Construction Type",
+      constructionType: "skill"
+    };
+  }
+
+  // 4. Project Manifest & Configuration Files
+  if (
+    path === "abide.project.json" ||
+    path === "package.json" ||
+    path === "tsconfig.json" ||
+    path === "vite.config.ts" ||
+    path.includes(".config.") ||
+    path.startsWith(".env") ||
+    path === "metadata.json"
+  ) {
+    return {
+      icon: Settings,
+      color: "text-blue-400",
+      bg: "bg-blue-400/15",
+      border: "border-blue-400/40",
+      badge: "MANIFEST",
+      typeLabel: "Configuration & Manifest Construction Type",
+      constructionType: "manifest"
+    };
+  }
+
+  // 5. Test & Verification Files
+  if (
+    path.includes(".test.") ||
+    path.includes(".spec.") ||
+    path.startsWith("tests/") ||
+    path.startsWith("test/") ||
+    path.includes("vitest")
+  ) {
+    return {
+      icon: CheckCircle2,
+      color: "text-teal-400",
+      bg: "bg-teal-400/15",
+      border: "border-teal-400/40",
+      badge: "TEST SUITE",
+      typeLabel: "Test & Verification Construction Type",
+      constructionType: "test"
+    };
+  }
+
+  // 6. SMT & Formal Proof Files
+  if (
+    path.endsWith(".smt2") ||
+    path.endsWith(".smt") ||
+    path.includes(".proof.")
+  ) {
+    return {
+      icon: Binary,
+      color: "text-purple-400",
+      bg: "bg-purple-400/15",
+      border: "border-purple-400/40",
+      badge: "SMT PROOF",
+      typeLabel: "Formal Verification Construction Type",
+      constructionType: "smt"
+    };
+  }
+
+  // 7. Documentation Files
+  if (
+    path === "readme.md" ||
+    path.endsWith(".md") ||
+    path.endsWith(".txt")
+  ) {
+    return {
+      icon: BookOpen,
+      color: "text-emerald-400",
+      bg: "bg-emerald-400/15",
+      border: "border-emerald-400/40",
+      badge: "DOCS",
+      typeLabel: "Documentation & Specification",
+      constructionType: "docs"
+    };
+  }
+
+  // 8. Standard Source Files (Default vs Pipeline)
+  return {
+    icon: FileCode,
+    color: "text-emerald-300",
+    bg: "bg-emerald-500/15",
+    border: "border-emerald-500/40",
+    badge: "SOURCE CODE",
+    typeLabel: "Standard Source Construction Type",
+    constructionType: "source"
+  };
+}
+
+const CONSTRUCTION_TYPE_FILTERS = [
+  { id: "all", label: "All Types", icon: Filter },
+  { id: "pipeline", label: "Pipeline IR", icon: Workflow, color: "text-[#00F0FF]" },
+  { id: "source", label: "Source Code", icon: FileCode, color: "text-emerald-400" },
+  { id: "capability", label: "Capability", icon: Boxes, color: "text-[#9D4EDD]" },
+  { id: "skill", label: "Skill Tool", icon: Sparkles, color: "text-amber-400" },
+  { id: "manifest", label: "Manifest", icon: Settings, color: "text-blue-400" },
+  { id: "test", label: "Test Suite", icon: CheckCircle2, color: "text-teal-400" },
+  { id: "docs", label: "Docs", icon: BookOpen, color: "text-emerald-500" }
+];
 
 interface CognitiveIdeProps {
   blueprint: BlueprintResult | null;
@@ -121,6 +314,7 @@ export default function CognitiveIde({
   const [newProjectModal, setNewProjectModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] = useState<any>("application-service");
+  const [explorerTypeFilter, setExplorerTypeFilter] = useState<string>("all");
 
   // Load backend projects on mount
   useEffect(() => {
@@ -346,9 +540,27 @@ export async function executeCapability(payload: any) {
   }, [files]);
 
   const filteredFilesList = useMemo(() => {
-    if (!searchQuery) return filesList;
-    return filesList.filter(f => f.path.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [filesList, searchQuery]);
+    let list = filesList;
+    if (searchQuery) {
+      list = list.filter(f => f.path.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    if (explorerTypeFilter !== "all") {
+      list = list.filter(f => {
+        const meta = getFileConstructionMeta(f.path, activeProject?.type);
+        return meta.constructionType === explorerTypeFilter;
+      });
+    }
+    return list;
+  }, [filesList, searchQuery, explorerTypeFilter, activeProject?.type]);
+
+  const filteredProjectFiles = useMemo(() => {
+    const keys = Object.keys(activeProject?.files || files || {});
+    if (explorerTypeFilter === "all") return keys;
+    return keys.filter(fp => {
+      const meta = getFileConstructionMeta(fp, activeProject?.type);
+      return meta.constructionType === explorerTypeFilter;
+    });
+  }, [activeProject?.files, files, explorerTypeFilter, activeProject?.type]);
 
   const activeContent = files[selectedPath] || "";
 
@@ -1327,24 +1539,73 @@ export async function executeCapability(payload: any) {
 
                     {/* Sandbox File System Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
-                      <div className="md:col-span-4 bg-[#0E0E0E] border border-[#222] p-3 space-y-2">
-                        <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
-                          Durable Sandbox Files List
-                        </span>
-                        <div className="space-y-1">
-                          {Object.keys(activeProject.files || {}).map((fp) => (
-                            <button
-                              key={fp}
-                              onClick={() => { setSelectedPath(fp); setWorkbenchSurface("code" as any); }}
-                              className="w-full text-left flex justify-between items-center p-1.5 bg-[#141414] hover:bg-[#1A1A1A] border border-[#222] text-xs font-mono transition-all group"
-                            >
-                              <span className="text-white truncate flex items-center gap-1.5 group-hover:text-[#00F0FF]">
-                                <FileCode size={12} className="text-emerald-400" />
-                                {fp}
-                              </span>
-                              <span className="text-[9px] text-gray-500">{((activeProject.files[fp] || "").length || 120)} B</span>
-                            </button>
-                          ))}
+                      <div className="md:col-span-4 bg-[#0E0E0E] border border-[#222] p-3 space-y-2.5">
+                        <div className="flex justify-between items-center border-b border-[#222] pb-1.5">
+                          <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase flex items-center gap-1.5">
+                            <Workflow size={13} />
+                            <span>Sandbox Files ({filteredProjectFiles.length})</span>
+                          </span>
+                          <span className="text-[8px] bg-[#00F0FF]/15 text-[#00F0FF] px-1.5 py-0.5 uppercase font-bold border border-[#00F0FF]/30">
+                            {activeProject.type}
+                          </span>
+                        </div>
+
+                        {/* Construction Type Separation Filter Legend */}
+                        <div className="flex flex-wrap gap-1 pb-1 border-b border-[#1A1A1A]">
+                          {CONSTRUCTION_TYPE_FILTERS.map(f => {
+                            const Icon = f.icon;
+                            const isSel = explorerTypeFilter === f.id;
+                            return (
+                              <button
+                                key={f.id}
+                                onClick={() => setExplorerTypeFilter(f.id)}
+                                className={`flex items-center gap-1 px-1.5 py-0.5 text-[8px] font-mono uppercase transition-all border ${
+                                  isSel
+                                    ? "bg-[#0E1B22] border-[#00F0FF] text-[#00F0FF] font-bold"
+                                    : "bg-[#141414] border-[#282828] text-gray-400 hover:text-white hover:border-[#444]"
+                                }`}
+                                title={`Filter by ${f.label}`}
+                              >
+                                <Icon size={9} className={f.color || "text-gray-400"} />
+                                <span>{f.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="space-y-1.5 max-h-[320px] overflow-y-auto scrollbar-thin pr-1">
+                          {filteredProjectFiles.length === 0 ? (
+                            <div className="p-3 bg-[#111] border border-[#222] text-center text-gray-500 font-mono text-[10px]">
+                              No files match construction type filter: <span className="text-[#00F0FF] uppercase font-bold">{explorerTypeFilter}</span>
+                            </div>
+                          ) : (
+                            filteredProjectFiles.map((fp) => {
+                              const meta = getFileConstructionMeta(fp, activeProject.type);
+                              const IconComp = meta.icon;
+                              return (
+                                <button
+                                  key={fp}
+                                  onClick={() => { setSelectedPath(fp); setWorkbenchSurface("code" as any); }}
+                                  className={`w-full text-left flex justify-between items-center p-2 bg-[#141414] hover:bg-[#1A1A1A] border transition-all group ${
+                                    selectedPath === fp ? "border-[#00F0FF] bg-[#0E1B22]" : "border-[#222] hover:border-[#444]"
+                                  }`}
+                                >
+                                  <span className="text-white truncate flex items-center gap-2 group-hover:text-[#00F0FF]">
+                                    <span className={`p-1 ${meta.bg} ${meta.color} border ${meta.border} shrink-0 flex items-center justify-center`} title={meta.typeLabel}>
+                                      <IconComp size={13} />
+                                    </span>
+                                    <span className="truncate font-bold text-[11px]">{fp}</span>
+                                  </span>
+                                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                    <span className={`text-[8px] px-1.5 py-0.5 uppercase font-black tracking-wider ${meta.bg} ${meta.color} border ${meta.border}`}>
+                                      {meta.badge}
+                                    </span>
+                                    <span className="text-[9px] text-gray-500 font-mono w-12 text-right">{((activeProject.files[fp] || "").length || 120)} B</span>
+                                  </div>
+                                </button>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
                       <div className="md:col-span-8 bg-[#0E0E0E] border border-[#222] p-3 space-y-3 flex flex-col justify-between font-mono text-xs">
@@ -1409,49 +1670,120 @@ export async function executeCapability(payload: any) {
                         </div>
                         <p className="text-gray-300 font-sans text-xs">Summary: <strong className="text-[#00F0FF]">{activeProposal.summary}</strong></p>
                         <div className="space-y-2 max-h-[180px] overflow-y-auto">
-                          {activeProposal.operations.map((op: any, idx: number) => (
-                            <div key={idx} className="bg-[#0E0E0E] border border-[#222] overflow-hidden text-[11px]">
-                              <div className="bg-[#141414] p-2 border-b border-[#222] flex justify-between items-center font-bold">
-                                <span className={op.operation === "create" ? "text-emerald-400" : "text-amber-400"}>
-                                  {op.operation === "create" ? "+ [CREATE]" : "~ [UPDATE]"} {op.path}
-                                </span>
+                          {activeProposal.operations.map((op: any, idx: number) => {
+                            const meta = getFileConstructionMeta(op.path, activeProject?.type);
+                            const IconComp = meta.icon;
+                            return (
+                              <div key={idx} className="bg-[#0E0E0E] border border-[#222] overflow-hidden text-[11px]">
+                                <div className="bg-[#141414] p-2 border-b border-[#222] flex justify-between items-center font-bold">
+                                  <span className={`flex items-center gap-2 ${op.operation === "create" ? "text-emerald-400" : "text-amber-400"}`}>
+                                    <span className={`p-1 ${meta.bg} ${meta.color} border ${meta.border} shrink-0`} title={meta.typeLabel}>
+                                      <IconComp size={11} />
+                                    </span>
+                                    <span>{op.operation === "create" ? "+ [CREATE]" : "~ [UPDATE]"} {op.path}</span>
+                                  </span>
+                                  <span className={`text-[8px] px-1.5 py-0.5 uppercase font-black tracking-wider ${meta.bg} ${meta.color} border ${meta.border}`}>
+                                    {meta.badge}
+                                  </span>
+                                </div>
+                                <pre className="p-2 bg-black text-emerald-300 overflow-x-auto text-[10px]">
+                                  {op.content}
+                                </pre>
                               </div>
-                              <pre className="p-2 bg-black text-emerald-300 overflow-x-auto text-[10px]">
-                                {op.content}
-                              </pre>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
 
                     {/* Limited Source File Editor Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
-                      <div className="md:col-span-3 bg-[#0E0E0E] border border-[#222] p-3 space-y-2">
-                        <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
-                          Select Sandbox File
-                        </span>
-                        <div className="space-y-1">
-                          {Object.keys(activeProject.files || {}).map((fp) => (
-                            <button
-                              key={fp}
-                              onClick={() => setSelectedPath(fp)}
-                              className={`w-full text-left px-2.5 py-1.5 text-xs font-mono truncate transition-all ${
-                                selectedPath === fp || (!selectedPath && fp === "src/server.ts")
-                                  ? "bg-[#00F0FF]/20 text-[#00F0FF] border-l-2 border-[#00F0FF]"
-                                  : "text-gray-400 hover:bg-[#161616] hover:text-white"
-                              }`}
-                            >
-                              {fp}
-                            </button>
-                          ))}
+                      <div className="md:col-span-4 bg-[#0E0E0E] border border-[#222] p-3 space-y-2.5">
+                        <div className="flex justify-between items-center border-b border-[#222] pb-1.5">
+                          <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase flex items-center gap-1.5">
+                            <FileCode size={13} />
+                            <span>Select File ({filteredProjectFiles.length})</span>
+                          </span>
+                          <span className="text-[8px] bg-[#00F0FF]/15 text-[#00F0FF] px-1.5 py-0.5 uppercase font-bold border border-[#00F0FF]/30">
+                            {activeProject.type}
+                          </span>
+                        </div>
+
+                        {/* Construction Type Separation Filter Legend */}
+                        <div className="flex flex-wrap gap-1 pb-1 border-b border-[#1A1A1A]">
+                          {CONSTRUCTION_TYPE_FILTERS.map(f => {
+                            const Icon = f.icon;
+                            const isSel = explorerTypeFilter === f.id;
+                            return (
+                              <button
+                                key={f.id}
+                                onClick={() => setExplorerTypeFilter(f.id)}
+                                className={`flex items-center gap-1 px-1.5 py-0.5 text-[8px] font-mono uppercase transition-all border ${
+                                  isSel
+                                    ? "bg-[#0E1B22] border-[#00F0FF] text-[#00F0FF] font-bold"
+                                    : "bg-[#141414] border-[#282828] text-gray-400 hover:text-white hover:border-[#444]"
+                                }`}
+                                title={`Filter by ${f.label}`}
+                              >
+                                <Icon size={9} className={f.color || "text-gray-400"} />
+                                <span>{f.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-thin pr-1">
+                          {filteredProjectFiles.length === 0 ? (
+                            <div className="p-3 bg-[#111] border border-[#222] text-center text-gray-500 font-mono text-[10px]">
+                              No files match construction type filter: <span className="text-[#00F0FF] uppercase font-bold">{explorerTypeFilter}</span>
+                            </div>
+                          ) : (
+                            filteredProjectFiles.map((fp) => {
+                              const meta = getFileConstructionMeta(fp, activeProject.type);
+                              const IconComp = meta.icon;
+                              const isSelected = selectedPath === fp || (!selectedPath && fp === "src/server.ts");
+                              return (
+                                <button
+                                  key={fp}
+                                  onClick={() => setSelectedPath(fp)}
+                                  className={`w-full text-left flex justify-between items-center p-2 text-xs font-mono transition-all border ${
+                                    isSelected
+                                      ? "bg-[#0E1B22] text-[#00F0FF] border-[#00F0FF] border-l-4 font-bold"
+                                      : "bg-[#141414] text-gray-300 border-[#222] hover:bg-[#1A1A1A] hover:text-white hover:border-[#444]"
+                                  }`}
+                                >
+                                  <span className="truncate flex items-center gap-2">
+                                    <span className={`p-1 ${meta.bg} ${meta.color} border ${meta.border} shrink-0 flex items-center justify-center`} title={meta.typeLabel}>
+                                      <IconComp size={12} />
+                                    </span>
+                                    <span className="truncate">{fp}</span>
+                                  </span>
+                                  <span className={`text-[8px] px-1.5 py-0.5 uppercase font-black tracking-wider shrink-0 ml-1 ${meta.bg} ${meta.color} border ${meta.border}`}>
+                                    {meta.badge}
+                                  </span>
+                                </button>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
-                      <div className="md:col-span-9 bg-[#0E0E0E] border border-[#222] p-3 flex flex-col justify-between">
+                      <div className="md:col-span-8 bg-[#0E0E0E] border border-[#222] p-3 flex flex-col justify-between">
                         <div className="space-y-2">
                           <div className="flex justify-between items-center border-b border-[#222] pb-1.5 font-mono text-xs text-gray-300">
-                            <span>Editing: <strong className="text-white">{selectedPath || "src/server.ts"}</strong></span>
-                            <span className="text-[10px] text-gray-500">Durable Path: ./workspace-sandbox/projects/{activeProject.id}/{selectedPath || "src/server.ts"}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span>Editing: <strong className="text-white">{selectedPath || "src/server.ts"}</strong></span>
+                              {(() => {
+                                const meta = getFileConstructionMeta(selectedPath || "src/server.ts", activeProject.type);
+                                const IconComp = meta.icon;
+                                return (
+                                  <span className={`flex items-center gap-1 text-[9px] px-2 py-0.5 uppercase font-bold tracking-wider ${meta.bg} ${meta.color} border ${meta.border}`}>
+                                    <IconComp size={11} />
+                                    <span>{meta.badge} — {meta.typeLabel}</span>
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                            <span className="text-[10px] text-gray-500 truncate max-w-[280px]">Durable Path: ./workspace-sandbox/projects/{activeProject.id}/{selectedPath || "src/server.ts"}</span>
                           </div>
                           <pre className="p-3 bg-black border border-[#1F1F1F] text-xs font-mono text-emerald-300 overflow-x-auto max-h-[340px]">
                             {activeProject.files[selectedPath || "src/server.ts"] || activeProject.files["README.md"] || "// Select a file from the sidebar"}
@@ -1745,7 +2077,7 @@ export async function executeCapability(payload: any) {
                     </div>
 
                     <div className="flex justify-between items-center bg-[#090909] p-2 border border-[#111]">
-                      <span className="text-[8px] font-mono uppercase text-gray-500">Virtual Files</span>
+                      <span className="text-[8px] font-mono uppercase text-[#00F0FF] font-bold">Construction Types ({filteredFilesList.length})</span>
                       <button
                         onClick={() => setShowAddModal(true)}
                         className="text-[#00F0FF] hover:text-white transition-all"
@@ -1755,39 +2087,75 @@ export async function executeCapability(payload: any) {
                       </button>
                     </div>
 
-                    <div className="space-y-1 max-h-[260px] overflow-y-auto scrollbar-thin">
-                      {filteredFilesList.map(file => {
-                        const isSelected = selectedPath === file.path;
-                        const isSmt = file.path.endsWith(".smt2");
-                        const isMd = file.path.endsWith(".md");
+                    {/* Construction Type Separation Filter Legend */}
+                    <div className="flex flex-wrap gap-1 py-1 bg-[#050505] px-1 border border-[#111]">
+                      {CONSTRUCTION_TYPE_FILTERS.map(f => {
+                        const Icon = f.icon;
+                        const isSel = explorerTypeFilter === f.id;
                         return (
-                          <div
-                            key={file.path}
-                            className={`flex items-center justify-between group px-2 py-1.5 border transition-all text-[11px] font-mono ${
-                              isSelected
-                                ? "bg-[#0E1B22] border-[#00F0FF]/30 text-[#00F0FF]"
-                                : "bg-transparent border-transparent text-gray-400 hover:bg-[#0C0C0C] hover:text-white"
+                          <button
+                            key={f.id}
+                            onClick={() => setExplorerTypeFilter(f.id)}
+                            className={`flex items-center gap-1 px-1 py-0.5 text-[7px] font-mono uppercase transition-all border ${
+                              isSel
+                                ? "bg-[#0E1B22] border-[#00F0FF] text-[#00F0FF] font-bold"
+                                : "bg-[#101010] border-[#222] text-gray-400 hover:text-white hover:border-[#444]"
                             }`}
+                            title={`Filter by ${f.label}`}
                           >
-                            <button
-                              onClick={() => setSelectedPath(file.path)}
-                              className="flex items-center gap-2 flex-1 text-left truncate"
-                            >
-                              <FileCode size={13} className={isSmt ? "text-[#9D4EDD]" : isMd ? "text-emerald-400" : "text-[#00F0FF]"} />
-                              <span className="truncate">{file.path}</span>
-                            </button>
-                            {file.path !== "README.md" && file.path !== "src/execute_optimized.ts" && (
-                              <button
-                                onClick={() => handleDeleteFile(file.path)}
-                                className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-white transition-all pl-1.5"
-                                title="Delete File"
-                              >
-                                <Trash2 size={11} />
-                              </button>
-                            )}
-                          </div>
+                            <Icon size={8} className={f.color || "text-gray-400"} />
+                            <span>{f.label}</span>
+                          </button>
                         );
                       })}
+                    </div>
+
+                    <div className="space-y-1 max-h-[260px] overflow-y-auto scrollbar-thin">
+                      {filteredFilesList.length === 0 ? (
+                        <div className="p-3 bg-[#111] border border-[#222] text-center text-gray-500 font-mono text-[9px]">
+                          No files match: <span className="text-[#00F0FF] uppercase font-bold">{explorerTypeFilter}</span>
+                        </div>
+                      ) : (
+                        filteredFilesList.map(file => {
+                          const isSelected = selectedPath === file.path;
+                          const meta = getFileConstructionMeta(file.path, activeProject?.type);
+                          const IconComp = meta.icon;
+                          return (
+                            <div
+                              key={file.path}
+                              className={`flex items-center justify-between group px-2 py-1.5 border transition-all text-[11px] font-mono ${
+                                isSelected
+                                  ? "bg-[#0E1B22] border-[#00F0FF]/40 text-[#00F0FF]"
+                                  : "bg-[#090909]/60 border-[#1A1A1A] text-gray-400 hover:bg-[#121212] hover:text-white hover:border-[#333]"
+                              }`}
+                            >
+                              <button
+                                onClick={() => setSelectedPath(file.path)}
+                                className="flex items-center gap-2 flex-1 text-left truncate"
+                              >
+                                <span className={`p-1 ${meta.bg} ${meta.color} border ${meta.border} shrink-0`} title={meta.typeLabel}>
+                                  <IconComp size={12} />
+                                </span>
+                                <span className="truncate font-bold">{file.path}</span>
+                              </button>
+                              <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                                <span className={`text-[7px] px-1 py-0.5 uppercase font-black tracking-wider ${meta.bg} ${meta.color} border ${meta.border}`}>
+                                  {meta.badge}
+                                </span>
+                                {file.path !== "README.md" && file.path !== "src/execute_optimized.ts" && (
+                                  <button
+                                    onClick={() => handleDeleteFile(file.path)}
+                                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-white transition-all pl-1"
+                                    title="Delete File"
+                                  >
+                                    <Trash2 size={11} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 

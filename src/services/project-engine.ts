@@ -132,29 +132,26 @@ export function syncProjectToDisk(project: AbideProject): string {
   }
 
   // Write metadata
-  fs.writeFileSync(
-    path.join(projectDir, "abide.project.json"),
-    JSON.stringify({
-      id: project.id,
-      name: project.name,
-      type: project.type,
-      description: project.description,
-      status: project.status,
-      dependencies: project.dependencies,
-      commands: project.commands,
-      expectedEndpoints: project.expectedEndpoints,
-      executionMode: project.executionMode,
-      updatedAt: new Date().toISOString()
-    }, null, 2),
-    "utf8"
-  );
+  const manifestContent = JSON.stringify({
+    id: project.id,
+    name: project.name,
+    type: project.type,
+    description: project.description,
+    status: project.status,
+    dependencies: project.dependencies,
+    commands: project.commands,
+    expectedEndpoints: project.expectedEndpoints,
+    executionMode: project.executionMode,
+    updatedAt: new Date().toISOString()
+  }, null, 2);
+
+  fs.writeFileSync(path.join(projectDir, "abide.project.json"), manifestContent, "utf8");
+  project.files["abide.project.json"] = manifestContent;
 
   if (project.pipelineFlow) {
-    fs.writeFileSync(
-      path.join(projectDir, "pipeline.json"),
-      JSON.stringify(project.pipelineFlow, null, 2),
-      "utf8"
-    );
+    const pipelineContent = JSON.stringify(project.pipelineFlow, null, 2);
+    fs.writeFileSync(path.join(projectDir, "pipeline.json"), pipelineContent, "utf8");
+    project.files["pipeline.json"] = pipelineContent;
   }
 
   return projectDir;
@@ -320,7 +317,16 @@ An ABIDE Project proving the complete 10-step bounded build loop:
 - \`npm install\`
 - \`npm test\`
 - \`npm run build\`
-`
+`,
+        "pipeline.json": JSON.stringify(ollamaPipelineFlow, null, 2),
+        "abide.project.json": JSON.stringify({
+          id: "proj-ollama-proof",
+          name: "Ollama HTTP Classification Pipeline",
+          type: "automation-pipeline",
+          description: "An HTTP pipeline that receives text, sends it to Ollama and returns the model response. The undeniable 10-step ABIDE proof build.",
+          status: "VERIFIED",
+          executionMode: "standalone"
+        }, null, 2)
       },
       evidenceHistory: [
         {

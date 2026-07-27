@@ -80,7 +80,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       summary: "[DEMO REFERENCE SAMPLE] A purely peer-to-peer version of electronic cash that allows online payments to be sent directly from one party to another without going through a financial institution.",
       relevance: "Establishes the foundational model of trustless transaction ledgers, digital signatures, and double-spend protection.",
       url: "https://bitcoin.org/bitcoin.pdf",
-      resolvableIdentifier: "bitcoin-whitepaper-2008",
+      resolvableIdentifier: "urn:doi:10.1000/bitcoin-whitepaper-2008",
       retrievalTimestamp: "2026-07-20T00:00:00Z",
       quotedClaimLocation: "Section 2 (Transactions)",
       verificationStatus: "VERIFIED"
