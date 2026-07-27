@@ -611,6 +611,10 @@ export default function App() {
   const [cappoUrl, setCappoUrl] = useState(() => (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com");
   // CANONICAL — replaced from http://localhost:8083
   const [gnomeledgerUrl, setGnomeledgerUrl] = useState(() => (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com");
+  // CANONICAL — replaced from http://localhost:8085
+  const [delynUrl, setDelynUrl] = useState(() => (typeof process !== "undefined" ? process.env.DELYN_URL : undefined) || "https://delyn.veklom.com");
+  // CANONICAL — replaced from http://localhost:8086
+  const [cipherUrl, setCipherUrl] = useState(() => (typeof process !== "undefined" ? process.env.CIPHER_URL : undefined) || "https://cipher.veklom.com");
   // CANONICAL — replaced from http://localhost:8084
   const [vnpUrl, setVnpUrl] = useState(() => (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com");
   const [backendStatuses, setBackendStatuses] = useState<any[]>([]);
@@ -885,7 +889,7 @@ export default function App() {
   const handleFetchBackendStatuses = async () => {
     setIsPingingBackends(true);
     try {
-      const response = await fetch(`/api/backends/status?byosUrl=${encodeURIComponent(byosUrl)}&cappoUrl=${encodeURIComponent(cappoUrl)}&gnomeledgerUrl=${encodeURIComponent(gnomeledgerUrl)}&vnpUrl=${encodeURIComponent(vnpUrl)}`);
+      const response = await fetch(`/api/backends/status?byosUrl=${encodeURIComponent(byosUrl)}&cappoUrl=${encodeURIComponent(cappoUrl)}&gnomeledgerUrl=${encodeURIComponent(gnomeledgerUrl)}&vnpUrl=${encodeURIComponent(vnpUrl)}&delynUrl=${encodeURIComponent(delynUrl)}&cipherUrl=${encodeURIComponent(cipherUrl)}`);
       if (!response.ok) {
         throw new Error("Failed to query decentralised backend routers.");
       }
@@ -910,6 +914,10 @@ export default function App() {
       { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8081, setter: setByosUrl },
       // CANONICAL — replaced from http://localhost:8082
       { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8082, setter: setCappoUrl },
+      // CANONICAL — replaced from http://localhost:8085
+      { id: "delyn", name: "DELYN Sovereign Intelligence Backend", url: (typeof process !== "undefined" ? process.env.DELYN_URL : undefined) || "https://delyn.veklom.com", port: 8085, setter: setDelynUrl },
+      // CANONICAL — replaced from http://localhost:8086
+      { id: "cipher", name: "LOCK THE CIPHER Cryptographic Engine", url: (typeof process !== "undefined" ? process.env.CIPHER_URL : undefined) || "https://cipher.veklom.com", port: 8086, setter: setCipherUrl },
       // CANONICAL — replaced from http://localhost:8083
       { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8083, setter: setGnomeledgerUrl },
       // CANONICAL — replaced from http://localhost:8084
@@ -970,6 +978,8 @@ export default function App() {
         body: JSON.stringify({
           byosUrl,
           cappoUrl,
+          delynUrl,
+          cipherUrl,
           gnomeledgerUrl,
           vnpUrl,
           connectionId: result?.hash ? `conn-${result.hash.slice(0, 10)}` : "conn-default-402",
@@ -1137,6 +1147,8 @@ export default function App() {
       configured_backend_routers: {
         veklom_byos_backend: byosUrl,
         cappo_backend: cappoUrl,
+        delyn_backend: delynUrl,
+        cipher_backend: cipherUrl,
         gnomeledger: gnomeledgerUrl,
         veklom_vnp: vnpUrl
       },
@@ -1187,10 +1199,10 @@ export default function App() {
   }, [showConfigPanel]);
 
   // Refs for stable 60-second interval dependencies
-  const autoVerifyParamsRef = useRef({ byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses });
+  const autoVerifyParamsRef = useRef({ byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses });
   useEffect(() => {
-    autoVerifyParamsRef.current = { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses };
-  }, [byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, result?.hash, backendStatuses]);
+    autoVerifyParamsRef.current = { byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses };
+  }, [byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, result?.hash, backendStatuses]);
 
   // Periodic background execution when auto-verify is enabled
   useEffect(() => {
@@ -1200,7 +1212,7 @@ export default function App() {
       const triggerVerification = async () => {
         const timestampStr = new Date().toISOString();
         const randId = "evt-" + Math.floor(Math.random() * 9000 + 1000);
-        const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, resultHash, backendStatuses } = autoVerifyParamsRef.current;
+        const { byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, resultHash, backendStatuses } = autoVerifyParamsRef.current;
         
         try {
           const response = await fetch("/api/backends/verify-sync", {
@@ -1209,6 +1221,8 @@ export default function App() {
             body: JSON.stringify({
               byosUrl,
               cappoUrl,
+              delynUrl,
+              cipherUrl,
               gnomeledgerUrl,
               vnpUrl,
               connectionId: resultHash ? `conn-${resultHash.slice(0, 10)}` : "conn-default-402",
@@ -3342,10 +3356,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         />
                         <div className="flex flex-wrap gap-1.5">
                           {[
-                            { name: "cappo-backend", url: "https://github.com/reprewindai-dev/cappo-backend" },
-                            { name: "byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" },
-                            { name: "lockerphycer", url: "https://github.com/reprewindai-dev/lockerphycer" },
-                            { name: "gnomledger", url: "https://github.com/reprewindai-dev/gnomledger" }
+                            { name: "cappo-backend (CAPPO)", url: "https://github.com/reprewindai-dev/cappo-backend" },
+                            { name: "delyn-backend (DELYN)", url: "https://github.com/reprewindai-dev/delyn-backend" },
+                            { name: "lockerphycer (LOCK THE CIPHER)", url: "https://github.com/reprewindai-dev/lockerphycer" },
+                            { name: "gnomledger (GENOME LEDGER / PGL)", url: "https://github.com/reprewindai-dev/gnomledger" },
+                            { name: "byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" }
                           ].map((r) => (
                             <button
                               key={r.name}
@@ -4699,15 +4714,21 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                           </button>
 
                           {/* Individual discovery results indicator badges */}
-                          <div className="grid grid-cols-4 gap-1.5 text-[8px] font-mono text-center pt-0.5 font-bold uppercase">
+                          <div className="grid grid-cols-6 gap-1.5 text-[8px] font-mono text-center pt-0.5 font-bold uppercase">
                             <div className={`p-1 border transition-colors ${discoveryResults.byos === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.byos === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
                               BYOS:8081
                             </div>
                             <div className={`p-1 border transition-colors ${discoveryResults.cappo === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.cappo === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
                               CAPPO:8082
                             </div>
+                            <div className={`p-1 border transition-colors ${discoveryResults.delyn === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.delyn === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
+                              DELYN:8085
+                            </div>
+                            <div className={`p-1 border transition-colors ${discoveryResults.cipher === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.cipher === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
+                              CIPHER:8086
+                            </div>
                             <div className={`p-1 border transition-colors ${discoveryResults.gnomeledger === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.gnomeledger === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
-                              GNOME:8083
+                              PGL:8083
                             </div>
                             <div className={`p-1 border transition-colors ${discoveryResults.vnp === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.vnp === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
                               VNP:8084
@@ -4750,6 +4771,34 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                               type="text"
                               value={cappoUrl}
                               onChange={(e) => setCappoUrl(e.target.value)}
+                              className="w-full bg-[#111] border border-[#222] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#00F0FF] rounded-none"
+                            />
+                          </div>
+
+                          {/* DELYN URL */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-[#666]">
+                              <span className="font-bold">DELYN URL (Sovereign Intelligence):</span>
+                              <span className="text-[8px] text-gray-400">Cognitive &amp; Neurosymbolic</span>
+                            </div>
+                            <input
+                              type="text"
+                              value={delynUrl}
+                              onChange={(e) => setDelynUrl(e.target.value)}
+                              className="w-full bg-[#111] border border-[#222] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#00F0FF] rounded-none"
+                            />
+                          </div>
+
+                          {/* LOCK THE CIPHER URL */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-[#666]">
+                              <span className="font-bold">LOCK THE CIPHER URL (Crypto Engine):</span>
+                              <span className="text-[8px] text-gray-400">Groth16/PLONK &amp; Enclaves</span>
+                            </div>
+                            <input
+                              type="text"
+                              value={cipherUrl}
+                              onChange={(e) => setCipherUrl(e.target.value)}
                               className="w-full bg-[#111] border border-[#222] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#00F0FF] rounded-none"
                             />
                           </div>
