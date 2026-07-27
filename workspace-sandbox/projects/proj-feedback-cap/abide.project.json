@@ -1,0 +1,35 @@
+{
+  "id": "proj-feedback-cap",
+  "name": "Customer Feedback Classifier & Storage",
+  "type": "capability-unit",
+  "description": "An API and capability unit that accepts customer feedback, classifies it using a local model and stores the result.",
+  "status": "APPROVED",
+  "dependencies": [
+    {
+      "name": "express",
+      "version": "4.21.2",
+      "reason": "HTTP REST interface"
+    },
+    {
+      "name": "zod",
+      "version": "3.23.8",
+      "reason": "Capability schema contract"
+    },
+    {
+      "name": "sqlite3",
+      "version": "5.1.7",
+      "reason": "Durable feedback storage"
+    }
+  ],
+  "commands": {
+    "build": "npm run build",
+    "test": "npm test",
+    "start": "npm start"
+  },
+  "expectedEndpoints": [
+    "POST /feedback",
+    "GET /feedback/stats"
+  ],
+  "executionMode": "veklom-connected",
+  "updatedAt": "2026-07-27T00:50:46.967Z"
+}

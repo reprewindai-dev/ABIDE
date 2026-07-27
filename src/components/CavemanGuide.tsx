@@ -469,6 +469,127 @@ export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.
           })}
         </div>
 
+        {/* CANONICAL SEPARATION & VEKLOM ARCHITECTURAL ARCHITECTURE */}
+        <div className="bg-[#0A1015] border-2 border-[#9D4EDD] p-5 space-y-4 mt-6 mb-4 shadow-[0_0_25px_rgba(157,78,221,0.15)]">
+          <div className="border-b border-[#9D4EDD]/30 pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[10px] bg-[#9D4EDD]/20 text-[#9D4EDD] border border-[#9D4EDD]/40 px-2.5 py-0.5 font-bold uppercase tracking-widest font-mono">
+                🏛️ Canonical Architecture Mandate
+              </span>
+              <span className="text-xs text-gray-400 font-mono">
+                Ports: 3002 | 3003 | 3009 | 3011 | 80 | 8001 | 8002 | 8088 | 8092
+              </span>
+            </div>
+            <h3 className="text-base font-black text-white font-mono uppercase tracking-wide mt-2">
+              ABIDE vs. The Wider Veklom Ecosystem: Canonical Separation
+            </h3>
+            <div className="mt-2 p-3 bg-[#9D4EDD]/10 border-l-4 border-[#9D4EDD] text-xs font-mono text-gray-200 leading-relaxed">
+              <strong className="text-[#9D4EDD] block uppercase font-black text-[11px] mb-0.5">THE CORRECTED PRODUCT STATEMENT:</strong>
+              &quot;ABIDE is Veklom&apos;s intent-to-blueprint and bounded build workbench. It can operate independently with a lightweight local execution engine, but inside Veklom it hands approved plans and projects into the cAPI-connected backend mesh for governed execution.&quot;
+            </div>
+          </div>
+
+          <div className="text-xs font-mono text-gray-300 space-y-2">
+            <p className="text-amber-400 font-bold">
+              ⚠️ CRITICAL CORRECTION: ABIDE is NOT supposed to become the control surface for all of Veklom! It should NOT recreate the full Veklom Terminal, complete cAPI control interface, all backend administration, complete GPC runtime, or Governance Portal.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 font-mono text-xs">
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                1. Veklom Ops Command
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Developer workforce only.</strong> Sits outside the customer-facing Veklom runtime. Used strictly by internal engineers to code, test, harden, and submit PRs.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                2. cAPI (Canonical Port: 3003)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Unified MCP/API capability layer.</strong> Embedded in or locally available to each of the four backends. Enables agent spawns operating across backends to communicate.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                3. Governance Portal
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>cAPI&apos;s visual interface.</strong> Displays the cAPI mesh, capabilities, agents, activity, and evidence. Must NOT maintain a competing mocked backend.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                4. Terminal (Canonical Port: 80)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Real command &amp; control interface.</strong> Where operators initiate commands and agent work. Separate from VNP benchmarking.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                5. VNP (Veklom Nexus Protocol)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>API benchmarking &amp; measurement.</strong> Handles operational performance metrics across system nodes. This is NOT the Terminal.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#9D4EDD] uppercase block border-b border-[#222] pb-1">
+                6. ABIDE (Ports: 3009 | Apex: 3011)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Intent &amp; bounded build workbench.</strong> Focuses on: messy intent &gt; verified understanding &gt; blueprint &gt; architecture &gt; implementation plan &gt; generated code &gt; sandbox tests &gt; handoff to cAPI.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-[#222] pt-3 grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+            <div className="bg-[#0C1217] p-3 border border-[#1E293B]">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase block mb-1">
+                🔗 The 4 Canonical Backends &amp; Ports
+              </span>
+              <ul className="text-gray-300 space-y-1 text-[11px]">
+                <li><strong className="text-white">8001: Gnomledger</strong> — Cryptographic evidence &amp; immutable ledger.</li>
+                <li><strong className="text-white">8002: CAPPO Backend</strong> — Consequential action policy authorization.</li>
+                <li><strong className="text-white">8088: BYOS Backend</strong> — Bring-Your-Own-Server storage &amp; execution.</li>
+                <li><strong className="text-white">8092: LockerPhycer</strong> — Hardware key vault &amp; physical isolation.</li>
+                <li className="text-gray-500 pt-1 border-t border-[#222]">Control Plane: <strong className="text-gray-400">3002</strong> | Retired: <strong className="text-rose-400 line-through">3000</strong>, <strong className="text-rose-400 line-through">8000</strong></li>
+              </ul>
+            </div>
+
+            <div className="bg-[#0C1217] p-3 border border-[#1E293B]">
+              <span className="text-[10px] font-bold text-[#00F0FF] uppercase block mb-1">
+                🚀 The 6 Canonical Views of Proper ABIDE
+              </span>
+              <ol className="text-gray-300 space-y-1 text-[11px] list-decimal list-inside">
+                <li><strong className="text-white">Blueprint View:</strong> Messy intent &gt; architecture &amp; production plan.</li>
+                <li><strong className="text-white">Project View:</strong> Real files persisted in sandbox (not virtual!).</li>
+                <li><strong className="text-white">Code View:</strong> Limited editor for source, schemas, tests &amp; diff patches.</li>
+                <li><strong className="text-white">Flow View:</strong> Used ONLY for real multi-stage pipeline sequences.</li>
+                <li><strong className="text-white">Build View:</strong> Real install, typecheck, test, build &amp; preview output.</li>
+                <li><strong className="text-white">Handoff View:</strong> Delegates approved plan to cAPI (3003) &gt; GPC &gt; CAPPO.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="bg-[#111] p-2.5 border border-[#222] text-[11px] font-mono text-gray-400 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+            <div>
+              <strong className="text-white uppercase">The Immediate Dependency Priority Order:</strong>
+              <span className="block text-gray-400 mt-0.5">
+                1. Verify &amp; harden cAPI &gt; 2. Verify 4 backends relationship &gt; 3. Replace Governance Portal mock data with real cAPI &gt; 4. Verify Terminal command path &gt; 5. Finish ABIDE real build loop &gt; 6. Connect ABIDE to cAPI/GPC.
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* INTERACTIVE ABIDE PROJECT FACTORY TUTORIAL & PROOF BUILDER */}
         <div className="bg-[#0E1B22]/40 border-2 border-[#00F0FF] p-4 space-y-3 mt-4 mb-2">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[#00F0FF]/30 pb-2.5">

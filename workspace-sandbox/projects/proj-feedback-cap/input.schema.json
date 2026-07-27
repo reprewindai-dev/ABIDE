@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "feedbackText": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "customerId",
+    "feedbackText"
+  ]
+}

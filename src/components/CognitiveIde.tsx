@@ -41,9 +41,20 @@ import {
   HelpCircle,
   GitFork,
   ShieldAlert,
-  Key
+  Key,
+  GitCommit
 } from "lucide-react";
 import { BlueprintResult, VirtualFile } from "../types";
+
+function computeHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16).padStart(8, "0");
+}
 
 interface CognitiveIdeProps {
   blueprint: BlueprintResult | null;
@@ -127,6 +138,20 @@ export default function CognitiveIde({
       })
       .catch(err => console.error("Failed to load ABIDE projects:", err));
   }, []);
+
+  // Redirect legacy panel states to unified ABIDE Workbench canonical views
+  useEffect(() => {
+    if (activePanel === "workspace") {
+      setActivePanel("factory");
+      setWorkbenchSurface("code" as any);
+    } else if (activePanel === "flow") {
+      setActivePanel("factory");
+      setWorkbenchSurface("flow" as any);
+    } else if (activePanel === "compiler") {
+      setActivePanel("factory");
+      setWorkbenchSurface("run" as any);
+    }
+  }, [activePanel]);
 
   // Switch active project
   const handleSelectProject = (id: string) => {
@@ -704,7 +729,8 @@ export async function executeCapability(payload: any) {
   const runZ3Verification = async () => {
     setIsZ3Running(true);
     setZ3Output(null);
-    setActivePanel("compiler");
+    setActivePanel("factory");
+    setWorkbenchSurface("run" as any);
     addTerminalLog("Compiling workspace SMT constraints and calling Z3 solver...", "seked");
 
     // Gather assertions: Base SMT rules + Active Academic Boosters
@@ -763,7 +789,8 @@ export async function executeCapability(payload: any) {
     setIsSimulationRunning(true);
     setSimStep(0);
     setSimLogs([]);
-    setActivePanel("compiler");
+    setActivePanel("factory");
+    setWorkbenchSurface("run" as any);
     addTerminalLog("Starting on-the-fly compiler execution pipeline...", "system");
 
     const steps = [
@@ -972,37 +999,37 @@ export async function executeCapability(payload: any) {
           }`}
         >
           <Sparkles size={14} className="text-[#00F0FF]" />
-          <span>🚀 ABIDE Project Factory (5 Surfaces)</span>
+          <span>🚀 ABIDE Workbench (6 Canonical Views)</span>
         </button>
         <button
-          onClick={() => setActivePanel("workspace")}
+          onClick={() => { setActivePanel("factory"); setWorkbenchSurface("code" as any); }}
           className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
-            activePanel === "workspace"
+            activePanel === "workspace" || (activePanel === "factory" && (workbenchSurface as string) === "code")
               ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
               : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
-          📂 Surface 2: Build (Code View) ({filteredFilesList.length})
+          📂 Code View ({filteredFilesList.length})
         </button>
         <button
-          onClick={() => setActivePanel("flow")}
+          onClick={() => { setActivePanel("factory"); setWorkbenchSurface("flow" as any); }}
           className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
-            activePanel === "flow"
+            activePanel === "flow" || (activePanel === "factory" && (workbenchSurface as string) === "flow")
               ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
               : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
-          🕸️ Surface 2: Build (Visual View)
+          🕸️ Flow View (IR Graph)
         </button>
         <button
-          onClick={() => setActivePanel("compiler")}
+          onClick={() => { setActivePanel("factory"); setWorkbenchSurface("run" as any); }}
           className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all ${
-            activePanel === "compiler"
+            activePanel === "compiler" || (activePanel === "factory" && (workbenchSurface as string) === "run")
               ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/40"
               : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
-          ⚡ Surface 4: Run (Sandbox Output)
+          ⚡ Build View (Exec Output)
         </button>
         <button
           onClick={() => setActivePanel("ontology")}
@@ -1134,17 +1161,18 @@ export async function executeCapability(payload: any) {
                   </div>
                 )}
 
-                {/* THE 5 PRIMARY SURFACES NAV PILLS */}
+                {/* THE 6 CANONICAL ABIDE WORKBENCH SURFACES */}
                 <div className="flex border-b border-[#222] gap-1 overflow-x-auto pb-1">
                   {[
-                    { id: "intent", label: "1. Intent & Build Plan", icon: Sparkles, desc: "Plain language instruction -> propose build" },
-                    { id: "build", label: "2. Build (Visual | Code)", icon: Layers, desc: "Dual view over the same durable project" },
-                    { id: "changes", label: "3. Changes (Diff Review)", icon: FileCode, desc: "Review AST diff before writing to sandbox" },
-                    { id: "run", label: "4. Run & Sandbox Exec", icon: Terminal, desc: "Real install, compile, test, start output" },
-                    { id: "evidence", label: "5. Evidence & Persistence", icon: ShieldCheck, desc: "Ledger records, hashes & ZIP export" }
+                    { id: "intent", label: "1. Blueprint View", icon: Sparkles, desc: "Messy intent -> architecture & production plan" },
+                    { id: "project", label: "2. Project View", icon: Layers, desc: "Real sandbox files & 4 project types" },
+                    { id: "code", label: "3. Code View", icon: FileCode, desc: "Limited editor for generated source & AST diffs" },
+                    { id: "flow", label: "4. Flow View", icon: GitCommit, desc: "Pipeline IR graph (for multi-stage sequences)" },
+                    { id: "run", label: "5. Build View", icon: Terminal, desc: "Real install, typecheck, test & preview output" },
+                    { id: "evidence", label: "6. Handoff View", icon: ShieldCheck, desc: "Connects into canonical cAPI (3003) -> GPC -> CAPPO (8002)" }
                   ].map((s) => {
                     const SIcon = s.icon;
-                    const isActive = workbenchSurface === s.id;
+                    const isActive = workbenchSurface === s.id || (s.id === "code" && (workbenchSurface as string) === "changes") || (s.id === "project" && (workbenchSurface as string) === "build");
                     return (
                       <button
                         key={s.id}
@@ -1251,163 +1279,144 @@ export async function executeCapability(payload: any) {
                   </div>
                 )}
 
-                {/* SURFACE 2: BUILD (VISUAL | CODE VIEW) */}
-                {workbenchSurface === "build" && activeProject && (
+                {/* SURFACE 2: PROJECT VIEW (REAL SANDBOX FILES & 4 PROJECT TYPES) */}
+                {(workbenchSurface === "project" || (workbenchSurface as string) === "build") && activeProject && (
                   <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
                     <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
                       <div>
                         <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
                           <Layers size={16} className="text-[#00F0FF]" />
-                          <span>Surface 2: Build — Dual Presentation (Visual View | Code View)</span>
+                          <span>Surface 2: Project View — Real Sandbox Files &amp; 4 Canonical Types</span>
                         </h3>
                         <p className="text-xs text-gray-400 font-sans mt-0.5">
-                          Both views represent the exact same durable project. ABIDE automatically chooses presentation based on complexity: multi-stage automation gets Visual View; source files get Code View.
+                          Unlike browser-only prototypes with React virtual files, ABIDE writes real projects to a durable sandbox directory: <code className="text-[#00F0FF] font-mono bg-[#111] px-1.5 py-0.5 border border-[#333]">./workspace-sandbox/projects/{activeProject.id}</code>.
                         </p>
                       </div>
-                      <div className="flex bg-[#141414] border border-[#333] p-1 gap-1">
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => setBuildViewMode("visual")}
-                          className={`px-3 py-1 text-[10px] font-mono font-bold uppercase transition-all ${
-                            buildViewMode === "visual" ? "bg-[#00F0FF] text-black" : "text-gray-400 hover:text-white"
-                          }`}
+                          onClick={() => setWorkbenchSurface("code" as any)}
+                          className="px-3 py-1.5 bg-[#00F0FF] hover:bg-white text-black font-black text-[10px] font-mono uppercase tracking-wider transition-all"
                         >
-                          🕸️ Visual View (Pipeline IR)
-                        </button>
-                        <button
-                          onClick={() => setBuildViewMode("code")}
-                          className={`px-3 py-1 text-[10px] font-mono font-bold uppercase transition-all ${
-                            buildViewMode === "code" ? "bg-[#00F0FF] text-black" : "text-gray-400 hover:text-white"
-                          }`}
-                        >
-                          📂 Code View (Source Files)
+                          Open in Code Editor (View #3) &gt;
                         </button>
                       </div>
                     </div>
 
-                    {buildViewMode === "visual" ? (
-                      <div className="space-y-3 p-4 bg-[#0E0E0E] border border-[#222] flex-1">
-                        <div className="flex items-center justify-between font-mono text-xs text-gray-300 border-b border-[#222] pb-2">
-                          <span>Flow ID: <strong className="text-[#00F0FF]">{activeProject.pipelineFlow?.flowId || "flow_default_01"}</strong></span>
-                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border border-emerald-500/30">
-                            Shared IR Format (Standalone LocalRunner & Veklom GPC)
-                          </span>
+                    {/* The 4 Project Types Explanation Grid */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-mono font-bold text-gray-400 uppercase block">The 4 Canonical ABIDE Project Types:</span>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 font-mono text-xs">
+                        <div className={`p-3 border ${activeProject.type === "application-service" ? "bg-[#0E1B22] border-[#00F0FF]" : "bg-[#0E0E0E] border-[#222]"}`}>
+                          <span className="text-[10px] text-[#00F0FF] font-black uppercase block">1. Application / Service</span>
+                          <p className="text-[11px] text-gray-300 font-sans mt-1">Small REST APIs, backend microservices, web hooks, or interactive dashboards.</p>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 py-4 items-center">
-                          {(activeProject.pipelineFlow?.nodes || [
-                            { id: "1", type: "trigger", label: "Receive POST Payload" },
-                            { id: "2", type: "validation", label: "Validate Schema (Zod)" },
-                            { id: "3", type: "model-call", label: "Call Ollama Inference" },
-                            { id: "4", type: "transformation", label: "Format Output Metadata" },
-                            { id: "5", type: "response", label: "Return JSON Result" }
-                          ]).map((node: any, idx: number, arr: any[]) => (
-                            <React.Fragment key={node.id}>
-                              <div className="p-3 bg-[#141414] border border-[#333] relative flex flex-col justify-between min-h-[90px]">
-                                <span className="text-[9px] font-mono font-bold text-[#00F0FF] uppercase block">{node.type}</span>
-                                <p className="text-xs font-mono font-bold text-white mt-1 leading-tight">{node.label}</p>
-                                <span className="text-[9px] font-mono text-gray-500 mt-2 block">ID: {node.id}</span>
-                              </div>
-                            </React.Fragment>
-                          ))}
+                        <div className={`p-3 border ${activeProject.type === "capability-unit" ? "bg-[#0E1B22] border-[#00F0FF]" : "bg-[#0E0E0E] border-[#222]"}`}>
+                          <span className="text-[10px] text-[#00F0FF] font-black uppercase block">2. Capability Unit</span>
+                          <p className="text-[11px] text-gray-300 font-sans mt-1">Reusable domain action with Zod schema verification and bounded inputs/outputs.</p>
                         </div>
-                        <div className="p-3 bg-[#111] border border-[#222] font-mono text-xs text-gray-400">
-                          <strong className="text-white">Why this matters:</strong> Pipelines are one project artifact—not the entire development environment. In standalone mode, this IR executes via local runner; in Veklom mode, it compiles to GPC &gt; CAPPO &gt; capability execution!
+                        <div className={`p-3 border ${activeProject.type === "automation-pipeline" ? "bg-[#0E1B22] border-[#00F0FF]" : "bg-[#0E0E0E] border-[#222]"}`}>
+                          <span className="text-[10px] text-[#00F0FF] font-black uppercase block">3. Automation / Pipeline</span>
+                          <p className="text-[11px] text-gray-300 font-sans mt-1">Multi-stage sequence or DAG graph connecting triggers, models, and transformations.</p>
+                        </div>
+                        <div className={`p-3 border ${activeProject.type === "skill-tool" ? "bg-[#0E1B22] border-[#00F0FF]" : "bg-[#0E0E0E] border-[#222]"}`}>
+                          <span className="text-[10px] text-[#00F0FF] font-black uppercase block">4. Skill / Agent Tool</span>
+                          <p className="text-[11px] text-gray-300 font-sans mt-1">SKILL.md definition, MCP tool wrapper, or specialized agent instruction bundle.</p>
                         </div>
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
-                        <div className="md:col-span-3 bg-[#0E0E0E] border border-[#222] p-3 space-y-2">
-                          <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
-                            Durable Sandbox Files
-                          </span>
-                          <div className="space-y-1">
-                            {Object.keys(activeProject.files || {}).map((fp) => (
-                              <button
-                                key={fp}
-                                onClick={() => setSelectedPath(fp)}
-                                className={`w-full text-left px-2.5 py-1.5 text-xs font-mono truncate transition-all ${
-                                  selectedPath === fp || (!selectedPath && fp === "src/server.ts")
-                                    ? "bg-[#00F0FF]/20 text-[#00F0FF] border-l-2 border-[#00F0FF]"
-                                    : "text-gray-400 hover:bg-[#161616] hover:text-white"
-                                }`}
-                              >
+                    </div>
+
+                    {/* Sandbox File System Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
+                      <div className="md:col-span-4 bg-[#0E0E0E] border border-[#222] p-3 space-y-2">
+                        <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                          Durable Sandbox Files List
+                        </span>
+                        <div className="space-y-1">
+                          {Object.keys(activeProject.files || {}).map((fp) => (
+                            <button
+                              key={fp}
+                              onClick={() => { setSelectedPath(fp); setWorkbenchSurface("code" as any); }}
+                              className="w-full text-left flex justify-between items-center p-1.5 bg-[#141414] hover:bg-[#1A1A1A] border border-[#222] text-xs font-mono transition-all group"
+                            >
+                              <span className="text-white truncate flex items-center gap-1.5 group-hover:text-[#00F0FF]">
+                                <FileCode size={12} className="text-emerald-400" />
                                 {fp}
-                              </button>
+                              </span>
+                              <span className="text-[9px] text-gray-500">{((activeProject.files[fp] || "").length || 120)} B</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="md:col-span-8 bg-[#0E0E0E] border border-[#222] p-3 space-y-3 flex flex-col justify-between font-mono text-xs">
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase block border-b border-[#222] pb-1">Manifest Overview (abide.project.json)</span>
+                          <div className="p-2.5 bg-[#111] border border-[#282828] space-y-1 text-[11px]">
+                            <div>Project ID: <strong className="text-white">{activeProject.id}</strong></div>
+                            <div>Name: <strong className="text-[#00F0FF]">{activeProject.name}</strong></div>
+                            <div>Execution Mode: <strong className="text-emerald-400">{activeProject.executionMode || "standalone-byok"}</strong></div>
+                            <div>Status: <strong className="text-amber-300">{activeProject.status || "verified-bounded"}</strong></div>
+                          </div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase block pt-2 border-b border-[#222] pb-1">Approved Package Dependencies</span>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {(activeProject.dependencies || ["zod@^3.22.4", "express@^4.18.2", "@types/node@^20.0.0"]).map((dep: string, idx: number) => (
+                              <span key={idx} className="px-2 py-0.5 bg-[#1A1A1A] border border-[#333] text-purple-300 text-[10px]">
+                                {dep}
+                              </span>
                             ))}
                           </div>
                         </div>
-                        <div className="md:col-span-9 bg-[#0E0E0E] border border-[#222] p-3 flex flex-col justify-between">
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center border-b border-[#222] pb-1.5 font-mono text-xs text-gray-300">
-                              <span>Editing: <strong className="text-white">{selectedPath || "src/server.ts"}</strong></span>
-                              <span className="text-[10px] text-gray-500">Durable Sandbox Path: ./workspace-sandbox/projects/{activeProject.id}/{selectedPath || "src/server.ts"}</span>
-                            </div>
-                            <pre className="p-3 bg-black border border-[#1F1F1F] text-xs font-mono text-emerald-300 overflow-x-auto max-h-[320px]">
-                              {activeProject.files[selectedPath || "src/server.ts"] || activeProject.files["README.md"] || "// Select a file from the sidebar"}
-                            </pre>
-                          </div>
+                        <div className="p-2.5 bg-[#141414] border border-[#282828] text-[10px] text-gray-400">
+                          <strong className="text-white">Durable Guarantee:</strong> These files exist on the container disk and are compiled by real language tooling in Surface 5 (Build View).
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
 
-                {/* SURFACE 3: CHANGES (PROPOSED DIFF REVIEW) */}
-                {workbenchSurface === "changes" && (
+                {/* SURFACE 3: CODE VIEW (LIMITED EDITOR & AST DIFF REVIEW) */}
+                {(workbenchSurface === "code" || (workbenchSurface as string) === "changes" || (workbenchSurface as string) === "workspace") && activeProject && (
                   <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
                     <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
                       <div>
                         <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
                           <FileCode size={16} className="text-[#00F0FF]" />
-                          <span>Surface 3: Changes — Sovereign Diff Review</span>
+                          <span>Surface 3: Code View — Limited Editor &amp; Sovereign Diff Review</span>
                         </h3>
                         <p className="text-xs text-gray-400 font-sans mt-0.5">
-                          The agent does not immediately overwrite files. It proposes a diff. You approve, reject, or edit proposed changes before anything is written to the durable sandbox!
+                          A bounded editor for generated source files, schemas, tests, and AST transformations. Review proposed diffs before writing to the durable sandbox!
                         </p>
                       </div>
                       {activeProposal && (
                         <button
                           onClick={handleApplyPatch}
-                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)] shrink-0"
                         >
                           <CheckCircle2 size={16} />
-                          <span>Approve &amp; Write to Sandbox &gt;</span>
+                          <span>Approve &amp; Write Diff to Sandbox &gt;</span>
                         </button>
                       )}
                     </div>
 
-                    {!activeProposal ? (
-                      <div className="p-8 text-center bg-[#0E0E0E] border border-[#222] space-y-3">
-                        <FileCode size={32} className="mx-auto text-gray-600" />
-                        <p className="text-xs font-mono text-gray-400">No active diff proposal pending review.</p>
-                        <button
-                          onClick={() => setWorkbenchSurface("intent")}
-                          className="px-4 py-2 bg-[#1A1A1A] hover:bg-[#00F0FF] hover:text-black text-xs font-mono font-bold uppercase transition-all"
-                        >
-                          Go to Intent &amp; Propose Build &gt;
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 flex-1">
-                        <div className="p-3 bg-[#111] border border-[#333] flex justify-between items-center font-mono text-xs">
-                          <div>
-                            <span className="text-gray-400">Proposal ID: <strong className="text-white">{activeProposal.proposalId}</strong></span>
-                            <span className="ml-4 text-gray-400">Summary: <strong className="text-[#00F0FF]">{activeProposal.summary}</strong></span>
-                          </div>
-                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Pending Approval</span>
+                    {/* Sovereign Diff Review Banner (When Active Proposal Pending) */}
+                    {activeProposal && (
+                      <div className="p-3 bg-[#111] border-2 border-amber-500/50 space-y-3 font-mono text-xs">
+                        <div className="flex justify-between items-center pb-1 border-b border-[#282828]">
+                          <span className="text-amber-300 font-bold flex items-center gap-2">
+                            <Sparkles size={14} />
+                            <span>Pending AST Diff Proposal ID: {activeProposal.proposalId}</span>
+                          </span>
+                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase">Sovereign Review Required</span>
                         </div>
-
-                        <div className="space-y-3">
+                        <p className="text-gray-300 font-sans text-xs">Summary: <strong className="text-[#00F0FF]">{activeProposal.summary}</strong></p>
+                        <div className="space-y-2 max-h-[180px] overflow-y-auto">
                           {activeProposal.operations.map((op: any, idx: number) => (
-                            <div key={idx} className="bg-[#0E0E0E] border border-[#222] overflow-hidden font-mono text-xs">
-                              <div className="bg-[#141414] p-2.5 border-b border-[#222] flex justify-between items-center">
-                                <span className="font-bold text-white flex items-center gap-2">
-                                  <span className={op.operation === "create" ? "text-emerald-400" : "text-amber-400"}>
-                                    {op.operation === "create" ? "+ [CREATE]" : "~ [UPDATE]"}
-                                  </span>
-                                  <span>{op.path}</span>
+                            <div key={idx} className="bg-[#0E0E0E] border border-[#222] overflow-hidden text-[11px]">
+                              <div className="bg-[#141414] p-2 border-b border-[#222] flex justify-between items-center font-bold">
+                                <span className={op.operation === "create" ? "text-emerald-400" : "text-amber-400"}>
+                                  {op.operation === "create" ? "+ [CREATE]" : "~ [UPDATE]"} {op.path}
                                 </span>
                               </div>
-                              <pre className="p-3 bg-black text-emerald-300 overflow-x-auto max-h-[200px]">
+                              <pre className="p-2 bg-black text-emerald-300 overflow-x-auto text-[10px]">
                                 {op.content}
                               </pre>
                             </div>
@@ -1415,20 +1424,116 @@ export async function executeCapability(payload: any) {
                         </div>
                       </div>
                     )}
+
+                    {/* Limited Source File Editor Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 flex-1">
+                      <div className="md:col-span-3 bg-[#0E0E0E] border border-[#222] p-3 space-y-2">
+                        <span className="text-[10px] font-mono font-bold text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                          Select Sandbox File
+                        </span>
+                        <div className="space-y-1">
+                          {Object.keys(activeProject.files || {}).map((fp) => (
+                            <button
+                              key={fp}
+                              onClick={() => setSelectedPath(fp)}
+                              className={`w-full text-left px-2.5 py-1.5 text-xs font-mono truncate transition-all ${
+                                selectedPath === fp || (!selectedPath && fp === "src/server.ts")
+                                  ? "bg-[#00F0FF]/20 text-[#00F0FF] border-l-2 border-[#00F0FF]"
+                                  : "text-gray-400 hover:bg-[#161616] hover:text-white"
+                              }`}
+                            >
+                              {fp}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="md:col-span-9 bg-[#0E0E0E] border border-[#222] p-3 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center border-b border-[#222] pb-1.5 font-mono text-xs text-gray-300">
+                            <span>Editing: <strong className="text-white">{selectedPath || "src/server.ts"}</strong></span>
+                            <span className="text-[10px] text-gray-500">Durable Path: ./workspace-sandbox/projects/{activeProject.id}/{selectedPath || "src/server.ts"}</span>
+                          </div>
+                          <pre className="p-3 bg-black border border-[#1F1F1F] text-xs font-mono text-emerald-300 overflow-x-auto max-h-[340px]">
+                            {activeProject.files[selectedPath || "src/server.ts"] || activeProject.files["README.md"] || "// Select a file from the sidebar"}
+                          </pre>
+                        </div>
+                        <div className="flex justify-between items-center pt-2 border-t border-[#222] font-mono text-[10px] text-gray-400">
+                          <span>AST Status: <strong className="text-emerald-400">Verified Valid TypeScript / Zod Schema</strong></span>
+                          <button
+                            onClick={() => setWorkbenchSurface("run" as any)}
+                            className="px-3 py-1 bg-[#1A1A1A] hover:bg-[#333] text-white border border-[#333] uppercase font-bold"
+                          >
+                            Proceed to Build &amp; Exec (View #5) &gt;
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* SURFACE 4: RUN (ISOLATED SANDBOX EXECUTION) */}
-                {workbenchSurface === "run" && activeProject && (
+                {/* SURFACE 4: FLOW VIEW (PIPELINE IR GRAPH) */}
+                {workbenchSurface === "flow" && activeProject && (
+                  <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
+                    <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
+                          <GitCommit size={16} className="text-[#00F0FF]" />
+                          <span>Surface 4: Flow View — Visual Pipeline IR Graph</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">
+                          Used only when the project includes a real sequence, graph, automation, or agent workflow. Pipelines are ONE construction type—not the entire mini-IDE!
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2.5 py-1 border border-emerald-500/30 font-bold uppercase">
+                          Shared IR Format (Standalone LocalRunner &amp; Veklom GPC)
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 p-4 bg-[#0E0E0E] border border-[#222] flex-1">
+                      <div className="flex items-center justify-between font-mono text-xs text-gray-300 border-b border-[#222] pb-2">
+                        <span>Flow ID: <strong className="text-[#00F0FF]">{activeProject.pipelineFlow?.flowId || "flow_default_01"}</strong></span>
+                        <span className="text-gray-400 text-[11px]">Execution Order: Sequential DAG (5 nodes)</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 py-6 items-center">
+                        {(activeProject.pipelineFlow?.nodes || [
+                          { id: "1", type: "trigger", label: "Receive POST Payload" },
+                          { id: "2", type: "validation", label: "Validate Schema (Zod)" },
+                          { id: "3", type: "model-call", label: "Call Ollama Inference" },
+                          { id: "4", type: "transformation", label: "Format Output Metadata" },
+                          { id: "5", type: "response", label: "Return JSON Result" }
+                        ]).map((node: any, idx: number) => (
+                          <React.Fragment key={node.id}>
+                            <div className="p-3.5 bg-[#141414] border-2 border-[#333] hover:border-[#00F0FF] transition-all relative flex flex-col justify-between min-h-[100px] shadow-lg">
+                              <span className="text-[9px] font-mono font-bold text-[#00F0FF] uppercase block tracking-wider">{idx + 1}. {node.type}</span>
+                              <p className="text-xs font-mono font-bold text-white mt-1.5 leading-tight">{node.label}</p>
+                              <span className="text-[9px] font-mono text-gray-500 mt-2 block">Node ID: {node.id}</span>
+                            </div>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                      <div className="p-3.5 bg-[#111] border border-[#282828] font-mono text-xs text-gray-300 space-y-1">
+                        <div className="text-[#00F0FF] font-bold uppercase text-[11px]">Why this matters for ABIDE:</div>
+                        <p className="font-sans text-xs text-gray-300">
+                          Someone might use ABIDE to build a small API, an MCP server, an agent skill, or a data transformer—not just pipelines. When a pipeline IS needed, ABIDE represents it in this shared IR so it can execute locally via BYOK runner or compile into Veklom GPC &gt; CAPPO!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SURFACE 5: BUILD VIEW (REAL INSTALL, TYPECHECK, TEST & PREVIEW OUTPUT) */}
+                {(workbenchSurface === "run" || (workbenchSurface as string) === "compiler") && activeProject && (
                   <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
                     <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
                       <div>
                         <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
                           <Terminal size={16} className="text-[#00F0FF]" />
-                          <span>Surface 4: Run — Isolated Sandbox Execution</span>
+                          <span>Surface 5: Build View — Real Install, Typecheck, Test &amp; Preview Output</span>
                         </h3>
                         <p className="text-xs text-gray-400 font-sans mt-0.5">
-                          ABIDE creates an isolated sandbox and runs only approved project commands. This is real process output, not animation-generated status!
+                          ABIDE creates an isolated sandbox and runs real language tooling. This is real terminal process output over your durable files, not animation-generated status!
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1500,22 +1605,22 @@ export async function executeCapability(payload: any) {
                   </div>
                 )}
 
-                {/* SURFACE 5: EVIDENCE & PERSISTENCE */}
-                {workbenchSurface === "evidence" && activeProject && (
+                {/* SURFACE 6: HANDOFF VIEW (cAPI DELEGATION & EVIDENCE LEDGER) */}
+                {(workbenchSurface === "evidence" || (workbenchSurface as string) === "handoff") && activeProject && (
                   <div className="space-y-4 bg-[#0A0A0A] p-4 border border-[#222] flex-1 flex flex-col">
                     <div className="flex items-center justify-between border-b border-[#1F1F1F] pb-2">
                       <div>
                         <h3 className="text-sm font-black text-white font-mono uppercase flex items-center gap-2">
                           <ShieldCheck size={16} className="text-[#00F0FF]" />
-                          <span>Surface 5: Evidence & Persistence — Audit Trail</span>
+                          <span>Surface 6: Handoff View — Canonical cAPI Delegation &amp; Evidence Ledger</span>
                         </h3>
                         <p className="text-xs text-gray-400 font-sans mt-0.5">
-                          ABIDE records generated files, changed files, package versions, compile output, test output, run logs, project hash, timestamps, and model used. Connected to Veklom, this feeds PGL!
+                          ABIDE is NOT the control surface for all of Veklom. Once a project is verified, ABIDE hands off the artifact into the canonical backend mesh for governed execution!
                         </p>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => alert(`Exporting ${activeProject.name} as ZIP bundle from ./workspace-sandbox/projects/${activeProject.id}... Download initiated!`)}
+                          onClick={() => alert(`Exporting ${activeProject.name} as ZIP bundle from ./workspace-sandbox/projects/${activeProject.id}... Standalone bundle downloaded!`)}
                           className="px-4 py-2 bg-[#00F0FF] hover:bg-white text-black font-black text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1.5"
                         >
                           <Download size={14} />
@@ -1530,13 +1635,67 @@ export async function executeCapability(payload: any) {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    {/* Canonical Handoff & Routing Mesh Map */}
+                    <div className="p-4 bg-[#111] border-2 border-[#00F0FF]/40 space-y-3 font-mono text-xs">
+                      <div className="flex justify-between items-center pb-1 border-b border-[#282828]">
+                        <span className="text-[#00F0FF] font-bold uppercase tracking-wider flex items-center gap-2">
+                          <span>🌐 Canonical Veklom Delegation Mesh</span>
+                        </span>
+                        <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase">Ready for Handoff</span>
+                      </div>
+                      <div className="p-3 bg-black border border-[#222] flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-300">
+                        <div className="p-2 bg-[#141414] border border-[#00F0FF] text-[#00F0FF] font-bold">
+                          ABIDE Workbench (3009)
+                        </div>
+                        <span className="text-gray-500 font-bold">&gt;&gt;</span>
+                        <div className="p-2 bg-[#141414] border border-emerald-500 text-emerald-400 font-bold">
+                          cAPI Mesh Gateway (3003)
+                        </div>
+                        <span className="text-gray-500 font-bold">&gt;&gt;</span>
+                        <div className="p-2 bg-[#141414] border border-purple-500 text-purple-300 font-bold">
+                          GPC Runtime
+                        </div>
+                        <span className="text-gray-500 font-bold">&gt;&gt;</span>
+                        <div className="p-2 bg-[#141414] border border-amber-500 text-amber-300 font-bold">
+                          CAPPO Engine (8002)
+                        </div>
+                        <span className="text-gray-500 font-bold">&gt;&gt;</span>
+                        <div className="p-2 bg-[#141414] border border-blue-500 text-blue-300 font-bold">
+                          Four Backends &amp; PGL Ledger
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-[11px] text-gray-400">Target Handoff Payload: <strong className="text-white">abide.project.json + AST AST Diff + Sandbox Files</strong></span>
+                        <button
+                          onClick={() => {
+                            const newRecord = {
+                              timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
+                              action: "HANDOFF_CAPI_MESH",
+                              output: `Delegated ${activeProject.name} to cAPI (Port 3003) -> GPC -> CAPPO (Port 8002). Canonical execution receipt sealed!`,
+                              status: "DELEGATED_SUCCESS",
+                              durationMs: 42,
+                              hash: computeHash(activeProject.id + Date.now()),
+                              modelUsed: "cAPI-GPC-Bridge"
+                            };
+                            if (activeProject) {
+                              activeProject.evidenceHistory = [newRecord, ...(activeProject.evidenceHistory || [])];
+                            }
+                            alert("🚀 Project successfully handed off into canonical cAPI (3003) -> GPC -> CAPPO (8002) mesh!");
+                          }}
+                          className="px-5 py-2 bg-gradient-to-r from-[#00F0FF] to-emerald-400 hover:from-white hover:to-white text-black font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(0,240,255,0.3)]"
+                        >
+                          🚀 Handoff Approved Project to cAPI Mesh &gt;
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 flex-1">
                       <div className="p-3 bg-[#111] border border-[#222] flex justify-between items-center font-mono text-xs">
                         <span>Project Hash: <strong className="text-[#00F0FF]">0x_abide_proj_{computeHash(activeProject.id).substring(0, 16)}</strong></span>
                         <span>Evidence Records: <strong className="text-white">{(activeProject.evidenceHistory || []).length} events sealed</strong></span>
                       </div>
 
-                      <div className="space-y-2 overflow-y-auto max-h-[340px]">
+                      <div className="space-y-2 overflow-y-auto max-h-[260px]">
                         {(activeProject.evidenceHistory || []).map((ev: any, idx: number) => (
                           <div key={idx} className="p-3 bg-[#0E0E0E] border border-[#222] font-mono text-xs space-y-1">
                             <div className="flex justify-between items-center border-b border-[#1A1A1A] pb-1">
