@@ -98,6 +98,31 @@ describe("SMT Solver: Z3 Integration Tests", () => {
     assert.strictEqual(smtUnsatRes.error.includes("UNSAT"), true);
   });
 
+  it("should check VERIFICATION_SERVICE_URL availability and mark PlanIR as UNVERIFIED if Z3 service is unreachable", async () => {
+    const { verifyPlanIRWithZ3, checkZ3ServiceAvailability } = await import("../compiler/seked");
+    const mockPlan: any = {
+      planId: "test-plan-unverified",
+      verificationStatus: "PENDING",
+      steps: [{ sequence: 1, lane: 3, riskLevel: "CRITICAL" }]
+    };
+
+    const isAvailable = await checkZ3ServiceAvailability("http://localhost:59999");
+    assert.strictEqual(isAvailable, false);
+
+    const oldUrl = process.env.VERIFICATION_SERVICE_URL;
+    process.env.VERIFICATION_SERVICE_URL = "http://localhost:59999";
+    const resultPlan = await verifyPlanIRWithZ3(mockPlan, ["(= total_steps 1)"]);
+    if (oldUrl !== undefined) {
+      process.env.VERIFICATION_SERVICE_URL = oldUrl;
+    } else {
+      delete process.env.VERIFICATION_SERVICE_URL;
+    }
+
+    assert.strictEqual(resultPlan.verificationStatus, "UNVERIFIED");
+    assert.strictEqual(resultPlan.z3Proof.verified, false);
+    assert.ok(resultPlan.z3Proof.error.includes("unreachable") || resultPlan.z3Proof.error.includes("offline"));
+  });
+
   after(() => {
     setTimeout(() => { process.exit(0); }, 100);
   });

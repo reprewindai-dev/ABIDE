@@ -47,9 +47,11 @@ import {
   Boxes,
   Workflow,
   Folder,
-  Filter
+  Filter,
+  Plug
 } from "lucide-react";
 import { BlueprintResult, VirtualFile } from "../types";
+import VioMarketplace from "./VioMarketplace";
 
 function computeHash(str: string): string {
   let hash = 0;
@@ -296,7 +298,7 @@ export default function CognitiveIde({
 }: CognitiveIdeProps) {
   // Mini IDE Main Tabs: Factory Workbench, Workspace, Workflow, Type Knowledge Graph, Compact Solver, Academic Hub, Compiler
   const [activePanel, setActivePanel] = useState<
-    "factory" | "workspace" | "flow" | "ontology" | "solver" | "academic" | "compiler"
+    "factory" | "workspace" | "flow" | "ontology" | "solver" | "academic" | "compiler" | "plugins"
   >("factory");
 
   // ABIDE BOUNDED PROJECT FACTORY STATE (The 5 Surfaces)
@@ -1282,6 +1284,17 @@ export async function executeCapability(payload: any) {
           }`}
         >
           🎓 Academic Booster Hub
+        </button>
+        <button
+          onClick={() => setActivePanel("plugins")}
+          className={`px-4 py-2.5 text-[10px] font-mono font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 ${
+            activePanel === "plugins"
+              ? "border-[#00F0FF] text-[#00F0FF] bg-[#0E1B22]/60 shadow-[0_0_15px_rgba(0,240,255,0.15)] glow-cyan font-bold"
+              : "border-transparent text-gray-400 hover:text-white"
+          }`}
+        >
+          <Plug size={14} className={activePanel === "plugins" ? "text-[#00F0FF] animate-pulse" : "text-gray-400"} />
+          <span>🔌 VIO Marketplace & Plugins (M2M Connectors)</span>
         </button>
       </div>
 
@@ -3021,6 +3034,19 @@ export async function executeCapability(payload: any) {
                     </span>
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {/* PANEL 7: VIO MARKETPLACE & IDE PLUGINS (M2M CONNECTORS) */}
+            {activePanel === "plugins" && (
+              <motion.div
+                key="plugins-panel"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="w-full flex-1"
+              >
+                <VioMarketplace blueprint={blueprint} />
               </motion.div>
             )}
 

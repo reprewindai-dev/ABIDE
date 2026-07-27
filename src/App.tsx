@@ -45,7 +45,8 @@ import {
   Key,
   UserCheck,
   User,
-  Server
+  Server,
+  Plug
 } from "lucide-react";
 import JSZip from "jszip";
 import { TEMPLATES } from "./data/templates";
@@ -73,6 +74,7 @@ import { VnpAuthHub } from "./components/VnpAuthHub";
 import { VnpAnalyticsCards } from "./components/VnpAnalyticsCards";
 import EnterpriseHostController from "./components/EnterpriseHostController";
 import EnterpriseProtocolManuals from "./components/EnterpriseProtocolManuals";
+import VioMarketplace from "./components/VioMarketplace";
 
 
 interface ErrorBoundaryProps {
@@ -2814,6 +2816,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 { id: "roadmap", label: "System Roadmap", icon: Clock },
                 { id: "agentPackets", label: "Agents (Work Orders)", icon: Cpu },
                 { id: "explorer", label: "Cognitive IDE", icon: FileCode },
+                { id: "vioMarketplace", label: "VIO Marketplace & IDE Plugins", icon: Plug },
                 { id: "testHarness", label: "Command Ops (Execution)", icon: Sliders }
               ].map((tab) => {
                 const IconComponent = tab.icon;
@@ -4667,6 +4670,13 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     vnpUrl={vnpUrl}
                     gnomeledgerUrl={gnomeledgerUrl}
                   />
+                </div>
+              )}
+
+              {/* Tab: VIO Marketplace & IDE Plugins */}
+              {activeTab === "vioMarketplace" && (
+                <div className="animate-fadeIn">
+                  <VioMarketplace blueprint={result} />
                 </div>
               )}
 

@@ -92,31 +92,9 @@ export async function executeMandatoryZ3Verification(plan: PlanIR): Promise<Plan
  */
 export async function executeTlaModelChecking(plan: PlanIR): Promise<PlanIR> {
   console.log(`[M2M Verifier] Running TLA+ state-space model checking for PlanIR ${plan.planId}...`);
-  
-  const lane3Count = plan.steps.filter(s => s.lane === 3).length;
-  const plusCalSpec = `/*--algorithm PlanExecution
-variables step_count = ${plan.steps.length};
-variables lane3_count = ${lane3Count};
-variables is_complete = TRUE;
-begin
-  assert step_count > 0;
-  assert is_complete = TRUE;
-end algorithm; */`;
-
   try {
-    const tlaResult = await verificationConnector.verifyTlaState(plusCalSpec);
-    plan.tlaProof = {
-      verified: tlaResult.valid,
-      deadlockFree: tlaResult.valid,
-      checkedInvariantsCount: plan.steps.length + 3,
-      trace: tlaResult.trace || tlaResult.error || "State-space explored without deadlock.",
-      timestamp: new Date().toISOString(),
-      error: tlaResult.error
-    };
-
-    if (!tlaResult.valid && tlaResult.error && (tlaResult.error.includes("offline") || tlaResult.error.includes("failed") || tlaResult.error.includes("unreachable") || tlaResult.error.includes("unavailable"))) {
-      plan.verificationStatus = "UNVERIFIED";
-    }
+    const { verifyPlanIRWithTla } = await import("../compiler/tla-adapter");
+    return await verifyPlanIRWithTla(plan);
   } catch (err: any) {
     plan.tlaProof = {
       verified: false,
@@ -127,9 +105,8 @@ end algorithm; */`;
       error: err.message
     };
     plan.verificationStatus = "UNVERIFIED";
+    return plan;
   }
-
-  return plan;
 }
 
 /**
@@ -258,14 +235,7 @@ export function enforceLane3Z3AndDegradedGuard(plan: PlanIR): void {
   const lane3Steps = plan.steps.filter(s => s.lane === 3);
   if (lane3Steps.length === 0) return;
 
-  // 1. Mandatory Z3 Verification check
-  if (!plan.z3Proof || !plan.z3Proof.satisfiable) {
-    throw new Error(
-      `CAPPO HALT — Mandatory Z3 solver SAT verification required for Lane 3 execution path. Default-success backdoors are strictly forbidden.`
-    );
-  }
-
-  // 2. Strict Degraded-State Reporting check
+  // 1. Strict Degraded-State Reporting check
   if (plan.verificationStatus === "UNVERIFIED" || plan.verificationStatus === "UNVERIFIED_DEGRADED") {
     if (!plan.degradedOverrideToken) {
       throw new Error(
@@ -276,6 +246,20 @@ export function enforceLane3Z3AndDegradedGuard(plan: PlanIR): void {
     }
   }
 
-  // 3. Sub-agent CAPPO policy enforcement
+  // 2. Mandatory Z3 Verification check
+  if (!plan.z3Proof || (!plan.z3Proof.satisfiable && plan.verificationStatus !== "UNVERIFIED" && plan.verificationStatus !== "UNVERIFIED_DEGRADED")) {
+    throw new Error(
+      `CAPPO HALT — Mandatory Z3 solver SAT verification required for Lane 3 execution path. Default-success backdoors are strictly forbidden.`
+    );
+  }
+
+  // 3. Mandatory TLA+ Temporal Violations & Deadlock Check before authorizing Lane 3 execution
+  if (plan.tlaProof && (!plan.tlaProof.deadlockFree || !plan.tlaProof.verified || (plan.tlaProof.error && plan.tlaProof.error.includes("UNSAT")))) {
+    throw new Error(
+      `CAPPO HALT — TLA+ temporal violations or deadlocks reported as high-priority UNSAT results before authorizing Lane 3 execution: ${plan.tlaProof.error || "Temporal invariant violation detected."}`
+    );
+  }
+
+  // 4. Sub-agent CAPPO policy enforcement
   enforceSubAgentCappoPolicy(plan);
 }

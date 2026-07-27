@@ -481,3 +481,11 @@ export function triageBlueprintIntakeV1(blueprint: any): SekedIntakeResult {
     signature
   };
 }
+
+// ==========================================================
+// Z3 CONCRETE HTTP ADAPTER & VERIFICATION SERVICE AVAILABILITY
+// ==========================================================
+
+export type { Z3HttpAdapterResult } from "./z3-adapter";
+export { checkZ3ServiceAvailability, executeZ3HttpAdapter, verifyPlanIRWithZ3 } from "./z3-adapter";
+
