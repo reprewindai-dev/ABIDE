@@ -44,7 +44,7 @@ export default function GovernanceSimulator({ capabilities }: GovernanceSimulato
           c: cVal,
           d: dVal,
           s: sVal,
-          systemName: "APEX-SIMULATED-GATEWAY",
+          systemName: "ABIDE-SIMULATED-GATEWAY",
           description: "Interactive SEKED telemetry valuation sweep."
         })
       });

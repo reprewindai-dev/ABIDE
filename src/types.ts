@@ -263,6 +263,7 @@ export interface ExecutionPacket {
 export interface BlueprintResult {
   title: string;
   tagline: string;
+  version?: string;
   timestamp: string;
   hash: string;
   highLevelGoals: Goal[];
@@ -281,7 +282,7 @@ export interface BlueprintResult {
 }
 
 export interface ModelConfig {
-  provider: "openai" | "anthropic" | "deepseek" | "llama" | "custom";
+  provider: "gemini" | "openai" | "anthropic" | "deepseek" | "llama" | "custom";
   apiKey: string;
   modelName: string;
   customUrl?: string;

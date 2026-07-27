@@ -313,7 +313,7 @@ export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.
   // Tab 3: Interactive Terminal States
   const [terminalCommand, setTerminalCommand] = useState("");
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    `[veklom-init] Local enclave gateway established on Port 3009.`,
+    `[veklom-init] Local enclave gateway established on Port 3000.`,
     `[veklom-ready] Local telemetry initialized. Cryptographic seed set from active blueprint.`,
     `Type 'list' to view live capabilities, 'ship <id>' to route a capability, or 'check-spec' for Z3 validator.`
   ]);
@@ -543,7 +543,7 @@ export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.
 
             <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
               <span className="text-[10px] font-black text-[#9D4EDD] uppercase block border-b border-[#222] pb-1">
-                6. ABIDE (Ports: 3009 | Apex: 3011)
+                6. ABIDE (Ports: 3009 | Abide: 3011)
               </span>
               <p className="text-gray-400 text-[11px] leading-normal font-sans">
                 <strong>Intent &amp; bounded build workbench.</strong> Focuses on: messy intent &gt; verified understanding &gt; blueprint &gt; architecture &gt; implementation plan &gt; generated code &gt; sandbox tests &gt; handoff to cAPI.
@@ -1298,7 +1298,7 @@ export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.
                     {/* SDK block code */}
                     <div className="bg-black border border-[#222] p-4 relative font-mono text-[9px] leading-relaxed text-cyan-400 select-all overflow-x-auto">
                       <button
-                        onClick={() => handleCopyCode(`import { SovereignGateway } from "@veklom/gateway-sdk";\n\nconst sdk = new SovereignGateway({\n  endpoint: "http://localhost:3009",\n  systemHash: "${blueprintHash}",\n  registrant: "${userEmail}"\n});\n\n// Trigger capability on-the-fly\nconst receipt = await sdk.executeCapability({\n  id: "${activeBlueprint.capabilities[0]?.id || "govern-agent-session"}",\n  payload: { runTimeLimit: 120 }\n});\nconsole.log("SEKED Verified Signature Receipt:", receipt.signature);`, "sdk-ts")}
+                        onClick={() => handleCopyCode(`import { SovereignGateway } from "@veklom/gateway-sdk";\n\nconst sdk = new SovereignGateway({\n  endpoint: "http://localhost:3000",\n  systemHash: "${blueprintHash}",\n  registrant: "${userEmail}"\n});\n\n// Trigger capability on-the-fly\nconst receipt = await sdk.executeCapability({\n  id: "${activeBlueprint.capabilities[0]?.id || "govern-agent-session"}",\n  payload: { runTimeLimit: 120 }\n});\nconsole.log("SEKED Verified Signature Receipt:", receipt.signature);`, "sdk-ts")}
                         className="absolute top-2 right-2 text-gray-500 hover:text-white text-[8px] uppercase flex items-center gap-1"
                       >
                         {copiedText === "sdk-ts" ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
@@ -1310,7 +1310,7 @@ export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.
 
 // Initialize byte-safe isolated enclaves
 const sdk = new SovereignGateway({
-  endpoint: "http://localhost:3009",
+  endpoint: "http://localhost:3000",
   systemHash: "${blueprintHash}",
   registrant: "${userEmail}"
 });
@@ -1327,7 +1327,7 @@ console.log("SEKED Verified Receipt:", receipt.signature);`}</code>
 
                     <div className="p-3 bg-amber-950/10 border border-amber-500/20 text-[8.5px] font-mono text-gray-400 leading-relaxed uppercase">
                       <span className="text-amber-500 font-bold block mb-0.5">LOCAL INTEGRATION BINDINGS</span>
-                      To route locally, run your Node process on the same VM host. Calls resolve over Port 3009 via direct IPC bindings to ensure EAL6 isolation boundaries.
+                      To route locally, run your Node process on the same VM host. Calls resolve over Port 3000 via direct IPC bindings to ensure EAL6 isolation boundaries.
                     </div>
 
                   </motion.div>

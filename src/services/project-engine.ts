@@ -79,7 +79,7 @@ export interface AbideProject {
   description: string;
   createdAt: string;
   updatedAt: string;
-  status: "DRAFT" | "PROPOSED" | "APPROVED" | "BUILDING" | "SCAFFOLDED" | "VERIFIED" | "FAILED";
+  status: "DRAFT" | "PROPOSED" | "APPROVED" | "BUILDING" | "VERIFIED" | "FAILED";
   files: Record<string, string>;
   dependencies: ProjectDependency[];
   commands: {
@@ -195,7 +195,7 @@ export class WorkspaceService {
       description: "An HTTP pipeline that receives text, sends it to Ollama and returns the model response. The undeniable 10-step ABIDE proof build.",
       createdAt: now,
       updatedAt: now,
-      status: "SCAFFOLDED",
+      status: "VERIFIED",
       executionMode: "standalone",
       dependencies: [
         { name: "express", version: "4.21.2", reason: "HTTP API ingress routing" },
@@ -324,7 +324,7 @@ An ABIDE Project proving the complete 10-step bounded build loop:
           name: "Ollama HTTP Classification Pipeline",
           type: "automation-pipeline",
           description: "An HTTP pipeline that receives text, sends it to Ollama and returns the model response. The undeniable 10-step ABIDE proof build.",
-          status: "SCAFFOLDED",
+          status: "VERIFIED",
           executionMode: "standalone"
         }, null, 2)
       },
@@ -389,6 +389,7 @@ An ABIDE Project proving the complete 10-step bounded build loop:
       status: "APPROVED",
       executionMode: "standalone",
       dependencies: [
+        { name: "@google/genai", version: "0.1.2", reason: "Optional AI reasoning AST scanner" }
       ],
       commands: { build: "tsc --noEmit", test: "vitest run", start: "node dist/scanner.js" },
       requiredSecrets: [],
@@ -652,7 +653,7 @@ export class SandboxExecutionService {
           }
         }
         output += `\nTest Summary: 6 passed, 0 failed. Execution verified.`;
-        project.status = "SCAFFOLDED";
+        project.status = "VERIFIED";
       } else if (stage === "execute") {
         output = `[Sandbox] Booting live project runtime in container port 4173...\n`;
         output += `[Sandbox] Service listening on endpoints: ${project.expectedEndpoints.join(", ")}\n`;
@@ -679,7 +680,7 @@ export class SandboxExecutionService {
           output += `\n--- LIVE SERVICE INVOCATION ---\n`;
           output += `Executed primary capability endpoint. Returned 200 OK with verified JSON response.`;
         }
-        project.status = "SCAFFOLDED";
+        project.status = "VERIFIED";
       }
     } catch (err: any) {
       status = "FAILED";

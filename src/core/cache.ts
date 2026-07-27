@@ -32,7 +32,7 @@ interface CacheEntry {
   latencyMs: number;
 }
 
-export class ApexCacheManager {
+export class AbideCacheManager {
   private cache = new Map<string, CacheEntry>();
   private maxEntries = 100;
   private hitsCount = 0;
@@ -191,7 +191,7 @@ export class ApexCacheManager {
     try {
       // Store compiled blueprint with a 24-hour expiration TTL (86400 seconds)
       await this.redisClient.set(
-        `apex:blueprint:${key}`,
+        `abide:blueprint:${key}`,
         JSON.stringify(entry),
         "EX",
         86400
@@ -207,7 +207,7 @@ export class ApexCacheManager {
   public async hydrateFromRedis(key: string): Promise<boolean> {
     if (!this.isRedisConnected || !this.redisClient) return false;
     try {
-      const dataStr = await this.redisClient.get(`apex:blueprint:${key}`);
+      const dataStr = await this.redisClient.get(`abide:blueprint:${key}`);
       if (dataStr) {
         const entry: CacheEntry = JSON.parse(dataStr);
         this.cache.set(key, entry);
@@ -263,7 +263,7 @@ export class ApexCacheManager {
 
     // Async clear Redis keys in background
     if (this.isRedisConnected && this.redisClient) {
-      this.redisClient.keys("apex:blueprint:*").then((keys) => {
+      this.redisClient.keys("abide:blueprint:*").then((keys) => {
         if (keys.length > 0 && this.redisClient) {
           this.redisClient.del(...keys).catch(() => {});
         }
@@ -272,4 +272,4 @@ export class ApexCacheManager {
   }
 }
 
-export const cacheManager = new ApexCacheManager();
+export const cacheManager = new AbideCacheManager();

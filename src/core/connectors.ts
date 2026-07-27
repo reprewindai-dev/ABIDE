@@ -258,7 +258,7 @@ export class RealWorldOTelExporter implements OpenTelemetryExporter {
           resourceSpans: [{
             resource: {
               attributes: [
-                { key: "service.name", value: { stringValue: "apex-control-plane" } },
+                { key: "service.name", value: { stringValue: "abide-control-plane" } },
                 { key: "service.environment", value: { stringValue: process.env.NODE_ENV || "development" } }
               ]
             },

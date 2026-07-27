@@ -200,7 +200,7 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
       
       addLog(`⚡ [POLTERGEIST] Watchman event received. Cursor clock: c:17283419-seq-${triggerCount}`);
       addLog(`🔨 [BUILD RUNNER] Automatically triggering deterministic build command...`);
-      addLog(`📁 [WORKSPACE PROBE] Scan of workspace folder '${repoIntel?.projectName || "apex-blueprint"}' started.`);
+      addLog(`📁 [WORKSPACE PROBE] Scan of workspace folder '${repoIntel?.projectName || "abide-blueprint"}' started.`);
       
       if (repoIntel) {
         addLog(`📁 [WORKSPACE PROBE] Real workspace size: ${repoIntel.totalFiles} physical files scanned.`);
@@ -283,7 +283,7 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
             
             // Construct receipt matching exactly the correct schema
             const receipt = {
-              "receipt_version": "apex.build-execution.v1",
+              "receipt_version": "abide.build-execution.v1",
               "authorization": {
                 "blueprint_id": `bp_${blueprint.hash.substring(0, 8)}`,
                 "blueprint_hash": `sha256:${blueprint.hash}`,
@@ -387,7 +387,7 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[#222] pb-3">
         <div className="flex items-center gap-2">
           <Cpu size={18} className="text-[#00F0FF]" />
-          <h3 className="text-xl font-black text-white uppercase tracking-tight">Apex & Poltergeist Build-to-Execution Accountability Engine</h3>
+          <h3 className="text-xl font-black text-white uppercase tracking-tight">Abide & Poltergeist Build-to-Execution Accountability Engine</h3>
         </div>
         <span className="px-2.5 py-0.5 bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 text-[9px] font-mono uppercase font-black tracking-widest glow-cyan">
           Active Provenance Loop
@@ -395,7 +395,7 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
       </div>
 
       <p className="text-xs font-mono text-[#666] uppercase leading-relaxed max-w-4xl">
-        Poltergeist proves which source state produced the compiled binary. Apex Blueprint proves that artifact was authorized to execute. Powered by actual workspace intelligence and deep backend alignment verification.
+        Poltergeist proves which source state produced the compiled binary. Abide Blueprint proves that artifact was authorized to execute. Powered by actual workspace intelligence and deep backend alignment verification.
       </p>
 
       {/* Real Workspace Summary Widget */}
@@ -782,11 +782,11 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
             </div>
           </div>
 
-          {/* Column C: Authorized Blueprint Capabilities (Apex Plane) */}
+          {/* Column C: Authorized Blueprint Capabilities (Abide Plane) */}
           <div className="lg:col-span-5 space-y-2 max-h-[340px] overflow-y-auto pl-1">
             <div className="text-[9px] font-black text-[#666] uppercase tracking-widest border-b border-[#111] pb-1 flex justify-between items-center">
               <span>AUTHORIZED CAPABILITIES</span>
-              <span>[APEX CONTROL PLANE]</span>
+              <span>[ABIDE CONTROL PLANE]</span>
             </div>
 
             {/* Render a list of capabilities matching current mapping selection */}

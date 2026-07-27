@@ -23,5 +23,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["node_modules", "dist", "build", "coverage", "workspace-sandbox"]
+  "exclude": ["workspace-sandbox", "node_modules", "dist"]
 }

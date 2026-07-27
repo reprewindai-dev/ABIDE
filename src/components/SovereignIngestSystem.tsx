@@ -50,7 +50,7 @@ export const SovereignIngestSystem: React.FC<SovereignIngestSystemProps> = ({
   const [parsedStats, setParsedStats] = useState<{ charCount: number; rowsCount?: number; integrity: string } | null>(null);
   const [parsedPendingContent, setParsedPendingContent] = useState<string>("");
 
-  // Apex Trust Pipeline Architecture Steps
+  // Abide Trust Pipeline Architecture Steps
   const [steps, setSteps] = useState<IngestStep[]>([
     { id: "messy", label: "Messy Intent", status: "idle", desc: "Scan raw user input & transcribe document streams" },
     { id: "canonical", label: "Canonical BP", status: "idle", desc: "Align unstructured nodes with Blueprint canonical models" },
@@ -487,11 +487,11 @@ Review and convert target specifications into plaintext/markdown lists to secure
         </div>
       )}
 
-      {/* Apex Trust Pipeline Architecture Visualizer */}
+      {/* Abide Trust Pipeline Architecture Visualizer */}
       <div className="space-y-3">
         <div className="flex items-center justify-between border-b border-[#111] pb-1">
           <span className="text-[10px] text-[#00F0FF] font-bold tracking-widest block">
-            [ APEX TRUST PIPELINE ARCHITECTURE ]
+            [ ABIDE TRUST PIPELINE ARCHITECTURE ]
           </span>
           {pipelineState === "processing" && (
             <span className="text-[9px] text-[#00F0FF] animate-pulse font-black">

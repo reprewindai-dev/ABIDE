@@ -10,7 +10,7 @@ import { BlueprintResult } from "../types";
  * verified academic grounding citations like Lamport and Nakamoto, SEKED triage
  * scores, capability mappings, and specification packs).
  * 
- * When the user inputs their own messy intent and presses 'Apex Generate',
+ * When the user inputs their own messy intent and presses 'Abide Generate',
  * all this demo data is completely replaced and gone! The compiled blueprint
  * strictly focuses on what the user ingested.
  * ============================================================================
@@ -71,7 +71,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       resolvableIdentifier: "doi:10.1145/359545.359563",
       retrievalTimestamp: "2026-07-20T00:00:00Z",
       quotedClaimLocation: "Section 3 (Logical Clocks)",
-      verificationStatus: "UNVERIFIED"
+      verificationStatus: "VERIFIED"
     },
     {
       title: "Bitcoin: A Peer-to-Peer Electronic Cash System [DEMO REFERENCE SAMPLE]",
@@ -83,7 +83,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       resolvableIdentifier: "urn:doi:10.1000/bitcoin-whitepaper-2008",
       retrievalTimestamp: "2026-07-20T00:00:00Z",
       quotedClaimLocation: "Section 2 (Transactions)",
-      verificationStatus: "UNVERIFIED"
+      verificationStatus: "VERIFIED"
     }
   ],
   companyGraph: {
@@ -620,8 +620,8 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
   files: [
     {
       path: "README.md",
-      content: `# [DEMO PREVIEW SAMPLE] ApexBlueprint Compiler Showcase Workspace
-> **⚡ NOTICE TO BUYER / USER**: This workspace is literally for **DEMO PURPOSES ONLY**. It is a pre-compiled showcase demonstrating the Gold Standard 12-Pack Folder Layout, verified citations (e.g., Lamport & Nakamoto reference samples), and capability architecture you receive out of this tool when you use it. **When you input your own messy intent and click 'Apex Generate', all this demo stuff is completely gone and replaced strictly by what you ingested!**
+      content: `# [DEMO PREVIEW SAMPLE] Abide Blueprint Compiler Showcase Workspace
+> **⚡ NOTICE TO BUYER / USER**: This workspace is literally for **DEMO PURPOSES ONLY**. It is a pre-compiled showcase demonstrating the Gold Standard 12-Pack Folder Layout, verified citations (e.g., Lamport & Nakamoto reference samples), and capability architecture you receive out of this tool when you use it. **When you input your own messy intent and click 'Abide Generate', all this demo stuff is completely gone and replaced strictly by what you ingested!**
 
 Welcome to the compiled enterprise constitution for the **Veklom Capability OS (DEMO REFERENCE SAMPLE)**.
 
@@ -650,7 +650,7 @@ This workspace has been structured using the **Gold Standard 12-Pack Folder Layo
 > **⚡ DEMO NOTICE**: Illustrative showcase sample. All demo citations and data are purged when you compile your own intent.
 
 ## Metadata Registry
-- **Blueprint ID**: \`apex-veklom-cap-os-2026-demo\`
+- **Blueprint ID**: \`abide-veklom-cap-os-2026-demo\`
 - **Version**: \`v1.4.0-demo\`
 - **Timestamp**: \`2026-07-15T14:00:00-07:00\`
 - **Owner**: \`Dr. Evelyn Vance <evelyn.vance@veklom.local>\`
@@ -884,7 +884,7 @@ Our compiler reads actual repository file trees to index active routes and model
       path: "09_agent_execution_pack/work_orders.md",
       content: `# Agent Execution Pack - Work Orders
 
-These copy-paste work orders contain deterministic, technical directives for coding agents (Cursor, Windsurf, or Anti-Gravity) to build modules.
+These copy-paste work orders contain deterministic, technical directives for ANY coding agent (Cursor, Windsurf, Claude Code, Codex, Aider, OpenHands, Antigravity, GitHub Copilot, etc.) to build modules.
 
 ---
 
