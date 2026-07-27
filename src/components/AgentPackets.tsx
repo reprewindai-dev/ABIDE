@@ -67,7 +67,7 @@ export const AgentPackets: React.FC<AgentPacketsProps> = ({
   const [jwtRole, setJwtRole] = useState<"CORE_AUDITOR" | "STAFF_DEVELOPER" | "EXTERNAL_CONTRACTOR">("STAFF_DEVELOPER");
   const [jwtStatus, setJwtStatus] = useState<"EMPLOYEE" | "CONTRACTOR">("EMPLOYEE");
   const [mcpProxyLogs, setMcpProxyLogs] = useState<string[]>([
-    "[PROXY] Apex MCP Proxy secure listener bound to http://localhost:3000/api/mcp",
+    "[PROXY] Apex MCP Proxy secure listener bound to http://localhost:3009/api/mcp",
     "[PROXY] Loaded default-deny ACL rules policy-as-code configuration.",
     "[PROXY] Enforcing cryptographic token isolation & claims check headers."
   ]);

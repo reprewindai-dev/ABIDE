@@ -110,14 +110,6 @@ export default function GovernedViewContainer({
           discoveryPorts: [8081, 8082, 8083, 8084],
           healthThresholdAlerts: true
         };
-      case "vnpAuth":
-        return {
-          protocol: "VNP Sovereign Authentication v2.4",
-          authority: "CAPPO-HSM Ed25519 & JWT Bearer Federation",
-          sessionTimeout: "7 days (auto-renew with physical node attestation)",
-          oauthProviders: ["GitHub Enterprise", "Google Cloud Identity", "Veklom Sovereign IAM"],
-          mfaEnforced: true
-        };
       default:
         return {
           tabId,
@@ -238,12 +230,7 @@ export default function GovernedViewContainer({
                     The Test Harness is our simulation dashboard. It automatically tests if your local Veklom backend servers are running, pings standard ports to ensure safety, and verifies secure escrow settling so you don't face sudden connection drops in production.
                   </p>
                 )}
-                {tabId === "vnpAuth" && (
-                  <p>
-                    VNP Sovereign Authentication manages who can operate physical telemetry nodes and sign data packets. By combining JWT session tokens, OAuth 2.0 institutional federation, and Ed25519 SSH keys, it guarantees that only authorized operators can modify real-world sensors or execute commands on the network.
-                  </p>
-                )}
-                {!["sovereignConstitution", "governance", "testHarness", "vnpAuth"].includes(tabId) && (
+                {!["sovereignConstitution", "governance", "testHarness"].includes(tabId) && (
                   <p>
                     This section defines the core elements of your compiled business package. Our compiler takes your inputs, checks them against mathematical verification models, and translates them directly into executable system code templates and agent instructions.
                   </p>
