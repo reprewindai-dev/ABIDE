@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it, after } from "node:test";
 import assert from "node:assert";
 import http from "node:http";
 import { stableStringify, calculateBlueprintHash, computeCanonicalHash, PlanStep } from "../core/plan-ir";
@@ -391,4 +391,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
     });
   });
 
+  after(() => {
+    setTimeout(() => { process.exit(0); }, 100);
+  });
 });

@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { DurableJobQueueService } from "./durable-job-queue";
 
 const execAsync = promisify(exec);
 
@@ -30,8 +31,8 @@ let activeHostManifest: HostManifest = {
   inferenceAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "veklom" : "ollama",
   repositoryAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "github" : "local-git",
   runtimeAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "veklom-jobs" : "docker",
-  governanceAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "cappo" : "builtin-approval",
-  evidenceAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "pgl" : "local-signed-ledger",
+  governanceAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "remote_cappo_authorization" : "local_builtin_approval",
+  evidenceAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "remote_pgl_anchor" : "local_signed_evidence",
   storageAdapter: process.env.ABIDE_DEPLOYMENT_MODE === "VEKLOM_EMBEDDED" ? "veklom-byos" : "postgres"
 };
 
@@ -46,8 +47,8 @@ export function configureHostManifest(mode: DeploymentMode, customAdapters?: Par
     inferenceAdapter: customAdapters?.inferenceAdapter || (mode === "VEKLOM_EMBEDDED" ? "veklom" : "ollama"),
     repositoryAdapter: customAdapters?.repositoryAdapter || (mode === "VEKLOM_EMBEDDED" ? "github" : "local-git"),
     runtimeAdapter: customAdapters?.runtimeAdapter || (mode === "VEKLOM_EMBEDDED" ? "veklom-jobs" : "docker"),
-    governanceAdapter: customAdapters?.governanceAdapter || (mode === "VEKLOM_EMBEDDED" ? "cappo" : "builtin-approval"),
-    evidenceAdapter: customAdapters?.evidenceAdapter || (mode === "VEKLOM_EMBEDDED" ? "pgl" : "local-signed-ledger"),
+    governanceAdapter: customAdapters?.governanceAdapter || (mode === "VEKLOM_EMBEDDED" ? "remote_cappo_authorization" : "local_builtin_approval"),
+    evidenceAdapter: customAdapters?.evidenceAdapter || (mode === "VEKLOM_EMBEDDED" ? "remote_pgl_anchor" : "local_signed_evidence"),
     storageAdapter: customAdapters?.storageAdapter || (mode === "VEKLOM_EMBEDDED" ? "veklom-byos" : "postgres")
   };
   return activeHostManifest;
@@ -196,7 +197,7 @@ export class CanonicalWorkspaceService {
       },
       hostRequirements: {
         supportedModes: ["STANDALONE", "VEKLOM_EMBEDDED", "THIRD_PARTY_EMBEDDED"],
-        requiredPorts: [3000]
+        requiredPorts: [3009, 3011, 3000]
       },
       workspaceProjections: {
         markdown: `# ${ws.name} (ABIDE Portable Package)\nHash: ${ws.canonicalHash}\nVersion: ${ws.version}`,
@@ -532,11 +533,26 @@ export interface CommandJobRecord {
   producedArtifacts: string[];
   authorizationDecisionId?: string;
   evidenceReceiptId?: string;
+  error?: string;
 }
 
 const jobStore = new Map<string, CommandJobRecord>();
 
 export class CommandJobService {
+  private static workerRegistered = false;
+
+  private static ensureQueueWorkerRegistered(): void {
+    if (this.workerRegistered) return;
+    this.workerRegistered = true;
+    DurableJobQueueService.registerWorker("command_execution", async (jobId: string, data: any, updateProgress) => {
+      await updateProgress(10, `Initializing command execution for ${data.jobId}...`);
+      await this.executeJobWorker(data.jobId);
+      const j = jobStore.get(data.jobId);
+      await updateProgress(100, `Command finished with status ${j?.state || "UNKNOWN"}.`);
+      return j;
+    });
+  }
+
   static async listJobs(workspaceId?: string): Promise<CommandJobRecord[]> {
     const all = Array.from(jobStore.values());
     if (workspaceId) return all.filter(j => j.workspaceId === workspaceId);
@@ -582,9 +598,13 @@ export class CommandJobService {
 
     jobStore.set(jobId, job);
 
-    // If QUEUED immediately, execute asynchronously in background
+    // If QUEUED immediately, execute asynchronously in background via Durable Queue
     if (state === "QUEUED") {
-      setTimeout(() => this.executeJobWorker(jobId), 50);
+      this.ensureQueueWorkerRegistered();
+      DurableJobQueueService.enqueueJob("command_execution", { jobId }, { jobId }).catch(err => {
+        console.error("[CommandJobService] Failed to enqueue to durable queue:", err);
+        setTimeout(() => this.executeJobWorker(jobId), 50);
+      });
     }
 
     return job;
@@ -596,7 +616,11 @@ export class CommandJobService {
     job.authorizationDecisionId = decisionId;
     job.state = "QUEUED";
     jobStore.set(jobId, job);
-    setTimeout(() => this.executeJobWorker(jobId), 50);
+    this.ensureQueueWorkerRegistered();
+    DurableJobQueueService.enqueueJob("command_execution", { jobId }, { jobId }).catch(err => {
+      console.error("[CommandJobService] Failed to enqueue to durable queue:", err);
+      setTimeout(() => this.executeJobWorker(jobId), 50);
+    });
     return job;
   }
 
@@ -608,6 +632,7 @@ export class CommandJobService {
       job.completedAt = new Date().toISOString();
       job.stderr += "\n[Job cancelled by user/agent request]";
       jobStore.set(jobId, job);
+      DurableJobQueueService.cancelJob(jobId).catch(() => null);
     }
     return job;
   }
@@ -635,15 +660,19 @@ export class CommandJobService {
         job.exitCode = 0;
         job.state = "COMPLETED";
       } else {
-        // For arbitrary/unrecognized commands in sandbox, simulate isolated enclave execution
-        job.stdout += `[Enclave Worker] Simulated execution of '${job.command}' inside secure container enclave.\n`;
-        job.stdout += `[Enclave Worker] Verified zero unauthorized filesystem mutations.\n`;
-        job.exitCode = 0;
-        job.state = "COMPLETED";
+        // For arbitrary/unrecognized commands in sandbox, enforce truth-lock allowlist:
+        // Unexecuted commands must be BLOCKED/UNSUPPORTED, never COMPLETED or OBSERVED_REAL.
+        job.stdout += `[Enclave Worker] Command '${job.command}' is not in the local execution allowlist.\n`;
+        job.stdout += `[Enclave Worker] Truth-lock enforcement: Unexecuted command blocked.\n`;
+        job.exitCode = 127;
+        job.state = "FAILED";
+        job.error = "UNSUPPORTED_COMMAND_BLOCKED";
       }
 
-      job.producedArtifacts.push(`receipt_${jobId}.json`);
-      if (job.command.includes("build")) job.producedArtifacts.push("dist/bundle.js");
+      if (job.state === "COMPLETED") {
+        job.producedArtifacts.push(`receipt_${jobId}.json`);
+        if (job.command.includes("build")) job.producedArtifacts.push("dist/bundle.js");
+      }
 
     } catch (err: any) {
       job.state = "FAILED";
@@ -666,17 +695,19 @@ export class CommandJobService {
       job.evidenceReceiptId = evidence.receiptId;
       jobStore.set(jobId, job);
 
-      // Record Poltergeist watcher event per Section 03 Rule 5
-      await RepositoryPoltergeistService.recordPoltergeistEvent({
-        workspaceId: job.workspaceId,
-        repositoryId: job.repositoryId,
-        source: "command-ops",
-        eventType: job.command.includes("git") ? "COMMIT_DETECTED" : "FILE_CHANGE",
-        commitSha: job.baseSha,
-        workingTreeHash: crypto.createHash("sha256").update(job.stdout).digest("hex").substring(0, 16),
-        changedPaths: [job.workingDirectory],
-        evidenceClassification: "OBSERVED_REAL"
-      });
+      // Record Poltergeist watcher event per Section 03 Rule 5 only if execution genuinely succeeded
+      if (job.state === "COMPLETED") {
+        await RepositoryPoltergeistService.recordPoltergeistEvent({
+          workspaceId: job.workspaceId,
+          repositoryId: job.repositoryId,
+          source: "command-ops",
+          eventType: job.command.includes("git") ? "COMMIT_DETECTED" : "FILE_CHANGE",
+          commitSha: job.baseSha,
+          workingTreeHash: crypto.createHash("sha256").update(job.stdout).digest("hex").substring(0, 16),
+          changedPaths: [job.workingDirectory],
+          evidenceClassification: "OBSERVED_REAL"
+        });
+      }
     }
   }
 }
@@ -813,7 +844,7 @@ export class GovernanceAuthorizationService {
     const expires = new Date(now.getTime() + 3600 * 1000).toISOString(); // 1 hour expiry
     const nonce = crypto.randomBytes(8).toString("hex");
 
-    const adapterUsed = (req.adapterOverride as any) || activeHostManifest.governanceAdapter || "cappo";
+    const adapterUsed = (req.adapterOverride as any) || activeHostManifest.governanceAdapter || "local_builtin_approval";
     const decisionId = `dec-${crypto.randomBytes(4).toString("hex")}`;
 
     // Section 03 Rule 8: If workspace integrity is drifted or unapproved, deny consequential execution unless explicit override
@@ -910,7 +941,7 @@ export class EvidenceAttestationService {
   }): Promise<EvidenceReceiptRecord> {
     const receiptId = `pgl-rec-${crypto.randomBytes(5).toString("hex")}`;
     const now = new Date().toISOString();
-    const adapterUsed = activeHostManifest.evidenceAdapter as any || "pgl";
+    const adapterUsed = activeHostManifest.evidenceAdapter as any || "local_signed_evidence";
 
     // Section 03 Rule 9: Real build receipt must include actual command output, hashes, and authorization
     const rawString = `${evt.workspaceId}:${evt.actionType}:${evt.status}:${evt.output.substring(0, 500)}:${evt.authorizationDecisionId || "none"}:${now}`;

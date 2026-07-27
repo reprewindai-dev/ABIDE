@@ -1,0 +1,142 @@
+{
+  "pgl-anchor-pgl-rec-8ED3E861554A": {
+    "planId": "07acc9aa-4dab-436d-8a7e-78e4f462eeb9",
+    "stepId": "253792f8-3a06-4dc0-a7e6-867a797735a1",
+    "receipt": {
+      "receiptId": "pgl-rec-8ED3E861554A",
+      "planId": "07acc9aa-4dab-436d-8a7e-78e4f462eeb9",
+      "stepId": "253792f8-3a06-4dc0-a7e6-867a797735a1",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "d621eaaf94e68c9000e80a5eb71610cc96fc5e827357fe8e71eaf69d1457c459",
+      "signature": "fd07232347d4db8e1c659d47f854fb7a4070abaa5840638cb77ad8b0b4920d9c",
+      "timestamp": "2026-07-27T14:45:54.202Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-8ED3E861554A",
+      "merkleRoot": "0x_1346481e448589d43a88ed687a881af633b36f0d65e3f06dec838528d556eddf",
+      "blockHeight": 178516355,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T14:45:54.202Z"
+    }
+  },
+  "pgl-anchor-pgl-rec-9F36E1029D9B": {
+    "planId": "eae418ca-5092-4a4a-a3be-823709a5f878",
+    "stepId": "e778acbc-cc32-494b-a51b-dc40898cf04d",
+    "receipt": {
+      "receiptId": "pgl-rec-9F36E1029D9B",
+      "planId": "eae418ca-5092-4a4a-a3be-823709a5f878",
+      "stepId": "e778acbc-cc32-494b-a51b-dc40898cf04d",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "594d4a6d7fbfcd8bf25e35ab1f09576edf0f6b2c20ef895906dd4e80c4ddebee",
+      "signature": "e38fc5c47e80a621e85485e815161fce730c6c2e437bf9b37d58aa89c57cbe25",
+      "timestamp": "2026-07-27T14:49:59.958Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-9F36E1029D9B",
+      "merkleRoot": "0x_ad2ffe2fe1743c16bdbac0e6df628e921cc85def03442eec3c08abdd43281d92",
+      "blockHeight": 178516379,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T14:49:59.959Z"
+    }
+  },
+  "pgl-anchor-pgl-rec-82708CCF29B8": {
+    "planId": "d8a2b5d5-3dc0-4ae1-a7d9-f6b66bfa2df1",
+    "stepId": "348f00f4-a8f8-4cb7-9cc5-ec441a2b2677",
+    "receipt": {
+      "receiptId": "pgl-rec-82708CCF29B8",
+      "planId": "d8a2b5d5-3dc0-4ae1-a7d9-f6b66bfa2df1",
+      "stepId": "348f00f4-a8f8-4cb7-9cc5-ec441a2b2677",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "2514aac29ffb007ab1a54762bb8b2056c3085ebce5b6d15d17b7fb03f3117075",
+      "signature": "e8f275218ceaa1c68014bebb152937897ed7cea9372eb30430d202c1380ed52f",
+      "timestamp": "2026-07-27T14:56:38.285Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-82708CCF29B8",
+      "merkleRoot": "0x_5ae171296bae9450cd5dd0b1c85f98ca4bc73c8c047a00ba136206f6db9af112",
+      "blockHeight": 178516419,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T14:56:38.285Z"
+    }
+  },
+  "pgl-anchor-pgl-rec-031BA4559669": {
+    "planId": "e54a5315-89d7-48af-b1a2-acfc485e99b0",
+    "stepId": "a7c38ae2-b9e2-4336-b3d4-7cc816b4eb4c",
+    "receipt": {
+      "receiptId": "pgl-rec-031BA4559669",
+      "planId": "e54a5315-89d7-48af-b1a2-acfc485e99b0",
+      "stepId": "a7c38ae2-b9e2-4336-b3d4-7cc816b4eb4c",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "d299a172615066b20c96676f4d4d7f37fad088956d35fbc3fa1358590cf125bf",
+      "signature": "0844906290ab3b4b14702faea95ca28fbc1522ac3f7265f971e0d001bdf2d89f",
+      "timestamp": "2026-07-27T14:58:14.597Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-031BA4559669",
+      "merkleRoot": "0x_b815bf6d1c71fde055d7e1a557b8fd3bed791996259b36fabbaf2ab2239897db",
+      "blockHeight": 178516429,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T14:58:14.597Z"
+    }
+  },
+  "pgl-anchor-pgl-rec-BF6F2379502A": {
+    "planId": "e2fc8a97-5ca2-4bd2-82f1-ce8889deb6ae",
+    "stepId": "ca95fc76-2e2b-480b-a2ed-53f18c4d4b7c",
+    "receipt": {
+      "receiptId": "pgl-rec-BF6F2379502A",
+      "planId": "e2fc8a97-5ca2-4bd2-82f1-ce8889deb6ae",
+      "stepId": "ca95fc76-2e2b-480b-a2ed-53f18c4d4b7c",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "a29e7a222ab7b80112603d4e50e81582438cf31a9a4ddc3cbe4e50ec3dde9930",
+      "signature": "9d651b795309ea58fe10ae85cf957111bf59cf7760ab78a5dd17d0928890bd99",
+      "timestamp": "2026-07-27T14:58:29.047Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-BF6F2379502A",
+      "merkleRoot": "0x_7227476602284c9ced78e287f283f449427beb07371dbec9c47605dbdcce7173",
+      "blockHeight": 178516430,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T14:58:29.048Z"
+    }
+  },
+  "pgl-anchor-pgl-rec-332AD3AB258C": {
+    "planId": "f754117d-baaf-4e03-9be3-f721becc7d0b",
+    "stepId": "3f916af3-a8cc-4182-98d1-af38be545f44",
+    "receipt": {
+      "receiptId": "pgl-rec-332AD3AB258C",
+      "planId": "f754117d-baaf-4e03-9be3-f721becc7d0b",
+      "stepId": "3f916af3-a8cc-4182-98d1-af38be545f44",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "ccdcee9dbe1b8e2cb937af195cece74dc9f0efb2c435188ae008f5fa33decc06",
+      "signature": "32d7408b3e7c466e73528fcc996a43b17cde397dddf795ac678e4fd5b9e2456d",
+      "timestamp": "2026-07-27T14:58:46.447Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-332AD3AB258C",
+      "merkleRoot": "0x_e294009a21e4230fe613cfb9eae637522b11f20e2ba5232a75c683112f1d25e4",
+      "blockHeight": 178516432,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T14:58:46.447Z"
+    }
+  },
+  "pgl-anchor-pgl-rec-2C847922AB14": {
+    "planId": "8ff78e12-aa68-4b46-a7dc-4ee629729552",
+    "stepId": "26a7e4d4-afbf-4d76-8b2f-28b211e92f99",
+    "receipt": {
+      "receiptId": "pgl-rec-2C847922AB14",
+      "planId": "8ff78e12-aa68-4b46-a7dc-4ee629729552",
+      "stepId": "26a7e4d4-afbf-4d76-8b2f-28b211e92f99",
+      "capability": "mint-settlement-evidence",
+      "compositeHash": "5652f3eafd021fc6059eb105f60ce0bc80116d6da5918020421b9e9b71405435",
+      "signature": "e56174e9cb86265adbef400c55775fd119fcea9934be8e6960c612f65321a72f",
+      "timestamp": "2026-07-27T15:00:03.701Z"
+    },
+    "anchor": {
+      "receiptId": "pgl-rec-2C847922AB14",
+      "merkleRoot": "0x_a256af38e648d46560a139086331ad55df6370cbe2f4f700323036ea6a51295e",
+      "blockHeight": 178516440,
+      "slsaLevel": "SLSA_BUILD_LEVEL_3",
+      "timestamp": "2026-07-27T15:00:03.701Z"
+    }
+  }
+}

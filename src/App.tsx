@@ -72,6 +72,7 @@ import { ExportConfirmModal } from "./components/ExportConfirmModal";
 import { VnpAuthHub } from "./components/VnpAuthHub";
 import { VnpAnalyticsCards } from "./components/VnpAnalyticsCards";
 import EnterpriseHostController from "./components/EnterpriseHostController";
+import EnterpriseProtocolManuals from "./components/EnterpriseProtocolManuals";
 
 
 interface ErrorBoundaryProps {
@@ -421,6 +422,7 @@ export default function App() {
     | "explorer"
     | "testHarness"
     | "enterpriseControl"
+    | "protocolManuals"
   >("overview");
   const [overviewMode, setOverviewMode] = useState<"caveman" | "pitch">("caveman");
   const [showConfigPanel, setShowConfigPanel] = useState(false);
@@ -2800,6 +2802,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 { id: "vnpAuth", label: "VNP Auth & Identity", icon: UserCheck },
                 { id: "vnpAnalytics", label: "VNP Telemetry & Gating", icon: Activity },
                 { id: "sovereignConstitution", label: "Sovereign Constitution", icon: Lock },
+                { id: "protocolManuals", label: "Protocol & Security Manuals", icon: BookOpen },
                 { id: "capabilityGraph", label: "Architecture (Graph)", icon: Globe },
                 { id: "productsBundles", label: "Products & Bundles", icon: Coins },
                 { id: "interfaces", label: "Interfaces Inventory", icon: Code },
@@ -2910,6 +2913,13 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
               {activeTab === "enterpriseControl" && (
                 <div className="animate-fadeIn">
                   <EnterpriseHostController />
+                </div>
+              )}
+
+              {/* Tab: Protocol & Security Manuals */}
+              {activeTab === "protocolManuals" && (
+                <div className="animate-fadeIn">
+                  <EnterpriseProtocolManuals />
                 </div>
               )}
 

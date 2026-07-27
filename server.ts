@@ -18,20 +18,31 @@ import { verifyCitation, VerificationStatus } from "./src/core/citationVerifier"
 import { gateMaturityClaim, TechnologyReadiness } from "./src/core/feasibilityGate";
 import { vnpAuthRouter } from "./src/core/vnp-auth";
 import { WorkspaceService, PatchService, SandboxExecutionService } from "./src/services/project-engine";
+import { CovenantService } from "./src/server/services/CovenantService";
 import { executeZkAttestationPipeline, verifyGroth16Pairing, verifyPlonkOrStarkCommitments, ZkAttestationRequest } from "./src/core/zk-gateway";
 import { enterpriseRouter } from "./src/services/enterprise-runtime";
+import { DurableJobQueueService } from "./src/services/durable-job-queue";
 
 dotenv.config();
 
 export const app = express();
-const PORT = 3000;
+// Canonical ABIDE Sovereign Port is 3009 (Port 3000 retired per canonical reconciliation).
+// In AI Studio cloud preview (GOOGLE_RUNTIME), port 3000 is required by the ingress proxy.
+const PORT = Number(process.env.ABIDE_PORT || process.env.VEKLOM_PORT || process.env.PORT || (process.env.GOOGLE_RUNTIME ? 3000 : 3009));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Mount VNP User Authentication & Identity Management API
-app.use("/api/auth", vnpAuthRouter);
-app.use("/api/vnp/auth", vnpAuthRouter);
+// Mount VNP User Authentication & Identity Management API (Optional / Decoupled per Canonical ABIDE spec)
+if (process.env.ENABLE_VNP_AUTH === "true") {
+  app.use("/api/auth", vnpAuthRouter);
+  app.use("/api/vnp/auth", vnpAuthRouter);
+} else {
+  // Canonical ABIDE runs without VNP authentication inside the workspace per reconciliation specification
+  app.use(["/api/auth", "/api/vnp/auth"], (req, res) => {
+    res.status(200).json({ status: "DECOUPLED_FROM_ABIDE", message: "VNP authentication is decoupled from canonical ABIDE workspace per reconciliation specification." });
+  });
+}
 
 // Mount ABIDE Universal Portable Workspace Enterprise API (11 Capability Groups)
 app.use("/api/v1", enterpriseRouter);
@@ -314,7 +325,7 @@ async function callVeklom(params: {
 // ==========================================
 
 // 1. Compile Ingested Ideas & Generate Gold-Standard Business Plan + Blueprint
-app.post("/api/generate", async (req, res) => {
+async function executeBlueprintGenerationWorker(data: any, updateProgress?: (pct: number, msg?: string) => Promise<void>): Promise<any> {
   const {
     notes,
     codebaseContext,
@@ -330,19 +341,19 @@ app.post("/api/generate", async (req, res) => {
     constitutionState,
     authMode,
     customHeaderName,
-  } = req.body || {};
+  } = data || {};
 
   if (!notes) {
-    return res.status(400).json({ error: "Missing required field: notes" });
+    throw new Error("Missing required field: notes");
   }
 
-  const emailToUse = userEmail || "anonymous@apexblueprint.local";
+  const emailToUse = userEmail || "anonymous@abide.local";
   const jurisdictionProfileName = selectedJurisdiction || "global";
   const constVersion = constitutionVersion || "v4.02.1";
   const constState = constitutionState || "LOCKED";
-  const selectedProvider = provider || "gemini";
+  const selectedProvider = provider || process.env.ABIDE_DEFAULT_PROVIDER || "ollama";
   const cacheKey = cacheManager.generateKey(notes, jurisdictionProfileName, selectedProvider, modelName || "gemini-3.5-flash", constVersion);
-  const bypassCache = req.body.bypassCache === true;
+  const bypassCache = data.bypassCache === true;
   const startTime = Date.now();
 
   try {
@@ -352,7 +363,8 @@ app.post("/api/generate", async (req, res) => {
       const cachedResult = await cacheManager.get(cacheKey);
       if (cachedResult) {
         console.log(`[Cache Hit] Serving compiled blueprint for key: ${cacheKey}`);
-        return res.json({
+        if (updateProgress) await updateProgress(100, "Served from compilation cache");
+        return {
           ...cachedResult,
           cacheStatus: {
             hit: true,
@@ -360,7 +372,7 @@ app.post("/api/generate", async (req, res) => {
             type: "MEMORY",
             latencyMs: 0
           }
-        });
+        };
       }
     }
 
@@ -824,13 +836,13 @@ ${emailToUse}`;
       });
 
       textResult = response.text || "";
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       // Determine base URL to use
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+      } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || "http://localhost:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
@@ -978,10 +990,10 @@ ${emailToUse}`;
             try {
               parsedData = JSON.parse(textResult.slice(startIdx, endIdx + 1));
             } catch (sliceError) {
-              return res.status(400).json({ error: "parse_failed", raw: textResult });
+              throw new Error("parse_failed: " + textResult.slice(0, 200));
             }
           } else {
-            return res.status(400).json({ error: "parse_failed", raw: textResult });
+            throw new Error("parse_failed: " + textResult.slice(0, 200));
           }
         }
       } else {
@@ -991,10 +1003,10 @@ ${emailToUse}`;
           try {
             parsedData = JSON.parse(textResult.slice(startIdx, endIdx + 1));
           } catch (sliceError) {
-            return res.status(400).json({ error: "parse_failed", raw: textResult });
+            throw new Error("parse_failed: " + textResult.slice(0, 200));
           }
         } else {
-          return res.status(400).json({ error: "parse_failed", raw: textResult });
+          throw new Error("parse_failed: " + textResult.slice(0, 200));
         }
       }
     }
@@ -1044,7 +1056,8 @@ ${emailToUse}`;
       latencyMs
     };
 
-    return res.json(parsedData);
+    if (updateProgress) await updateProgress(100, "Blueprint compilation complete");
+    return parsedData;
   } catch (error: any) {
     console.warn("Gemini API Error or Quota Exhaustion, generating local fallback blueprint:", error);
     try {
@@ -1065,11 +1078,92 @@ ${emailToUse}`;
         latencyMs,
         isFallback: true
       };
-      return res.json(fallbackBlueprint);
+      if (updateProgress) await updateProgress(100, "Fallback blueprint generated");
+      return fallbackBlueprint;
     } catch (fallbackErr: any) {
       console.error("Local compilation fallback failed:", fallbackErr);
-      return res.status(500).json({ error: "Compilation failed: " + (error.message || "Internal Server Error") });
+      throw new Error("Compilation failed: " + (error.message || "Internal Server Error"));
     }
+  }
+}
+
+// Initialize Durable Job Queue and Register Blueprint Generation Worker
+DurableJobQueueService.init();
+DurableJobQueueService.registerWorker("blueprint_generation", async (jobId: string, data: any, updateProgress) => {
+  await updateProgress(10, "Initializing blueprint compilation in worker pipeline...");
+  return await executeBlueprintGenerationWorker(data, updateProgress);
+});
+
+// ============================================================================
+// DURABLE JOB QUEUE & BULLMQ MANAGEMENT ENDPOINTS
+// ============================================================================
+app.get("/api/v1/queue/jobs", async (req, res) => {
+  const { type, status, limit } = req.query;
+  const jobs = await DurableJobQueueService.listJobs({
+    type: type as string,
+    status: status as string,
+    limit: limit ? Number(limit) : 50
+  });
+  res.json({ success: true, count: jobs.length, jobs });
+});
+
+app.get("/api/v1/queue/jobs/:id", async (req, res) => {
+  const job = await DurableJobQueueService.getJob(req.params.id);
+  if (!job) return res.status(404).json({ success: false, error: "Job not found" });
+  res.json({ success: true, job });
+});
+
+app.post("/api/v1/queue/jobs", async (req, res) => {
+  const { type, data, priority, delay, initiator } = req.body || {};
+  if (!type || !data) {
+    return res.status(400).json({ success: false, error: "type and data are required" });
+  }
+  const job = await DurableJobQueueService.enqueueJob(type, data, {
+    priority: priority ? Number(priority) : undefined,
+    delay: delay ? Number(delay) : undefined,
+    initiator: initiator || "API/UI Request"
+  });
+  res.status(202).json({ success: true, job, pollUrl: `/api/v1/queue/jobs/${job.id}` });
+});
+
+app.post("/api/v1/queue/jobs/:id/cancel", async (req, res) => {
+  const cancelled = await DurableJobQueueService.cancelJob(req.params.id);
+  if (!cancelled) return res.status(400).json({ success: false, error: "Failed to cancel job or job not found" });
+  res.json({ success: true, message: `Job ${req.params.id} cancelled.` });
+});
+
+app.get("/api/v1/queue/stats", async (req, res) => {
+  const stats = await DurableJobQueueService.getStats();
+  res.json({ success: true, stats });
+});
+
+// 1. Compile Ingested Ideas & Generate Gold-Standard Business Plan + Blueprint (via Durable Queue)
+app.post("/api/generate", async (req, res) => {
+  const data = req.body || {};
+  if (!data.notes) {
+    return res.status(400).json({ error: "Missing required field: notes" });
+  }
+
+  try {
+    // If client explicitly asks for asynchronous queue execution (or via query/header)
+    if (data.async === true || req.query.async === "true" || req.headers["x-async-job"] === "true") {
+      const job = await DurableJobQueueService.enqueueJob("blueprint_generation", data, { initiator: data.userEmail || "anonymous" });
+      return res.status(202).json({
+        success: true,
+        status: "QUEUED",
+        jobId: job.id,
+        message: "Blueprint generation job enqueued to BullMQ / Durable Queue.",
+        pollUrl: `/api/v1/queue/jobs/${job.id}`
+      });
+    }
+
+    // Standard synchronous response path: delegates to durable queue and awaits worker completion
+    const job = await DurableJobQueueService.enqueueJob("blueprint_generation", data, { initiator: data.userEmail || "anonymous" });
+    const result = await DurableJobQueueService.waitForJobResult(job.id, 60000);
+    return res.json(result);
+  } catch (error: any) {
+    console.error("[DurableJobQueue /api/generate Error]:", error);
+    return res.status(500).json({ error: error.message || "Blueprint generation failed." });
   }
 });
 
@@ -1285,7 +1379,7 @@ function generateFallbackBlueprint(
 
   // ============================================================================
   // [UNIVERSAL DEMO PURGE ENGINE]
-  // When the user inputs their own messy intent and presses 'Apex Generate',
+  // When the user inputs their own messy intent and presses 'ABIDE Generate',
   // ALL DEMO REFERENCE STUFF MUST BE GONE! It strictly focuses on what the user ingested.
   // ============================================================================
   const jurisdictionPolicy = selectedJurisdiction || "Global Standard";
@@ -1688,7 +1782,7 @@ function generateFallbackBlueprint(
     }
   ];
 
-  blueprint.fallback_message = "Free-tier Gemini API token count limit exceeded (250K/min limit). Apex locally generated an offline fallback blueprint. NOTE: Human-readable exports and verified packs are mechanically blocked until live API compilation is restored.";
+  blueprint.fallback_message = "Free-tier Gemini API token count limit exceeded (250K/min limit). ABIDE locally generated an offline fallback blueprint. NOTE: Human-readable exports and verified packs are mechanically blocked until live API compilation is restored.";
 
   // Run formal SEKED triage heuristic engine on fallback blueprint
   try {
@@ -1713,7 +1807,7 @@ app.post("/api/test-connection", async (req, res) => {
       customHeaderName,
     } = req.body;
 
-    const selectedProvider = provider || "gemini";
+    const selectedProvider = provider || process.env.ABIDE_DEFAULT_PROVIDER || "ollama";
     const testPrompt = "Respond only with the word 'OK'.";
 
     if (selectedProvider === "gemini") {
@@ -1741,12 +1835,12 @@ app.post("/api/test-connection", async (req, res) => {
           temperature: 0.1,
         },
       });
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+      } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || "http://localhost:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
@@ -2276,7 +2370,7 @@ app.post("/api/github/analyze", async (req, res) => {
     try {
       // Set up real GitHub API call to fetch recursive tree
       const headers: HeadersInit = {
-        "User-Agent": "ApexBlueprint-Compiler",
+        "User-Agent": "ABIDE-Compiler",
         Accept: "application/vnd.github.v3+json",
       };
       if (customToken) {
@@ -2475,9 +2569,9 @@ app.post("/api/github/push-blueprint", async (req, res) => {
       return res.status(400).json({ error: "Invalid repository format. Please enter 'owner/repo' or a GitHub URL." });
     }
 
-    const targetBranch = branchName ? branchName.trim() : "apex-blueprint-alignment";
+    const targetBranch = branchName ? branchName.trim() : "abide-blueprint-alignment";
     const headers: HeadersInit = {
-      "User-Agent": "ApexBlueprint-Compiler",
+      "User-Agent": "ABIDE-Compiler",
       "Accept": "application/vnd.github.v3+json",
       "Authorization": `token ${token}`,
       "Content-Type": "application/json"
@@ -2524,9 +2618,9 @@ app.post("/api/github/push-blueprint", async (req, res) => {
       throw new Error(`Failed to create branch '${targetBranch}': ${createRefResponse.statusText}. ${errorMsg}`);
     }
 
-    // 3. Check if APEX_BLUEPRINT.json already exists to get its SHA (required for update)
+    // 3. Check if ABIDE_BLUEPRINT.json already exists to get its SHA (required for update)
     let existingSha = "";
-    const contentUrl = `https://api.github.com/repos/${owner}/${repo}/contents/APEX_BLUEPRINT.json?ref=${targetBranch}`;
+    const contentUrl = `https://api.github.com/repos/${owner}/${repo}/contents/ABIDE_BLUEPRINT.json?ref=${targetBranch}`;
     const contentResponse = await fetch(contentUrl, { headers });
     if (contentResponse.ok) {
       const contentData = await contentResponse.json();
@@ -2534,11 +2628,11 @@ app.post("/api/github/push-blueprint", async (req, res) => {
     }
 
     // 4. Push/write the file
-    const pushFileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/APEX_BLUEPRINT.json`;
+    const pushFileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/ABIDE_BLUEPRINT.json`;
     const blueprintBase64 = Buffer.from(JSON.stringify(blueprint, null, 2)).toString("base64");
     
     const pushBody: any = {
-      message: `Feat: align Apex Sovereign Blueprint [skip ci]`,
+      message: `Feat: align ABIDE Sovereign Blueprint [skip ci]`,
       content: blueprintBase64,
       branch: targetBranch
     };
@@ -2554,7 +2648,7 @@ app.post("/api/github/push-blueprint", async (req, res) => {
 
     if (!pushResponse.ok) {
       const errorMsg = await pushResponse.text();
-      throw new Error(`Failed to write APEX_BLUEPRINT.json to branch '${targetBranch}': ${pushResponse.statusText}. ${errorMsg}`);
+      throw new Error(`Failed to write ABIDE_BLUEPRINT.json to branch '${targetBranch}': ${pushResponse.statusText}. ${errorMsg}`);
     }
 
     const pushData = await pushResponse.json();
@@ -2865,7 +2959,7 @@ app.post("/api/test-harness/generate", async (req, res) => {
   const selectedSpecName = targetSpec || "Unified Call Client & Lane Router";
 
   // System prompt to generate realistic test suites based on the provided PDF blueprints
-  const testHarnessSystemPrompt = `You are the Apex test-generation agent. Your goal is to produce 100% production-ready, highly technical, syntactic, non-mock Jest or Vitest test suites that align perfectly with the Veklom Canonical Architecture (v2.0).
+  const testHarnessSystemPrompt = `You are the ABIDE test-generation agent. Your goal is to produce 100% production-ready, highly technical, syntactic, non-mock Jest or Vitest test suites that align perfectly with the Veklom Canonical Architecture (v2.0).
 The user is writing tests for the: "${selectedSpecName}" component.
 
 RELEVANT ARCHITECTURAL PARAMS:
@@ -2884,7 +2978,7 @@ Here is the active compiled sovereign blueprint:
 ${JSON.stringify(blueprint, null, 2)}`;
 
   try {
-    const selectedProvider = provider || "gemini";
+    const selectedProvider = provider || process.env.ABIDE_DEFAULT_PROVIDER || "ollama";
     let generatedCode = "";
 
     if (selectedProvider === "gemini") {
@@ -2913,13 +3007,13 @@ ${JSON.stringify(blueprint, null, 2)}`;
         }
       });
       generatedCode = response.text || "";
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       // OpenAI/Ollama compatible endpoint
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+      } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || "http://localhost:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       }
@@ -3108,7 +3202,7 @@ app.post("/api/covenant/project", async (req, res) => {
       return res.status(400).json({ error: "Missing target projection type" });
     }
 
-    let title = "Apex Sovereign Platform";
+    let title = "ABIDE Sovereign Platform";
     let hash = "unknown_canonical_hash";
     let validatedPlan: any = null;
     let validatedBlueprint: any = null;
@@ -3174,11 +3268,11 @@ app.post("/api/covenant/project", async (req, res) => {
         });
       }
 
-      title = validatedBlueprint.title || "Apex Sovereign Platform";
+      title = validatedBlueprint.title || "ABIDE Sovereign Platform";
       hash = validatedBlueprint.hash;
     } else {
       // Relaxed preview path: allow partial objects from client-side simulator
-      title = blueprint?.title || plan?.title || "Apex Sovereign Platform";
+      title = blueprint?.title || plan?.title || "ABIDE Sovereign Platform";
       hash = blueprint?.hash || plan?.canonicalHash || "preview_hash_placeholder";
     }
     const activeJurisdiction = (selectedJurisdiction || "global").toUpperCase();
@@ -3229,7 +3323,7 @@ ${Array.isArray(pkt.definitionOfDone) ? pkt.definitionOfDone.map((d: string) => 
 - **Execution Safeguard**: All Lane 3 (external integrations) require certified CAPPO approval tokens prior to commit.
 
 ## 🎯 BLUEPRINT OVERVIEW
-This repository is governed by **Apex Blueprint**. The underlying directory is structured as a typed capability model. 
+This repository is governed by **ABIDE Blueprint**. The underlying directory is structured as a typed capability model. 
 Messy local edits that mismatch the active Blueprint Hash will trigger immediate circuit breakers in the Gnomledger evidence validators and Covenant gates.
 
 ## 🧩 COMPILED SYSTEM CAPABILITIES
@@ -3244,7 +3338,7 @@ ${packetsSection}
 3. **Traceability**: All external states (Lane 3) must be logged directly to the Gnomledger proof ledger.
 
 ---
-*Generated by Apex Trust Layer Compiler at ${new Date().toISOString()}*
+*Generated by ABIDE Trust Layer Compiler at ${new Date().toISOString()}*
 `;
     } else if (target === "claude-md") {
       filename = "CLAUDE.md";
@@ -3281,12 +3375,12 @@ ${capSummary}
 
 ## 🏁 Handover Checkpoint & Workflow Continuation
 If switching tools or resuming a suspended session:
-- Locate the active work order ID in the Apex agentPackets.
+- Locate the active work order ID in the ABIDE agentPackets.
 - Fetch the latest approved \`PlanIR\` to assert compliance with hash \`${hash}\`.
 - Ensure all required unit tests pass successfully prior to pushing to main.
 
 ---
-*Sealed by Apex Blueprint Governance Compiler at ${new Date().toISOString()}*
+*Sealed by ABIDE Blueprint Governance Compiler at ${new Date().toISOString()}*
 `;
     } else if (target === "spec-kit-json") {
       filename = "spec-plan-task.json";
@@ -3364,6 +3458,14 @@ If switching tools or resuming a suspended session:
     });
   }
 });
+
+// Canonical Abide M2M Contract Endpoints (API v4)
+app.post("/api/v4/m2m/intent/compile", CovenantService.compileM2MIntent);
+app.post("/api/v4/m2m/plan/verify", CovenantService.verifyM2MPlan);
+app.post("/api/v4/m2m/plan/authorize", CovenantService.authorizeM2MPlan);
+app.post("/api/v4/m2m/plan/execute", CovenantService.executeM2MPlan);
+app.post("/api/v4/m2m/plan/receipt", CovenantService.getM2MReceipt);
+app.get("/api/v4/m2m/plan/receipt/:id", CovenantService.getM2MReceipt);
 
 function generateLocalFallbackTestSuite(specName: string, framework: string, blueprint: any) {
   const importsHeader = framework === "vitest" 
@@ -3480,7 +3582,7 @@ describe("Veklom Canonical System Integration & Authority Boundaries", () => {
 }
 
 // ==========================================================
-// ADDITIONAL HIGH-FIDELITY CORE APEX ENGINE ENDPOINTS
+// ADDITIONAL HIGH-FIDELITY CORE ABIDE ENGINE ENDPOINTS
 // ==========================================================
 
 // 1. SEKED COMPILER INTEGRATION ENDPOINT
@@ -3515,7 +3617,7 @@ app.post("/api/seked/compile", (req, res) => {
     // Cryptographically sign the envelope
     const signedPayload = {
       timestamp: new Date().toISOString(),
-      systemName: systemName || "APEX-SOVEREIGN-COVENANT",
+      systemName: systemName || "ABIDE-SOVEREIGN-COVENANT",
       description: description || "Routine autonomous telemetry sweep and settlement audit.",
       metrics: { e, r, c, d, s },
       normalized,
@@ -3600,7 +3702,7 @@ app.get("/api/repo-intelligence", (req, res) => {
 
     return res.json({
       success: true,
-      projectName: packageJson.name || "apex-blueprint",
+      projectName: packageJson.name || "abide-blueprint",
       projectVersion: packageJson.version || "1.0.0",
       totalFiles: repoFiles.length,
       totalLinesOfCode,
@@ -3736,7 +3838,7 @@ app.get("/api/cache/stats", (req, res) => {
 app.post("/api/cache/clear", (req, res) => {
   try {
     cacheManager.clear();
-    return res.json({ success: true, message: "Apex Blueprint compilation cache cleared successfully." });
+    return res.json({ success: true, message: "ABIDE Blueprint compilation cache cleared successfully." });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Failed to clear cache." });
   }
@@ -3990,7 +4092,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[ApexBlueprint Server] Running at http://localhost:${PORT}`);
+    console.log(`[ABIDE Server] Running at http://localhost:${PORT}`);
   });
 }
 

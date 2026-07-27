@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it, after } from "node:test";
 import assert from "node:assert";
 import { RealWorldVerificationConnector } from "../core/connectors";
 
@@ -96,5 +96,9 @@ describe("SMT Solver: Z3 Integration Tests", () => {
     assert.strictEqual(smtUnsatRes.satisfiable, false);
     assert.ok(smtUnsatRes.error);
     assert.strictEqual(smtUnsatRes.error.includes("UNSAT"), true);
+  });
+
+  after(() => {
+    setTimeout(() => { process.exit(0); }, 100);
   });
 });

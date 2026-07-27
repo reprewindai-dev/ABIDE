@@ -285,6 +285,8 @@ export function scoreComplianceDriftV1(blueprint: any): MetricScore {
       totalPoints -= 2.0; // Drift detected carries a heavy penalty
     } else if (cap?.verificationState === "Verified") {
       totalPoints += 0.5;
+    } else if (cap?.verificationState === "Unverified" || cap?.verificationState === "UNVERIFIED" || cap?.verificationState === "UNVERIFIED_DEGRADED" || blueprint?.verificationStatus === "UNVERIFIED" || blueprint?.verificationStatus === "UNVERIFIED_DEGRADED") {
+      totalPoints -= 1.5; // Unverified or degraded formal verification carries a severe compliance penalty
     }
 
     if (cap?.maturityState === "Sovereign Production") {
@@ -306,10 +308,15 @@ export function scoreComplianceDriftV1(blueprint: any): MetricScore {
     totalPoints -= 1.0;
   }
 
+  if (blueprint?.verificationStatus === "UNVERIFIED" || blueprint?.verificationStatus === "UNVERIFIED_DEGRADED") {
+    totalPoints = Math.min(totalPoints, 4.0); // Clamp compliance score below threshold when formal verification is unverified/degraded
+  }
+
   const finalScore = Number(Math.max(0, Math.min(9, totalPoints)).toFixed(2));
+  const isUnverified = blueprint?.verificationStatus === "UNVERIFIED" || blueprint?.verificationStatus === "UNVERIFIED_DEGRADED";
   return {
     score: finalScore,
-    reasoning: `Compliance analysis: detected ${testCount} declared tests across ${capabilities.length} capabilities. Drift prevention mechanisms active in ${driftEnforcementCount}/${capabilities.length} modules.`
+    reasoning: `Compliance analysis: detected ${testCount} declared tests across ${capabilities.length} capabilities. Drift prevention mechanisms active in ${driftEnforcementCount}/${capabilities.length} modules.${isUnverified ? " [DEGRADED VERIFICATION: Formal verifier unreachable/unverified, capping compliance score.]" : ""}`
   };
 }
 
