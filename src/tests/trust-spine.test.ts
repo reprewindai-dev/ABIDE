@@ -349,7 +349,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
   });
 
   describe("10. Checkpoint Continuation Across Agent Projections", () => {
-    it("should allow Agent B to resume and continue from a checkpoint persisted by Agent A", () => {
+    it("should allow Agent B to resume and continue from a checkpoint persisted by Agent A", async () => {
       // 1. Create a checkpoint as Agent A
       const checkpointAInput = {
         parentCheckpointId: null,
@@ -362,12 +362,12 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
         agentIdentity: "Agent-A"
       };
 
-      const checkpointA = createCheckpoint(checkpointAInput);
+      const checkpointA = await createCheckpoint(checkpointAInput);
       assert.ok(checkpointA.checkpointId.startsWith("chk-"));
       assert.strictEqual(checkpointA.agentIdentity, "Agent-A");
 
       // 2. Load the checkpoint and verify resume by Agent B
-      const retrieved = getCheckpoint(checkpointA.checkpointId);
+      const retrieved = await getCheckpoint(checkpointA.checkpointId);
       assert.ok(retrieved);
       assert.strictEqual(retrieved.agentIdentity, "Agent-A");
       assert.strictEqual(retrieved.parentCheckpointId, null);
@@ -384,7 +384,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
         agentIdentity: "Agent-B"
       };
 
-      const checkpointB = createCheckpoint(checkpointBInput);
+      const checkpointB = await createCheckpoint(checkpointBInput);
       assert.ok(checkpointB.checkpointId.startsWith("chk-"));
       assert.strictEqual(checkpointB.agentIdentity, "Agent-B");
       assert.strictEqual(checkpointB.parentCheckpointId, checkpointA.checkpointId);

@@ -16,6 +16,15 @@ import { dbConnector, x402Connector, verificationConnector, otelExporter } from 
 import { verifyCitation, VerificationStatus } from "./src/core/citationVerifier";
 import { gateMaturityClaim, TechnologyReadiness } from "./src/core/feasibilityGate";
 import { WorkspaceService, PatchService, SandboxExecutionService } from "./src/services/project-engine";
+import { assertDbConfiguredInProduction, isDatabaseConfigured } from "./src/db/client";
+import {
+  hasApprovedPlan,
+  insertAcademicPaper,
+  listAcademicPapers,
+  saveApprovedPlan,
+  searchAcademicPapers,
+  updateAcademicPaper
+} from "./src/db/repositories";
 import { executeZkAttestationPipeline, verifyGroth16Pairing, verifyPlonkOrStarkCommitments, ZkAttestationRequest } from "./src/core/zk-gateway";
 
 dotenv.config();
@@ -256,6 +265,54 @@ async function getEmbedding(text: string): Promise<number[]> {
     return generateFallbackVector(text);
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+function databasePaperToAcademicPaper(paper: any): AcademicPaper {
+  let vector: number[] | undefined;
+  if (Array.isArray(paper.embedding)) {
+    vector = paper.embedding.map(Number);
+  } else if (typeof paper.embedding === "string") {
+    try {
+      vector = JSON.parse(paper.embedding).map(Number);
+    } catch {
+      vector = undefined;
+    }
+  }
+  return {
+    title: paper.title,
+    authors: paper.authors,
+    source: paper.source,
+    summary: paper.summary,
+    relevance: paper.relevance,
+    url: paper.url,
+    resolvableIdentifier: paper.resolvableIdentifier,
+    retrievalTimestamp: new Date(paper.retrievalTimestamp).toISOString(),
+    quotedClaimLocation: paper.quotedClaimLocation,
+    verificationStatus: paper.verificationStatus,
+    digitalSignature: paper.digitalSignature,
+    vector
+  };
+}
+
+async function getAcademicPapers(): Promise<AcademicPaper[]> {
+  if (!isDatabaseConfigured()) return vectorDatabase;
+  let rows = await listAcademicPapers();
+  if (rows.length === 0) {
+    for (const paper of vectorDatabase) {
+      const seeded = { ...paper, vector: paper.vector || await getEmbedding(`${paper.title} ${paper.summary}`) };
+      await insertAcademicPaper(seeded);
+    }
+    rows = await listAcademicPapers();
+  }
+  return rows.map(databasePaperToAcademicPaper);
+}
+
+async function persistAcademicPaper(paper: AcademicPaper): Promise<void> {
+  if (isDatabaseConfigured()) {
+    await insertAcademicPaper(paper);
+  } else {
+    vectorDatabase.push(paper);
   }
 }
 
@@ -1800,6 +1857,7 @@ app.post("/api/academic/search", async (req, res) => {
 
     // 1. Get embedding for the user search query
     const queryVector = await getEmbedding(query);
+    let papers = await getAcademicPapers();
 
     // 1.5 Optionally query arXiv live to fetch and inject real papers dynamically
     try {
@@ -1819,7 +1877,7 @@ app.post("/api/academic/search", async (req, res) => {
           if (!title) continue;
 
           // Avoid duplicate titles
-          if (vectorDatabase.some(p => p.title.toLowerCase() === title.toLowerCase())) {
+          if (papers.some(p => p.title.toLowerCase() === title.toLowerCase())) {
             continue;
           }
 
@@ -1855,7 +1913,8 @@ app.post("/api/academic/search", async (req, res) => {
 
           // Generate embedding for the new real paper
           realPaper.vector = await getEmbedding(`${title} ${summary}`);
-          vectorDatabase.push(realPaper);
+          await persistAcademicPaper(realPaper);
+          papers.push(realPaper);
         }
       }
     } catch (e: any) {
@@ -1863,14 +1922,31 @@ app.post("/api/academic/search", async (req, res) => {
     }
 
     // 2. Check and generate embeddings lazily for papers that don't have them yet
-    for (const paper of vectorDatabase) {
+    papers = await getAcademicPapers();
+    for (const paper of papers) {
       if (!paper.vector) {
         paper.vector = await getEmbedding(`${paper.title} ${paper.summary}`);
+        if (isDatabaseConfigured()) {
+          await updateAcademicPaper(paper.title, { embedding: paper.vector });
+        }
       }
     }
 
-    // 3. Compute cosine similarity scores
-    const results = vectorDatabase.map((paper) => {
+    // 3. Compute nearest-neighbour scores using pgvector when configured.
+    const results = isDatabaseConfigured()
+      ? (await searchAcademicPapers(queryVector)).map(({ paper, distance }) => {
+        const current = databasePaperToAcademicPaper(paper);
+        return {
+          title: current.title,
+          authors: current.authors,
+          source: current.source,
+          summary: current.summary,
+          relevance: current.relevance,
+          url: current.url,
+          score: Math.round((1 - Number(distance)) * 1000) / 1000
+        };
+      })
+      : papers.map((paper) => {
       const sim = cosineSimilarity(queryVector, paper.vector || []);
       return {
         title: paper.title,
@@ -1920,14 +1996,22 @@ app.post("/api/academic/verify", async (req, res) => {
       : "";
 
     if (isMatch && realRec) {
-      for (const paper of vectorDatabase) {
+      const papers = await getAcademicPapers();
+      for (const paper of papers) {
         if (paper.title.toLowerCase() === claimedTitle.toLowerCase() || (claimedArxivId && paper.resolvableIdentifier.includes(claimedArxivId))) {
-          paper.title = realRec.title;
-          paper.authors = realRec.authors.join(", ");
-          paper.url = realRec.url;
-          paper.verificationStatus = "VERIFIED";
-          paper.digitalSignature = digitalSignature;
-          paper.source = `${realRec.source.toUpperCase()} Live Verified`;
+          const changes = {
+            title: realRec.title,
+            authors: realRec.authors.join(", "),
+            url: realRec.url,
+            verificationStatus: "VERIFIED",
+            digitalSignature,
+            source: `${realRec.source.toUpperCase()} Live Verified`
+          };
+          if (isDatabaseConfigured()) {
+            await updateAcademicPaper(paper.title, changes);
+          } else {
+            Object.assign(paper, changes);
+          }
         }
       }
     }
@@ -2138,7 +2222,7 @@ app.post("/api/academic/scrape", async (req, res) => {
       newPaper.vector = await getEmbedding(`${title} ${summary}`);
 
       newEntries.push(newPaper);
-      vectorDatabase.push(newPaper);
+      await persistAcademicPaper(newPaper);
     }
 
     return res.json({
@@ -2917,7 +3001,11 @@ app.post("/api/covenant/approve", async (req, res) => {
     validatedPlan.signature = signature;
 
     // Track in server-owned in-memory ledger
-    serverApprovedPlans.set(validatedPlan.planId, validatedPlan.canonicalHash);
+    if (isDatabaseConfigured()) {
+      await saveApprovedPlan(validatedPlan.planId, validatedPlan.canonicalHash);
+    } else {
+      serverApprovedPlans.set(validatedPlan.planId, validatedPlan.canonicalHash);
+    }
 
     return res.json({
       success: true,
@@ -2995,7 +3083,9 @@ app.post("/api/covenant/project", async (req, res) => {
       }
 
       // Verify server-side authority of this approval (cannot be self-authorized by client)
-      const isApprovedInServerLedger = serverApprovedPlans.has(validatedPlan.planId) && serverApprovedPlans.get(validatedPlan.planId) === validatedPlan.canonicalHash;
+      const isApprovedInServerLedger = isDatabaseConfigured()
+        ? await hasApprovedPlan(validatedPlan.planId, validatedPlan.canonicalHash)
+        : serverApprovedPlans.has(validatedPlan.planId) && serverApprovedPlans.get(validatedPlan.planId) === validatedPlan.canonicalHash;
       const isApprovedViaSignature = validatedPlan.signature === crypto.createHmac("sha256", SEKED_HMAC_SECRET).update(validatedPlan.planId + "|" + validatedPlan.canonicalHash).digest("hex");
 
       if (!isApprovedInServerLedger && !isApprovedViaSignature) {
@@ -3704,18 +3794,18 @@ app.post("/api/realworld/verify/z3", async (req, res) => {
 // ABIDE BOUNDED PROJECT FACTORY & IDE API
 // ==========================================
 
-app.get("/api/ide/projects", (req, res) => {
+app.get("/api/ide/projects", async (req, res) => {
   try {
-    const projects = WorkspaceService.listProjects();
+    const projects = await WorkspaceService.listProjects();
     return res.json({ success: true, projects });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || "Failed to list projects" });
   }
 });
 
-app.get("/api/ide/projects/:id", (req, res) => {
+app.get("/api/ide/projects/:id", async (req, res) => {
   try {
-    const project = WorkspaceService.getProject(req.params.id);
+    const project = await WorkspaceService.getProject(req.params.id);
     if (!project) {
       return res.status(404).json({ success: false, error: "Project not found" });
     }
@@ -3725,13 +3815,13 @@ app.get("/api/ide/projects/:id", (req, res) => {
   }
 });
 
-app.post("/api/ide/projects", (req, res) => {
+app.post("/api/ide/projects", async (req, res) => {
   try {
     const { name, type, description, executionMode } = req.body;
     if (!name || !type) {
       return res.status(400).json({ success: false, error: "Missing name or project type" });
     }
-    const project = WorkspaceService.createProject(name, type, description || "", executionMode || "standalone");
+    const project = await WorkspaceService.createProject(name, type, description || "", executionMode || "standalone");
     return res.json({ success: true, project });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || "Failed to create project" });
@@ -3744,11 +3834,11 @@ app.post("/api/ide/propose", async (req, res) => {
     if (!projectId || !instruction) {
       return res.status(400).json({ success: false, error: "Missing projectId or instruction" });
     }
-    const project = WorkspaceService.getProject(projectId);
+    const project = await WorkspaceService.getProject(projectId);
     if (!project) {
       return res.status(404).json({ success: false, error: "Project not found" });
     }
-    const proposal = PatchService.createProposal(project, instruction);
+    const proposal = await PatchService.createProposal(project, instruction);
     return res.json({ success: true, proposal, project });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || "Failed to create proposal" });
@@ -3761,11 +3851,11 @@ app.post("/api/ide/apply-patch", async (req, res) => {
     if (!projectId || !proposalId) {
       return res.status(400).json({ success: false, error: "Missing projectId or proposalId" });
     }
-    const project = WorkspaceService.getProject(projectId);
+    const project = await WorkspaceService.getProject(projectId);
     if (!project) {
       return res.status(404).json({ success: false, error: "Project not found" });
     }
-    const updatedProject = PatchService.applyProposal(project, proposalId);
+    const updatedProject = await PatchService.applyProposal(project, proposalId);
     return res.json({ success: true, project: updatedProject });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || "Failed to apply patch" });
@@ -3778,7 +3868,7 @@ app.post("/api/ide/run-stage", async (req, res) => {
     if (!projectId || !stage) {
       return res.status(400).json({ success: false, error: "Missing projectId or stage" });
     }
-    const project = WorkspaceService.getProject(projectId);
+    const project = await WorkspaceService.getProject(projectId);
     if (!project) {
       return res.status(404).json({ success: false, error: "Project not found" });
     }
@@ -3794,6 +3884,7 @@ app.post("/api/ide/run-stage", async (req, res) => {
 // ==========================================
 
 async function startServer() {
+  assertDbConfiguredInProduction();
   // Requirement 8: Enforce robust cryptographic secrets in production
   if (process.env.NODE_ENV === "production") {
     const isAbsOrDef = (v: string | undefined, def: string) => !v || v === def;

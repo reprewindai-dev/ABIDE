@@ -4,6 +4,8 @@ import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { solveZ3InvariantsWrapper } from "./verification";
+import { deleteBlueprint, getBlueprint, saveBlueprint } from "../db/repositories";
+import { isDatabaseConfigured } from "../db/client";
 
 const execAsync = promisify(exec);
 
@@ -38,26 +40,20 @@ export class RealWorldDBConnector implements DBConnector {
   private memoryStore = new Map<string, any>();
 
   async saveBlueprint(id: string, blueprint: any): Promise<void> {
-    // Relational/PostgreSQL Drizzle Ingress Hook
-    if (process.env.DATABASE_URL) {
-      try {
-        // Wire your migrations/Drizzle schema insert here, e.g.:
-        // const { db } = await import("../db");
-        // await db.insert(blueprintsTable).values({ id, data: blueprint });
-        console.log(`[DB Connector] DATABASE_URL is set but no query is wired yet — configure src/core/connectors.ts. Falling back to memory for now.`);
-      } catch (err: any) {
-        console.warn("[DB Connector] PostgreSQL save failed:", err.message);
-      }
+    if (isDatabaseConfigured()) {
+      await saveBlueprint(id, blueprint);
+      return;
     }
-
     this.memoryStore.set(id, blueprint);
   }
 
   async getBlueprint(id: string): Promise<any | null> {
+    if (isDatabaseConfigured()) return getBlueprint(id);
     return this.memoryStore.get(id) || null;
   }
 
   async deleteBlueprint(id: string): Promise<boolean> {
+    if (isDatabaseConfigured()) return deleteBlueprint(id);
     return this.memoryStore.delete(id);
   }
 }

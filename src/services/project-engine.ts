@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { getProjectFromDatabase, getProposal, listProjectsFromDatabase, saveProposal, upsertProject, databasePersistenceEnabled } from "../db/repositories";
+import { isDatabaseConfigured } from "../db/client";
 
 export type ProjectType = "application-service" | "capability-unit" | "automation-pipeline" | "skill-tool";
 
@@ -21,6 +23,7 @@ export interface BuildProposal {
   proposalId: string;
   projectId: string;
   projectType: ProjectType;
+  instruction: string;
   summary: string;
   operations: ProjectOperation[];
   dependencies: ProjectDependency[];
@@ -155,6 +158,13 @@ export function syncProjectToDisk(project: AbideProject): string {
   }
 
   return projectDir;
+}
+
+async function persistProject(project: AbideProject): Promise<void> {
+  syncProjectToDisk(project);
+  if (isDatabaseConfigured()) {
+    await upsertProject(project);
+  }
 }
 
 // ==========================================
@@ -416,7 +426,11 @@ When triggered before deployment, execute the following inspection checklist:
     return [ollamaProject, feedbackProject, skillProject];
   }
 
-  static getProject(id: string): AbideProject | undefined {
+  static async getProject(id: string): Promise<AbideProject | undefined> {
+    if (databasePersistenceEnabled()) {
+      const persisted = await getProjectFromDatabase(id);
+      if (persisted) return persisted as AbideProject;
+    }
     if (projectRegistry.has(id)) {
       return projectRegistry.get(id);
     }
@@ -424,13 +438,24 @@ When triggered before deployment, execute the following inspection checklist:
     const found = templates.find(t => t.id === id);
     if (found) {
       projectRegistry.set(id, found);
-      syncProjectToDisk(found);
+      await persistProject(found);
       return found;
     }
     return undefined;
   }
 
-  static listProjects(): AbideProject[] {
+  static async listProjects(): Promise<AbideProject[]> {
+    if (databasePersistenceEnabled()) {
+      let persisted = await listProjectsFromDatabase();
+      if (persisted.length === 0) {
+        for (const template of WorkspaceService.getTemplates()) {
+          await persistProject(template);
+        }
+        persisted = await listProjectsFromDatabase();
+      }
+      for (const project of persisted) projectRegistry.set(project.id, project);
+      return persisted as AbideProject[];
+    }
     const templates = WorkspaceService.getTemplates();
     for (const t of templates) {
       if (!projectRegistry.has(t.id)) {
@@ -441,7 +466,7 @@ When triggered before deployment, execute the following inspection checklist:
     return Array.from(projectRegistry.values());
   }
 
-  static createProject(name: string, type: ProjectType, description: string, executionMode: "standalone" | "veklom-connected" = "standalone"): AbideProject {
+  static async createProject(name: string, type: ProjectType, description: string, executionMode: "standalone" | "veklom-connected" = "standalone"): Promise<AbideProject> {
     const id = `proj-${crypto.randomBytes(4).toString("hex")}`;
     const now = new Date().toISOString();
 
@@ -477,7 +502,7 @@ When triggered before deployment, execute the following inspection checklist:
     };
 
     projectRegistry.set(id, newProject);
-    syncProjectToDisk(newProject);
+    await persistProject(newProject);
     return newProject;
   }
 }
@@ -487,7 +512,7 @@ When triggered before deployment, execute the following inspection checklist:
 // ==========================================
 
 export class PatchService {
-  static createProposal(project: AbideProject, instruction: string): BuildProposal {
+  static async createProposal(project: AbideProject, instruction: string): Promise<BuildProposal> {
     const proposalId = `prop-${crypto.randomBytes(4).toString("hex")}`;
     const now = new Date().toISOString();
 
@@ -538,6 +563,7 @@ export class PatchService {
       proposalId,
       projectId: project.id,
       projectType: project.type,
+      instruction,
       summary,
       operations,
       dependencies,
@@ -550,6 +576,9 @@ export class PatchService {
     };
 
     proposalRegistry.set(proposalId, proposal);
+    if (isDatabaseConfigured()) {
+      await saveProposal(proposal);
+    }
 
     // Record evidence
     project.evidenceHistory.unshift({
@@ -565,8 +594,8 @@ export class PatchService {
     return proposal;
   }
 
-  static applyProposal(project: AbideProject, proposalId: string): AbideProject {
-    const proposal = proposalRegistry.get(proposalId);
+  static async applyProposal(project: AbideProject, proposalId: string): Promise<AbideProject> {
+    const proposal = proposalRegistry.get(proposalId) || (isDatabaseConfigured() ? await getProposal(proposalId) : undefined);
     if (!proposal) {
       throw new Error(`Proposal ${proposalId} not found.`);
     }
@@ -590,7 +619,7 @@ export class PatchService {
     project.updatedAt = now;
 
     // Sync to durable disk
-    syncProjectToDisk(project);
+    await persistProject(project);
 
     // Record evidence
     project.evidenceHistory.unshift({
@@ -619,7 +648,7 @@ export class SandboxExecutionService {
     let output = "";
 
     // Sync first to guarantee durable sandbox consistency
-    syncProjectToDisk(project);
+    await persistProject(project);
 
     try {
       if (stage === "install") {

@@ -264,6 +264,7 @@ export interface BlueprintResult {
   title: string;
   tagline: string;
   timestamp: string;
+  version?: string;
   hash: string;
   highLevelGoals: Goal[];
   competitiveMoat: Moat[];

@@ -241,12 +241,18 @@ export async function executeZkAttestationPipeline(req: ZkAttestationRequest): P
   // Record on Genome Ledger (PGL)
   const pglReceipt: PglReceipt = sealStepOnLedger("zk-pipeline-" + attestationId, {
     stepId: "ZK_ATTESTATION_VERIFIED",
+    sequence: 1,
+    capability: "zk.attestation",
     status: "SUCCESS",
-    stdout: `Zero-Knowledge proof ${req.proofType} verified by Z3 SMT solver in ${solverTime}ms for agent ${req.agentId}.`,
-    stderr: "",
-    exitCode: 0,
-    durationMs: solverTime,
-    artifacts: [`covenant_token_${attestationId}.jwt`, `pgl_receipt_${attestationId}.json`]
+    output: {
+      stdout: `Zero-Knowledge proof ${req.proofType} verified by Z3 SMT solver in ${solverTime}ms for agent ${req.agentId}.`,
+      stderr: "",
+      exitCode: 0,
+      durationMs: solverTime,
+      artifacts: [`covenant_token_${attestationId}.jwt`, `pgl_receipt_${attestationId}.json`]
+    },
+    executedAt: timestamp,
+    resultHash: crypto.createHash("sha256").update(covenantToken).digest("hex")
   });
 
   trace.push(`[Execution Unlocked] -> [PGL Receipt Sealed: ${pglReceipt.receiptId}]`);
