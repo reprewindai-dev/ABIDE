@@ -2114,7 +2114,7 @@ If switching tools or resuming a suspended session:
                 {ssrnIncludeAiDisclosure && (
                   <div className="space-y-2 border-l-4 border-gray-400 pl-4 py-1.5 my-4 bg-gray-50 text-[10px] text-gray-700 italic">
                     <span className="font-bold block uppercase text-[9px] tracking-wider not-italic">AI Research Disclosure Statement</span>
-                    Pursuant to SSRN Research Integrity guidelines, the authors disclose that artificial intelligence models (Gemini-3.5-Flash and Claude) were utilized in the drafting of mathematical simulation parameters, styling layout rendering checks, and generating JATS XML metadata.
+                    Pursuant to SSRN Research Integrity guidelines, the authors disclose that artificial intelligence models (locally-hosted Ollama models) were utilized in the drafting of mathematical simulation parameters, styling layout rendering checks, and generating JATS XML metadata.
                   </div>
                 )}
 
