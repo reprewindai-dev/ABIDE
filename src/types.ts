@@ -1,3 +1,24 @@
+export type MetricEvidenceState =
+  | "COMPUTED"
+  | "COMPUTED_UNCALIBRATED"
+  | "MEASURED"
+  | "RETRIEVED"
+  | "USER_DECLARED"
+  | "GENERATED_ESTIMATE"
+  | "DEMO_SAMPLE"
+  | "UNMEASURED";
+
+export interface MetricValue {
+  value: number | null;
+  unit?: string;
+  evidence_state: MetricEvidenceState;
+  computation_source?: string;
+  algorithm_version?: string;
+  inputs_hash?: string;
+  measured_at?: string;
+  source_record_id?: string;
+}
+
 export interface Goal {
   title: string;
   description: string;
@@ -17,9 +38,18 @@ export interface EinsteinVariable {
 
 export interface EinsteinProbability {
   modelName: string;
-  successRate: number;
-  latencyMs: number;
+  successRate: number | null;
+  latencyMs: number | null;
+  measurementState?: string;
   variables: EinsteinVariable[];
+  source_kind?: string;
+  source_provider?: string;
+  source_record_id?: string | null;
+  retrieved_at?: string;
+  evidence_state?: string;
+  claim_validation_state?: string;
+  provenance?: Record<string, any>;
+  metric_provenance?: Record<string, MetricValue>;
 }
 
 export interface AcademicPaper {
@@ -34,6 +64,14 @@ export interface AcademicPaper {
   quotedClaimLocation?: string;
   verificationStatus?: string;
   digitalSignature?: string;
+  source_kind?: string;
+  source_provider?: string;
+  source_record_id?: string | null;
+  retrieved_at?: string;
+  retrievalStatus?: string;
+  evidence_state?: string;
+  claim_validation_state?: string;
+  provenance?: Record<string, any>;
 }
 
 export interface VirtualFile {
@@ -45,11 +83,11 @@ export interface VirtualFile {
 
 export interface CompanyGraph {
   domains: { name: string; description: string; products: string[] }[];
-  products: { name: string; domain: string; businessValue: string; owner: string }[];
+  products: { name: string; domain: string; businessValue: string; owner: string; source_kind?: string; provenance?: Record<string, any>; }[];
   canonicalSystems: { name: string; techStack: string; purpose: string }[];
-  repositories: { name: string; url: string; capabilities: string[]; status: string }[];
-  environments: string[];
-  owners: { name: string; role: string; team: string }[];
+  repositories: { name: string; url: string; capabilities: string[]; status: string; source_kind?: string; provenance?: Record<string, any>; }[];
+  environments: (string | { name?: string; source_kind?: string; provenance?: Record<string, any>; })[];
+  owners: { name: string; role: string; team: string; source_kind?: string; provenance?: Record<string, any>; }[];
   revenueStreams: { name: string; description: string; model: string }[];
   policies: { name: string; rule: string; scope: string }[];
   externalProviders: { name: string; service: string; sla: string }[];
@@ -104,6 +142,10 @@ export interface CapabilityEvidence {
   privateDetails: string;
   completedProof: string;
   classification: "VERIFIED_EXISTING" | "INFERRED_FROM_CODE" | "RESEARCH_SUPPORTED" | "PROJECTED_BUSINESS_ASSUMPTION" | "UNVERIFIED_DESIGN_INTENT";
+  verifiedOnChain?: boolean | null | string;
+  testCoveragePercent?: number | null;
+  measurementState?: string;
+  provenance?: Record<string, any>;
   // Evidence Freshness fields
   evidenceTimestamp?: string;
   freshnessWindowDays?: number;
@@ -155,11 +197,11 @@ export interface ProductionEligibility {
 }
 
 export interface CapabilityVerification {
-  unitTests: string[];
-  contractTests: string[];
-  fixtureTests: string[];
-  mcpTests: string[];
-  securityTests: string[];
+  unitTests: string[] | null;
+  contractTests: string[] | null;
+  fixtureTests: string[] | null;
+  mcpTests: string[] | null;
+  securityTests: string[] | null;
   latencySlo: string;
   driftChecks: string;
   promotionRules?: PromotionRule[];
@@ -224,6 +266,9 @@ export interface Capability {
   downstreamImpact?: DownstreamImpactAnalysis;
   bundleInheritance?: BundleInheritance;
   dataSovereignty?: DataSovereigntyMapping;
+  source_kind?: string;
+  provenance?: Record<string, any>;
+  metric_provenance?: Record<string, MetricValue>;
 }
 
 export interface ProductOffering {
@@ -279,6 +324,13 @@ export interface BlueprintResult {
   source?: string;
   quota_fallback?: boolean;
   fallback_message?: string;
+  evidence_state?: string;
+  verification_state?: string;
+  cacheStatus?: any;
+  sekedTriage?: any;
+  jurisdictionProfileName?: string;
+  provenance?: Record<string, any>;
+  metric_provenance?: Record<string, MetricValue>;
 }
 
 export interface ModelConfig {

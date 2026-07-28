@@ -17,6 +17,8 @@ import { BlueprintResult } from "../types";
  */
 export const DEFAULT_BLUEPRINT: BlueprintResult = {
   source: "default",
+  evidence_state: "DEMO_SAMPLE",
+  verification_state: "NOT_VERIFIED",
   title: "[DEMO PREVIEW SAMPLE] Veklom Capability OS",
   tagline: "⚡ DEMO REFERENCE SAMPLE ONLY — Illustrates verified capabilities, SEKED compliance, and academic grounding (Lamport & Nakamoto reference samples). When you ingest your own intent, all this demo data is completely replaced!",
   timestamp: "2026-07-15T13:41:12-07:00",

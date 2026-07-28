@@ -1,4 +1,4 @@
-import { test, describe } from "node:test";
+import { test, describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import crypto from "node:crypto";
 import { exploreTlaStateSpace, verifyPlanIRWithTla } from "../compiler/tla-adapter";
@@ -7,6 +7,20 @@ import { PlanIR, PlanStep } from "../core/plan-ir";
 
 describe("TLA+ Formal State-Space Exploration Adapter Suite", () => {
   const mockTenantId = "tenant-tla-test";
+  let origUrl: string | undefined;
+
+  beforeEach(() => {
+    origUrl = process.env.VERIFICATION_SERVICE_URL;
+    delete process.env.VERIFICATION_SERVICE_URL;
+  });
+
+  afterEach(() => {
+    if (origUrl !== undefined) {
+      process.env.VERIFICATION_SERVICE_URL = origUrl;
+    } else {
+      delete process.env.VERIFICATION_SERVICE_URL;
+    }
+  });
 
   function createSampleStep(sequence: number, lane: 1 | 2 | 3 = 1, capability = "test-cap"): PlanStep {
     return {

@@ -23,6 +23,10 @@ export interface VerificationServiceConnector {
   solveZ3Invariants(assertions: string[]): Promise<{ satisfiable: boolean; model?: any; error?: string }>;
 }
 
+export interface CapabilityExecutionConnector {
+  executeCapability(step: any, verificationProof?: { satisfiable?: boolean; valid?: boolean; verified?: boolean }): Promise<any>;
+}
+
 export interface OpenTelemetryExporter {
   exportSpan(spanName: string, attributes: Record<string, any>): Promise<void>;
 }
@@ -112,14 +116,15 @@ export class RealWorldX402Connector implements X402PaymentConnector {
           const data = await response.json();
           return { txHash: data.txHash, success: true, simulated: false, status: "SUCCESS" };
         }
+        throw new Error(`Remote X402 Ledger returned status ${response.status}`);
       } catch (err: any) {
         console.warn("[X402 Connector] Remote X402 Ledger connection failed:", err.message);
+        throw new Error(`X402_LEDGER_UNREACHABLE: Remote X402 ledger connection failed (${err.message}). Simulated and default-success fallbacks are strictly forbidden.`);
       }
     }
 
     // No X402_LEDGER_URL configured (or it failed) — no money moved.
-    // Per truth-lock rules, return explicit non-settlement state rather than simulated success.
-    return { txHash: "NONE", success: false, simulated: true, status: "SETTLEMENT_NOT_PERFORMED" };
+    throw new Error("X402_LEDGER_UNREACHABLE: Real-world X402 ledger endpoint is unconfigured or unreachable. Simulated and default-success fallbacks are strictly forbidden.");
   }
 
   async releaseEscrow(leaseId: string, amountUsd: number, payeeAddress: string): Promise<{ txHash: string; success: boolean; simulated: boolean; status?: string }> {
@@ -136,13 +141,15 @@ export class RealWorldX402Connector implements X402PaymentConnector {
           const data = await response.json();
           return { txHash: data.txHash, success: true, simulated: false, status: "SUCCESS" };
         }
+        throw new Error(`Remote X402 Ledger returned status ${response.status}`);
       } catch (err: any) {
         console.warn("[X402 Connector] Remote X402 Ledger connection failed:", err.message);
+        throw new Error(`X402_LEDGER_UNREACHABLE: Remote X402 ledger connection failed (${err.message}). Simulated and default-success fallbacks are strictly forbidden.`);
       }
     }
 
     // Same rule: unconfigured or failed remote ledger means this did not move real money.
-    return { txHash: "NONE", success: false, simulated: true, status: "SETTLEMENT_NOT_PERFORMED" };
+    throw new Error("X402_LEDGER_UNREACHABLE: Real-world X402 ledger endpoint is unconfigured or unreachable. Simulated and default-success fallbacks are strictly forbidden.");
   }
 }
 
@@ -168,8 +175,10 @@ export class RealWorldVerificationConnector implements VerificationServiceConnec
         if (response.ok) {
           return await response.json();
         }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       } catch (err: any) {
-        console.log(`[Verification Connector] External TLA+ service (${process.env.VERIFICATION_SERVICE_URL}) offline or unreachable. Falling back to internal PlusCal state machine simulator.`);
+        console.warn(`[Verification Connector] External TLA+ service (${process.env.VERIFICATION_SERVICE_URL}) offline or unreachable: ${err.message}`);
+        throw new Error(`VERIFICATION_SERVICE_UNREACHABLE: External TLA+ service (${process.env.VERIFICATION_SERVICE_URL}) offline or unreachable (${err.message}). Fallback to internal simulator is strictly forbidden.`);
       }
     }
 
@@ -268,6 +277,18 @@ export class RealWorldVerificationConnector implements VerificationServiceConnec
 
   async solveZ3Invariants(assertions: string[]): Promise<{ satisfiable: boolean; model?: any; error?: string }> {
     console.log("[Verification Connector] Formulating logical constraints. Calling SMT solver Z3.");
+    if (process.env.VERIFICATION_SERVICE_URL) {
+      const { executeZ3HttpAdapter } = await import("../compiler/z3-adapter");
+      const httpRes = await executeZ3HttpAdapter(assertions, process.env.VERIFICATION_SERVICE_URL);
+      if (!httpRes.serviceReachable || (httpRes.error && (httpRes.error.includes("offline") || httpRes.error.includes("unreachable") || httpRes.error.includes("status") || httpRes.error.includes("timed out")))) {
+        throw new Error(`VERIFICATION_SERVICE_UNREACHABLE: External Z3 service (${process.env.VERIFICATION_SERVICE_URL}) offline or unreachable (${httpRes.error}). Fallback to internal rule engine is strictly forbidden.`);
+      }
+      return {
+        satisfiable: httpRes.satisfiable,
+        model: httpRes.model,
+        error: httpRes.error
+      };
+    }
     return solveZ3InvariantsWrapper(assertions);
   }
 }
@@ -316,8 +337,33 @@ export class RealWorldOTelExporter implements OpenTelemetryExporter {
   }
 }
 
+/**
+ * Real-world Capability Execution Connector.
+ * Executes capability steps while auditing and rejecting any default-success or mock-success fallbacks.
+ * Enforces that every operation strictly requires formal verification SAT results.
+ */
+export class RealWorldCapabilityConnector implements CapabilityExecutionConnector {
+  async executeCapability(
+    step: any,
+    verificationProof?: { satisfiable?: boolean; valid?: boolean; verified?: boolean }
+  ): Promise<any> {
+    console.log(`[Capability Connector] Verifying SAT requirements prior to executing capability "${step?.capability}".`);
+    
+    // Ensure every operation strictly requires formal verification SAT results
+    if (!verificationProof || !verificationProof.satisfiable) {
+      throw new Error(
+        `CAPPO HALT — Mandatory formal verification SAT results required prior to capability execution for "${step?.capability || 'unknown'}". Default-success and mock-success fallbacks are strictly forbidden.`
+      );
+    }
+
+    const { executeCapabilityStep } = await import("./execution");
+    return executeCapabilityStep(step);
+  }
+}
+
 // Singletons for simple real-world connection
 export const dbConnector = new RealWorldDBConnector();
 export const x402Connector = new RealWorldX402Connector();
 export const verificationConnector = new RealWorldVerificationConnector();
+export const capabilityConnector = new RealWorldCapabilityConnector();
 export const otelExporter = new RealWorldOTelExporter();

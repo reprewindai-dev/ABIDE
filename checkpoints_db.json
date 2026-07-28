@@ -2273,5 +2273,600 @@
     },
     "unresolvedWork": "None. Telemetry buffering complete.",
     "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-399c9ce6f8ee3e1d",
+    "timestamp": "2026-07-27T23:10:38.736Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-17c33b384b939f46",
+    "timestamp": "2026-07-27T23:10:38.738Z",
+    "parentCheckpointId": "chk-399c9ce6f8ee3e1d",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-e0864b594d514883",
+    "timestamp": "2026-07-27T23:19:19.659Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-45551ae190d598ad",
+    "timestamp": "2026-07-27T23:19:19.661Z",
+    "parentCheckpointId": "chk-e0864b594d514883",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-28516f78fb9bde2e",
+    "timestamp": "2026-07-27T23:23:12.428Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-ba582a4638a0172c",
+    "timestamp": "2026-07-27T23:23:12.430Z",
+    "parentCheckpointId": "chk-28516f78fb9bde2e",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-abcc5b73163bd9c7",
+    "timestamp": "2026-07-27T23:23:49.443Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-f198fed5b0e4facf",
+    "timestamp": "2026-07-27T23:23:49.444Z",
+    "parentCheckpointId": "chk-abcc5b73163bd9c7",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-690369d6bdbcc886",
+    "timestamp": "2026-07-27T23:24:00.026Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-51917257d1cd588b",
+    "timestamp": "2026-07-27T23:24:00.028Z",
+    "parentCheckpointId": "chk-690369d6bdbcc886",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-ab424a309627c425",
+    "timestamp": "2026-07-27T23:24:42.032Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-c09020ed5dfafed0",
+    "timestamp": "2026-07-27T23:24:42.034Z",
+    "parentCheckpointId": "chk-ab424a309627c425",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-73f6d2ac05ff704f",
+    "timestamp": "2026-07-27T23:57:10.302Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-2a89d5f86ea5d913",
+    "timestamp": "2026-07-27T23:57:10.304Z",
+    "parentCheckpointId": "chk-73f6d2ac05ff704f",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-8e1368ecaf660c83",
+    "timestamp": "2026-07-27T23:57:33.453Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-e5ac7833afc7ad8d",
+    "timestamp": "2026-07-27T23:57:33.455Z",
+    "parentCheckpointId": "chk-8e1368ecaf660c83",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-09d24fca91b21e7f",
+    "timestamp": "2026-07-27T23:58:38.353Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-d7a248559a909e4c",
+    "timestamp": "2026-07-27T23:58:38.354Z",
+    "parentCheckpointId": "chk-09d24fca91b21e7f",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-f5c65c366a311f17",
+    "timestamp": "2026-07-28T00:33:48.464Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-13e8263b7b4059e4",
+    "timestamp": "2026-07-28T00:33:48.466Z",
+    "parentCheckpointId": "chk-f5c65c366a311f17",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-396a92c616f83a6f",
+    "timestamp": "2026-07-28T00:37:59.072Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-049c842e420c61c3",
+    "timestamp": "2026-07-28T00:37:59.074Z",
+    "parentCheckpointId": "chk-396a92c616f83a6f",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-b872f02737a8b48f",
+    "timestamp": "2026-07-28T00:48:37.932Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-e9879e8c4cfb5c23",
+    "timestamp": "2026-07-28T00:48:37.934Z",
+    "parentCheckpointId": "chk-b872f02737a8b48f",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-dfeef363b4a878cd",
+    "timestamp": "2026-07-28T00:50:20.221Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-d3576250cc590a91",
+    "timestamp": "2026-07-28T00:50:20.223Z",
+    "parentCheckpointId": "chk-dfeef363b4a878cd",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-a8e2b23873866f5f",
+    "timestamp": "2026-07-28T02:22:40.145Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-4e636027bd962dda",
+    "timestamp": "2026-07-28T02:22:40.146Z",
+    "parentCheckpointId": "chk-a8e2b23873866f5f",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-8c9c80509b9cd6ef",
+    "timestamp": "2026-07-28T02:23:11.553Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-0db639d70bac7573",
+    "timestamp": "2026-07-28T02:23:11.555Z",
+    "parentCheckpointId": "chk-8c9c80509b9cd6ef",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-5155a797d5816fd5",
+    "timestamp": "2026-07-28T02:23:52.685Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-0d819adbfcc6f2b1",
+    "timestamp": "2026-07-28T02:23:52.687Z",
+    "parentCheckpointId": "chk-5155a797d5816fd5",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
+  },
+  {
+    "checkpointId": "chk-7fd51ed85d3052fe",
+    "timestamp": "2026-07-28T02:25:08.022Z",
+    "parentCheckpointId": null,
+    "blueprintHash": "hash-alpha-123",
+    "packetHash": "pkt-alpha-123",
+    "repositoryCommitSha": "commit-abc123",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 8
+    },
+    "unresolvedWork": "Implement telemetry buffering",
+    "agentIdentity": "Agent-A"
+  },
+  {
+    "checkpointId": "chk-d1e16b544c63dc7b",
+    "timestamp": "2026-07-28T02:25:08.024Z",
+    "parentCheckpointId": "chk-7fd51ed85d3052fe",
+    "blueprintHash": "hash-beta-456",
+    "packetHash": "pkt-beta-456",
+    "repositoryCommitSha": "commit-def456",
+    "modifiedFiles": [
+      "src/scheduler/einstein.rs",
+      "src/scheduler/telemetry.rs"
+    ],
+    "testResults": {
+      "success": true,
+      "count": 12
+    },
+    "unresolvedWork": "None. Telemetry buffering complete.",
+    "agentIdentity": "Agent-B"
   }
 ]

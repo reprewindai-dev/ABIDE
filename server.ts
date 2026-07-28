@@ -14,6 +14,7 @@ import { PlanIRSchema, CanonicalBlueprintV1Schema } from "./src/core/validation"
 import { compileSekedDirective, normalizeTelemetry, signAgentPacket, verifyAgentPacket, triageBlueprintIntakeV1 } from "./src/compiler/seked";
 import { cacheManager } from "./src/core/cache";
 import { dbConnector, x402Connector, verificationConnector, otelExporter } from "./src/core/connectors";
+import { downgradeFallbackClaims } from "./src/core/fallback-downgrade";
 import { verifyCitation, VerificationStatus } from "./src/core/citationVerifier";
 import { gateMaturityClaim, TechnologyReadiness } from "./src/core/feasibilityGate";
 import { vnpAuthRouter } from "./src/core/vnp-auth";
@@ -1791,7 +1792,7 @@ function generateFallbackBlueprint(
     console.warn("Failed to execute SEKED triage heuristic engine on fallback blueprint:", triageError);
   }
 
-  return blueprint;
+  return downgradeFallbackClaims(blueprint);
 }
 
 // Endpoint to verify connection to the selected LLM provider with custom authentication headers

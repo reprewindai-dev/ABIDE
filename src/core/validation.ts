@@ -23,8 +23,9 @@ export const EinsteinVariableSchema = z.object({
 // Zod schema for EinsteinProbability
 export const EinsteinProbabilitySchema = z.object({
   modelName: z.string(),
-  successRate: z.number(),
-  latencyMs: z.number(),
+  successRate: z.number().nullable().optional(),
+  latencyMs: z.number().nullable().optional(),
+  measurementState: z.string().optional(),
   variables: z.array(EinsteinVariableSchema)
 });
 
@@ -36,11 +37,19 @@ export const AcademicPaperSchema = z.object({
   summary: z.string(),
   relevance: z.string(),
   // Strict academic requirements added to avoid credibility risk
-  resolvableIdentifier: z.string().url().optional(),
+  resolvableIdentifier: z.string().optional(),
   retrievalTimestamp: z.string().optional(),
   quotedClaimLocation: z.string().optional(),
   verificationStatus: z.string().optional(),
-  digitalSignature: z.string().optional()
+  digitalSignature: z.string().optional(),
+  source_kind: z.string().optional(),
+  source_provider: z.string().optional(),
+  source_record_id: z.string().nullable().optional(),
+  retrieved_at: z.string().optional(),
+  retrievalStatus: z.string().optional(),
+  evidence_state: z.string().optional(),
+  claim_validation_state: z.string().optional(),
+  provenance: z.record(z.string(), z.any()).optional()
 });
 
 // Zod schema for VirtualFile
@@ -61,7 +70,9 @@ export const ProductSchema = z.object({
   name: z.string(),
   domain: z.string(),
   businessValue: z.string(),
-  owner: z.string()
+  owner: z.string(),
+  source_kind: z.string().optional(),
+  provenance: z.record(z.string(), z.any()).optional()
 });
 
 // Zod schema for CanonicalSystem
@@ -76,14 +87,18 @@ export const RepositorySchema = z.object({
   name: z.string(),
   url: z.string().url(),
   capabilities: z.array(z.string()),
-  status: z.string()
+  status: z.string(),
+  source_kind: z.string().optional(),
+  provenance: z.record(z.string(), z.any()).optional()
 });
 
 // Zod schema for Owner
 export const OwnerSchema = z.object({
   name: z.string(),
   role: z.string(),
-  team: z.string()
+  team: z.string(),
+  source_kind: z.string().optional(),
+  provenance: z.record(z.string(), z.any()).optional()
 });
 
 // Zod schema for RevenueStream
@@ -113,7 +128,7 @@ export const CompanyGraphSchema = z.object({
   products: z.array(ProductSchema),
   canonicalSystems: z.array(CanonicalSystemSchema),
   repositories: z.array(RepositorySchema),
-  environments: z.array(z.string()),
+  environments: z.array(z.union([z.string(), z.record(z.string(), z.any())])),
   owners: z.array(OwnerSchema),
   revenueStreams: z.array(RevenueStreamSchema),
   policies: z.array(PolicySchema),
@@ -180,6 +195,9 @@ export const CapabilityEvidenceSchema = z.object({
     "PROJECTED_BUSINESS_ASSUMPTION",
     "UNVERIFIED_DESIGN_INTENT"
   ]),
+  verifiedOnChain: z.union([z.boolean(), z.string(), z.null()]).optional(),
+  testCoveragePercent: z.number().nullable().optional(),
+  measurementState: z.string().optional(),
   evidenceTimestamp: z.string().optional(),
   freshnessWindowDays: z.number().optional(),
   nextRevalidationDue: z.string().optional(),
@@ -204,11 +222,11 @@ export const PromotionRuleSchema = z.object({
 
 // Zod schema for CapabilityVerification
 export const CapabilityVerificationSchema = z.object({
-  unitTests: z.array(z.string()),
-  contractTests: z.array(z.string()),
-  fixtureTests: z.array(z.string()),
-  mcpTests: z.array(z.string()),
-  securityTests: z.array(z.string()),
+  unitTests: z.array(z.string()).nullable().optional(),
+  contractTests: z.array(z.string()).nullable().optional(),
+  fixtureTests: z.array(z.string()).nullable().optional(),
+  mcpTests: z.array(z.string()).nullable().optional(),
+  securityTests: z.array(z.string()).nullable().optional(),
   latencySlo: z.string(),
   driftChecks: z.string(),
   promotionRules: z.array(PromotionRuleSchema).optional(),
@@ -258,7 +276,9 @@ export const CapabilitySchema = z.object({
   semanticVersion: z.string().optional(),
   priorVersionPointer: z.string().optional(),
   deprecationFlag: z.boolean().optional(),
-  replacementPointer: z.string().optional()
+  replacementPointer: z.string().optional(),
+  source_kind: z.string().optional(),
+  provenance: z.record(z.string(), z.any()).optional()
 });
 
 // Zod schema for ProductOffering
@@ -313,7 +333,8 @@ export const CanonicalBlueprintV1Schema = z.object({
   productOfferings: z.array(ProductOfferingSchema),
   gapsReport: z.array(GapReportSchema),
   files: z.array(VirtualFileSchema),
-  agentPackets: z.array(AgentPacketSchema).optional()
+  agentPackets: z.array(AgentPacketSchema).optional(),
+  provenance: z.record(z.string(), z.any()).optional()
 });
 
 // Zod schema for PlanStep

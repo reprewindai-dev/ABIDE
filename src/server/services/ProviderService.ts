@@ -4,6 +4,7 @@ import { DEFAULT_BLUEPRINT } from "../../data/defaultBlueprint";
 import { calculateBlueprintHash } from "../../core/plan-ir";
 import { triageBlueprintIntakeV1 } from "../../compiler/seked";
 import { cacheManager } from "../../core/cache";
+import { downgradeFallbackClaims } from "../../core/fallback-downgrade";
 
 export function calculateCanonicalHash(blueprint: any, intent?: string, compilerVersion = "v4.02"): string {
   return calculateBlueprintHash(blueprint);
@@ -750,7 +751,7 @@ export function generateFallbackBlueprint(
     console.warn("Failed to execute SEKED triage heuristic engine on fallback blueprint:", triageError);
   }
 
-  return blueprint;
+  return downgradeFallbackClaims(blueprint);
 }
 
 // Endpoint to verify connection to the selected LLM provider with custom authentication headers

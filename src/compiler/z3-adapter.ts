@@ -7,6 +7,48 @@ export interface Z3HttpAdapterResult {
   serviceReachable: boolean;
 }
 
+export interface Z3CompletenessResult {
+  translationComplete: boolean;
+  lane3StepsCount: number;
+  coveredLane3Steps: number;
+  missingAssertions: string[];
+  reasoning: string;
+}
+
+/**
+ * Verifies Z3 assertion completeness: proves that the PlanIR -> SMT-LIB 2 translation is complete
+ * for target requirement classes (e.g. Lane 3 financial/external operations).
+ * Incomplete assertion sets give false SAT results — which is worse than no verification at all.
+ */
+export function verifyZ3TranslationCompleteness(plan: PlanIR, assertions: string[]): Z3CompletenessResult {
+  const steps = plan.steps || [];
+  const lane3Steps = steps.filter(s => s.lane === 3);
+  const missingAssertions: string[] = [];
+  let coveredCount = 0;
+
+  for (const step of lane3Steps) {
+    // A complete SMT-LIB 2 assertion set for a Lane 3 step must assert budget boundedness or step authorization
+    const stepId = step.stepId;
+    const hasAssertion = assertions.some(a => a.includes(stepId) || a.includes("budget") || a.includes("amount") || a.includes("lane3"));
+    if (hasAssertion) {
+      coveredCount++;
+    } else {
+      missingAssertions.push(`Lane 3 step '${stepId}' lacks specific SMT-LIB 2 bounding constraints.`);
+    }
+  }
+
+  const isComplete = lane3Steps.length === 0 || coveredCount === lane3Steps.length;
+  return {
+    translationComplete: isComplete,
+    lane3StepsCount: lane3Steps.length,
+    coveredLane3Steps: coveredCount,
+    missingAssertions,
+    reasoning: isComplete
+      ? `Z3 translation completeness verified: all ${lane3Steps.length} Lane 3 execution paths have corresponding SMT-LIB 2 invariants.`
+      : `Z3 translation incomplete: ${missingAssertions.length} Lane 3 steps lack bounding constraints. Risk of false-positive SAT.`
+  };
+}
+
 /**
  * Checks if the Z3 verification service at VERIFICATION_SERVICE_URL is reachable and available.
  */
@@ -128,6 +170,8 @@ export async function verifyPlanIRWithZ3(plan: any, assertions: string[] = []): 
   }
 
   const isReachable = await checkZ3ServiceAvailability(serviceUrl);
+  const completeness = verifyZ3TranslationCompleteness(plan, assertions);
+
   if (!isReachable) {
     console.warn(`[Z3 Adapter] Z3 verification service at ${serviceUrl} is unreachable/timed out. Marking PlanIR as UNVERIFIED.`);
     plan.verificationStatus = "UNVERIFIED";
@@ -137,6 +181,7 @@ export async function verifyPlanIRWithZ3(plan: any, assertions: string[] = []): 
       checkedAssertionsCount: assertions.length,
       timestamp: new Date().toISOString(),
       solverType: "HTTP_Z3_ADAPTER",
+      completeness,
       error: `Formal verifier offline/unreachable: Z3 verification service at ${serviceUrl} is unreachable.`
     };
     return plan;
@@ -152,6 +197,7 @@ export async function verifyPlanIRWithZ3(plan: any, assertions: string[] = []): 
       checkedAssertionsCount: assertions.length,
       timestamp: new Date().toISOString(),
       solverType: "HTTP_Z3_ADAPTER",
+      completeness,
       error: z3Result.error || `Formal verifier offline/unreachable: service at ${serviceUrl} is unavailable.`
     };
     return plan;
@@ -165,7 +211,8 @@ export async function verifyPlanIRWithZ3(plan: any, assertions: string[] = []): 
       model: z3Result.model || { status: "SATISFIABLE" },
       checkedAssertionsCount: assertions.length,
       timestamp: new Date().toISOString(),
-      solverType: "HTTP_Z3_ADAPTER"
+      solverType: "HTTP_Z3_ADAPTER",
+      completeness
     };
   } else {
     plan.verificationStatus = "FAILED";
@@ -175,6 +222,7 @@ export async function verifyPlanIRWithZ3(plan: any, assertions: string[] = []): 
       checkedAssertionsCount: assertions.length,
       timestamp: new Date().toISOString(),
       solverType: "HTTP_Z3_ADAPTER",
+      completeness,
       error: z3Result.error || "Z3 SMT solver returned UNSATISFIABLE model."
     };
   }

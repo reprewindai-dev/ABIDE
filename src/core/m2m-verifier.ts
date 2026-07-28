@@ -33,7 +33,7 @@ export async function executeMandatoryZ3Verification(plan: PlanIR): Promise<Plan
   }
 
   try {
-    const z3Result = await solveZ3InvariantsWrapper(assertions);
+    const z3Result = await verificationConnector.solveZ3Invariants(assertions);
     
     if (z3Result.satisfiable) {
       plan.z3Proof = {

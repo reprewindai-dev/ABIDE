@@ -1,4 +1,4 @@
-import { describe, it, after } from "node:test";
+import { describe, it, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import crypto from "crypto";
 import fs from "fs";
@@ -12,10 +12,26 @@ import {
   enforceSubAgentCappoPolicy, 
   persistLane3PglAnchor 
 } from "../core/m2m-verifier";
-import { sealStepOnLedger } from "../core/execution";
+import { sealStepOnLedger, generateGnomledgerBaseL2Anchor } from "../core/execution";
+import { computeFentonWilkinsonTriage, evaluateHoverboardFeasibilityGate, classifyExecutionLanes } from "../compiler/seked";
+import { verifyZ3TranslationCompleteness } from "../compiler/z3-adapter";
 
 describe("Enterprise Hardening: Verification & M2M Contract Regression Suite", () => {
   const mockTenantId = "tenant-enterprise-99";
+  let origUrl: string | undefined;
+
+  beforeEach(() => {
+    origUrl = process.env.VERIFICATION_SERVICE_URL;
+    delete process.env.VERIFICATION_SERVICE_URL;
+  });
+
+  afterEach(() => {
+    if (origUrl !== undefined) {
+      process.env.VERIFICATION_SERVICE_URL = origUrl;
+    } else {
+      delete process.env.VERIFICATION_SERVICE_URL;
+    }
+  });
   
   function createSamplePlan(lane: 1 | 2 | 3 = 1): PlanIR {
     const step: PlanStep = {
@@ -188,6 +204,71 @@ describe("Enterprise Hardening: Verification & M2M Contract Regression Suite", (
     // Provide sovereign override token
     plan.degradedOverrideToken = "ovr-token-sovereign-architect-sig-999";
     assert.doesNotThrow(() => enforceLane3Z3AndDegradedGuard(plan), "Should allow execution when explicit override token is present");
+  });
+
+  it("should calculate Fenton-Wilkinson lognormal triage and verify Hoverboard feasibility rules", () => {
+    const scores = {
+      E: { score: 8, reasoning: "High efficiency" },
+      R: { score: 9, reasoning: "Verified reputation" },
+      C: { score: 7, reasoning: "Good compliance" },
+      D: { score: 8, reasoning: "Sovereign boundary" },
+      S: { score: 9, reasoning: "Sub-second settlement" }
+    };
+    const fw = computeFentonWilkinsonTriage(scores);
+    assert.ok(fw.fentonWilkinsonScore > 0 && fw.fentonWilkinsonScore <= 1.0, "Fenton-Wilkinson score must be bounded between 0 and 1");
+    assert.strictEqual(fw.priors.sourceCorpus, "open-source-software-effort-archive-v1", "Must reference bootstrapped empirical corpus");
+
+    const blueprintWithUnverifiedClaim = {
+      capabilities: [
+        {
+          id: "cap-1",
+          title: "Production Financial Core",
+          maturityState: "Sovereign Production",
+          verificationState: "Unverified",
+          evidence: { measurementState: "UNMEASURED", testCoveragePercent: 10 }
+        }
+      ]
+    };
+    const hbGate = evaluateHoverboardFeasibilityGate(blueprintWithUnverifiedClaim);
+    assert.strictEqual(hbGate.passed, false, "Hoverboard rule must trip when claiming TRL 9 without tests or empirical measurements");
+    assert.strictEqual(hbGate.violations.length, 1, "Must record exact violation details");
+  });
+
+  it("should classify execution steps into deterministic execution lanes", () => {
+    const bp = {
+      capabilities: [
+        { id: "c1", title: "Read Data", pricingModel: { settlementCompat: [] } },
+        { id: "c2", title: "Mutate State", verification: { driftChecks: ["schema-check"] } },
+        { id: "c3", title: "X402 Payment Settlement", pricingModel: { settlementCompat: ["x402"] } }
+      ]
+    };
+    const lanes = classifyExecutionLanes(bp);
+    assert.strictEqual(lanes.lane1Count, 1, "Must identify 1 Lane 1 step");
+    assert.strictEqual(lanes.lane2Count, 1, "Must identify 1 Lane 2 step");
+    assert.strictEqual(lanes.lane3Count, 1, "Must identify 1 Lane 3 step");
+    assert.strictEqual(lanes.requiresCovenantApproval, true, "Lane 3 step requires covenant approval");
+  });
+
+  it("should verify Z3 assertion completeness and detect missing bounding constraints", () => {
+    const plan: any = {
+      planId: "p-z3",
+      canonicalHash: "c-hash-z3",
+      steps: [{ stepId: "step-lane3-payout", capability: "x402-payout", lane: 3 }]
+    };
+    const incompleteAssertions = ["(assert (> x 0))"];
+    const compIncomplete = verifyZ3TranslationCompleteness(plan, incompleteAssertions);
+    assert.strictEqual(compIncomplete.translationComplete, false, "Must detect incomplete SMT-LIB 2 translation");
+
+    const completeAssertions = ["(assert (> step-lane3-payout-amount 0))", "(assert (<= step-lane3-payout-budget 1000))"];
+    const compComplete = verifyZ3TranslationCompleteness(plan, completeAssertions);
+    assert.strictEqual(compComplete.translationComplete, true, "Must verify completeness when bounding constraints are present");
+  });
+
+  it("should generate valid Gnomledger Base L2 root anchors for PGL batching", () => {
+    const anchor = generateGnomledgerBaseL2Anchor("0x_merkle_root_998877", "batch-101", 18500000, "base-sepolia");
+    assert.strictEqual(anchor.chainId, 84532, "Must map to correct Base Sepolia chain ID");
+    assert.ok(anchor.txHash.startsWith("0x"), "Must generate cryptographic tx hash");
+    assert.ok(anchor.signedAttestation.length > 0, "Must sign attestation payload with HMAC secret");
   });
 
   after(() => {

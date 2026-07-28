@@ -398,7 +398,8 @@ export async function verifyPlanIRWithTla(plan: PlanIR, customSpec?: string): Pr
         return plan;
       }
     }
-    console.log(`[TLA+ Adapter] External TLA+ service (${serviceUrl}) offline or unreachable. Falling back to internal formal TLA+ state-space exploration adapter.`);
+    console.warn(`[TLA+ Adapter] External TLA+ service (${serviceUrl}) offline or unreachable. Marking PlanIR as UNVERIFIED and falling back to internal exploration.`);
+    plan.verificationStatus = "UNVERIFIED";
   }
 
   // Execute local formal state-space exploration
