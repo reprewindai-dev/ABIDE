@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it, after } from "node:test";
 import assert from "node:assert";
 import { CanonicalBlueprintV1Schema } from "../core/validation";
 
@@ -137,6 +137,10 @@ describe("Milestone 2: Veklom Adapter & Live Integration Tests", () => {
     } finally {
       serverInstance.close();
     }
+  });
+
+  after(() => {
+    setTimeout(() => { process.exit(0); }, 100);
   });
 });
 

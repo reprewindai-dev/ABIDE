@@ -22,6 +22,7 @@ import {
   Copy
 } from "lucide-react";
 import { Capability, LockedConstitution, RevisionLog } from "../types";
+import EnterpriseProtocolManuals from "./EnterpriseProtocolManuals";
 
 interface SovereignConstitutionProps {
   capabilities: Capability[];
@@ -48,6 +49,7 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
   revisions,
   setRevisions
 }) => {
+  const [activeSubView, setActiveSubView] = useState<"constitution" | "manuals">("constitution");
   // Custom new revision fields
   const [newVersion, setNewVersion] = useState("v4.02.2");
   const [newChanges, setNewChanges] = useState("");
@@ -533,12 +535,42 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
         </div>
       </div>
 
+      {/* SUB-VIEW SWITCHER: CONSTITUTION SPEC VS PROTOCOL MANUALS */}
+      <div className="flex flex-col sm:flex-row border-2 border-[#222] bg-[#050505] p-1 font-mono text-xs gap-1">
+        <button
+          onClick={() => setActiveSubView("constitution")}
+          className={`flex-1 py-3 px-4 text-center uppercase font-black transition-all flex items-center justify-center gap-2 ${
+            activeSubView === "constitution"
+              ? "bg-[#00F0FF] text-black shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+              : "text-[#888] hover:text-white bg-[#0A0A0A]"
+          }`}
+        >
+          <Lock size={15} />
+          <span>Active Constitution &amp; Governance Profiles</span>
+        </button>
+        <button
+          onClick={() => setActiveSubView("manuals")}
+          className={`flex-1 py-3 px-4 text-center uppercase font-black transition-all flex items-center justify-center gap-2 ${
+            activeSubView === "manuals"
+              ? "bg-[#00F0FF] text-black shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+              : "text-[#888] hover:text-white bg-[#0A0A0A]"
+          }`}
+        >
+          <BookOpen size={15} />
+          <span>ABIDE Enterprise &amp; Security Protocol Manuals (SLSA 3 / ISO 15704)</span>
+        </button>
+      </div>
+
+      {activeSubView === "manuals" ? (
+        <EnterpriseProtocolManuals />
+      ) : (
+        <div className="space-y-8 animate-fadeIn">
       {/* THREE BLOCK SUMMARY CARD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
         <div className="p-5 border-2 border-[#222] bg-[#0A0A0A] space-y-2 relative">
           <span className="text-[10px] text-[#00F0FF] font-black block uppercase">[ CORE BACKBONE STANDARDS ]</span>
           <p className="text-gray-400 text-[10px] normal-case leading-relaxed">
-            ApexBlueprint acts as a repeatable, executable architecture-description engine strictly conformant with:
+            Abide Blueprint acts as a repeatable, executable architecture-description engine strictly conformant with:
           </p>
           <ul className="space-y-1 text-white text-[10px] pt-1 uppercase">
             <li>• IEEE/ISO/IEC 42010:2022 (Descriptions)</li>
@@ -1267,6 +1299,8 @@ export const SovereignConstitution: React.FC<SovereignConstitutionProps> = ({
           </div>
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };

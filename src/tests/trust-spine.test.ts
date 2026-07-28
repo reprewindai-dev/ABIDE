@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it, after } from "node:test";
 import assert from "node:assert";
 import http from "node:http";
 import { stableStringify, calculateBlueprintHash, computeCanonicalHash, PlanStep } from "../core/plan-ir";
@@ -24,7 +24,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
 
     it("should produce a different hash when any nested property is changed (tampering)", () => {
       const blueprint1 = {
-        title: "Apex Sovereign",
+        title: "Abide Sovereign",
         tagline: "Uncompromising security",
         timestamp: "2026-07-18T12:00:00Z",
         highLevelGoals: [{ title: "Durable Ledger", description: "Use X402", status: "PENDING" }],
@@ -57,7 +57,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
         canonicalHash: "ae24f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4",
         stepId: "f92b7cfa-4687-43cf-be44-fa3046124cb1",
         allowedCapability: "Sovereign Settlement Layer",
-        allowedRepositories: ["https://github.com/apex/sovereign"],
+        allowedRepositories: ["https://github.com/abide/sovereign"],
         allowedFiles: ["src/scheduler/einstein.rs", "src/scheduler/telemetry.rs"],
         issuedAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour in the future
@@ -80,7 +80,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
         canonicalHash: "ae24f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4",
         stepId: "f92b7cfa-4687-43cf-be44-fa3046124cb1",
         allowedCapability: "Sovereign Settlement Layer",
-        allowedRepositories: ["https://github.com/apex/sovereign"],
+        allowedRepositories: ["https://github.com/abide/sovereign"],
         allowedFiles: ["src/scheduler/einstein.rs", "src/scheduler/telemetry.rs"],
         issuedAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
@@ -121,7 +121,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
         canonicalHash: "ae24f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4f5a6b0c2d3e4",
         stepId: "f92b7cfa-4687-43cf-be44-fa3046124cb1",
         allowedCapability: "Sovereign Settlement Layer",
-        allowedRepositories: ["https://github.com/apex/sovereign"],
+        allowedRepositories: ["https://github.com/abide/sovereign"],
         allowedFiles: ["src/scheduler/einstein.rs", "src/scheduler/telemetry.rs"],
         issuedAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
         expiresAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
@@ -182,7 +182,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
     it("should refuse writing projection files if the plan status is not APPROVED", async () => {
       const blueprint = {
         ...DEFAULT_BLUEPRINT,
-        title: "Sovereign Apex",
+        title: "Sovereign Abide",
         tagline: "Uncompromising ledger",
         timestamp: "2026-07-18T12:00:00Z",
       };
@@ -391,4 +391,7 @@ describe("Milestone 1: Real Trust Spine Regression Tests", () => {
     });
   });
 
+  after(() => {
+    setTimeout(() => { process.exit(0); }, 100);
+  });
 });

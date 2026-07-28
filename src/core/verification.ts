@@ -219,9 +219,24 @@ export async function solveZ3InvariantsWrapper(assertions: string[]): Promise<{ 
   const hasZ3 = await detectZ3Binary();
   const serviceUrl = process.env.VERIFICATION_SERVICE_URL;
 
-  // Falling back to current internal rule engine when z3 binary is missing or VERIFICATION_SERVICE_URL is set
-  if (!hasZ3 || serviceUrl) {
-    console.log(`[Z3 Service Wrapper] Falling back to internal engine. Has Z3: ${hasZ3}, Service URL: ${serviceUrl}`);
+  if (serviceUrl) {
+    console.log(`[Z3 Service Wrapper] Using HTTP adapter targeting ${serviceUrl}`);
+    const { executeZ3HttpAdapter } = await import("../compiler/z3-adapter");
+    const httpRes = await executeZ3HttpAdapter(assertions, serviceUrl);
+    if (!httpRes.serviceReachable || (httpRes.error && (httpRes.error.includes("offline") || httpRes.error.includes("unreachable") || httpRes.error.includes("status") || httpRes.error.includes("timed out")))) {
+      console.log(`[Z3 Service Wrapper] External Z3 service (${serviceUrl}) offline or unreachable. Falling back to internal SMT rule engine.`);
+      return solveWithInternalRuleEngine(assertions);
+    }
+    return {
+      satisfiable: httpRes.satisfiable,
+      model: httpRes.model,
+      error: httpRes.error
+    };
+  }
+
+  // Falling back to current internal rule engine when z3 binary is missing
+  if (!hasZ3) {
+    console.log(`[Z3 Service Wrapper] Falling back to internal engine. Has Z3: ${hasZ3}`);
     return solveWithInternalRuleEngine(assertions);
   }
 

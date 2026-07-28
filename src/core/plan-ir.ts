@@ -10,6 +10,49 @@ export type PlanStatus =
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+export type ZkProofType = 'GROTH16' | 'PLONK' | 'STARK' | 'EZKL' | 'ZKLLVM';
+
+export interface ZkSnarkProofCircuit {
+  proofType: ZkProofType;
+  proof: any;
+  publicSignals: (string | number)[];
+  verificationKeyHash?: string;
+  verified: boolean;
+  verifiedAt?: string;
+  circuitName?: string;
+}
+
+export type VerificationStatus = 'VERIFIED' | 'UNVERIFIED' | 'UNVERIFIED_DEGRADED' | 'FAILED' | 'PENDING';
+
+export interface Z3VerificationProof {
+  verified: boolean;
+  satisfiable: boolean;
+  model?: any;
+  checkedAssertionsCount: number;
+  timestamp: string;
+  solverType: 'NATIVE_Z3' | 'REMOTE_Z3' | 'INTERNAL_SMT_FALLBACK';
+  error?: string;
+}
+
+export interface TlaVerificationProof {
+  verified: boolean;
+  deadlockFree: boolean;
+  checkedInvariantsCount: number;
+  trace: string;
+  timestamp: string;
+  error?: string;
+}
+
+export interface SubAgentPolicy {
+  agentId: string;
+  tenantId: string;
+  requiredCapabilities: string[];
+  authorizedByCappo: boolean;
+  cappoToken?: string;
+  policyHash?: string;
+  grantedPermissions?: string[];
+}
+
 export interface PlanStep {
   stepId: string;              // UUID v4
   sequence: number;            // 1-based order, immutable after compile
@@ -23,6 +66,14 @@ export interface PlanStep {
   idempotencyKey: string;      // SHA-256 of stepId + inputHash
   executedAt?: string;         // ISO 8601, set after execution
   resultHash?: string;         // SHA-256 of actual output
+  subAgentPolicy?: SubAgentPolicy;
+  pglAnchor?: {
+    receiptId: string;
+    merkleRoot: string;
+    blockHeight: number;
+    slsaLevel: string;
+    timestamp: string;
+  };
 }
 
 export interface PlanIR {
@@ -42,6 +93,12 @@ export interface PlanIR {
   x402ReservationId?: string;  // Set when payment is reserved
   pglReceiptId?: string;       // Set when PGL seals this plan
   replayable: boolean;         // Always true for APPROVED+ plans
+  verificationStatus?: VerificationStatus;
+  z3Proof?: Z3VerificationProof;
+  tlaProof?: TlaVerificationProof;
+  zkSnarkCircuit?: ZkSnarkProofCircuit;
+  degradedOverrideToken?: string; // Required when verificationStatus === 'UNVERIFIED' or 'UNVERIFIED_DEGRADED' and executing Lane 3
+  pglMerkleRoot?: string;
 }
 
 // Deterministic cross-environment SHA-256 implementation
@@ -173,6 +230,9 @@ export function validatePlanIR(plan: PlanIR): { valid: boolean; errors: string[]
   const lane3Steps = plan.steps.filter(s => s.lane === 3);
   if (lane3Steps.some(s => !s.requiresApproval)) {
     errors.push('all Lane 3 (external) steps must require approval');
+  }
+  if (plan.zkSnarkCircuit && !plan.zkSnarkCircuit.verified) {
+    errors.push('zkSnarkCircuit attached to plan is not verified');
   }
   return { valid: errors.length === 0, errors };
 }

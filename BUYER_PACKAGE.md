@@ -1,4 +1,4 @@
-# APEX BLUEPRINT & COVENANT GATE — BUILD-TO-EXECUTION ACCOUNTABILITY BRIEF
+# ABIDE BLUEPRINT & COVENANT GATE — BUILD-TO-EXECUTION ACCOUNTABILITY BRIEF
 *Technical Audit & Pluggable Integration Guide. July 2026.*
 
 ---
@@ -7,7 +7,7 @@
 
 The breakthrough in agentic software development is not the ability to write code faster, but the ability to prove that compiled software was executed safely, authorized properly, and traced directly to its source state.
 
-This package defines the **Build-to-Execution Accountability Infrastructure** for the Apex Blueprint platform. This document serves as both a strategic overview and a clean, honest engineering layout. It explicitly separates what is **fully implemented and working in the codebase** from what is **designed as a pluggable, real-world integration port**.
+This package defines the **Build-to-Execution Accountability Infrastructure** for the ABIDE Blueprint platform. This document serves as both a strategic overview and a clean, honest engineering layout. It explicitly separates what is **fully implemented and working in the codebase** from what is **designed as a pluggable, real-world integration port**.
 
 ---
 
@@ -30,7 +30,7 @@ The codebase is engineered with **pluggable ingress/egress ports** (`src/core/co
 
 ```
                   ┌──────────────────────────────────────────────┐
-                  │            APEX TRUST CONTROL PLANE          │
+                  │           ABIDE TRUST CONTROL PLANE          │
                   └──────┬─────────────────┬────────────────┬────┘
                          │                 │                │
                          ▼                 ▼                ▼
@@ -109,7 +109,7 @@ The "Strategic Analysis" document describes high-level objectives that represent
 
 ### Module 3: IDE Model Context Protocol (MCP) Server (Weeks 5-6)
 *   **Target Integration:** Implement a standard MCP JSON-RPC over stdio.
-*   **Actionable Flow:** Allow Cursor, Claude Code, and Windsurf to declare Apex as a first-class tool source, pulling signed work packets and pushing file-system mutation logs directly to the accountability pipeline.
+*   **Actionable Flow:** Allow Cursor, Claude Code, and Windsurf to declare ABIDE as a first-class tool source, pulling signed work packets and pushing file-system mutation logs directly to the accountability pipeline.
 
 ---
 

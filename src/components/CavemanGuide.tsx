@@ -4,7 +4,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
-  Cpu, Zap, Flame, Terminal, FileCode, CheckCircle2, Sliders, Layers, Code, RefreshCw, Copy, Check, Lock, ShieldCheck, ChevronRight, HelpCircle, Activity, Play, AlertTriangle
+  Cpu, Zap, Flame, Terminal, FileCode, CheckCircle2, Sliders, Layers, Code, RefreshCw, Copy, Check, Lock, ShieldCheck, ChevronRight, HelpCircle, Activity, Play, AlertTriangle, BookOpen, ArrowRight, CheckSquare, Square, ExternalLink, Sparkles, UserCheck, Globe, Coins, Github, TrendingUp, Clock, Printer, Download, Compass, ShieldAlert
 } from "lucide-react";
 import { normalizeTelemetry, compileSekedDirective } from "../compiler/seked";
 import { BlueprintResult, Capability } from "../types";
@@ -12,11 +12,103 @@ import { BlueprintResult, Capability } from "../types";
 interface CavemanGuideProps {
   blueprint: BlueprintResult;
   userEmail?: string;
+  onSelectTab?: (tabId: string) => void;
 }
 
-export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.io" }: CavemanGuideProps) {
+export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.io", onSelectTab }: CavemanGuideProps) {
   const [activeTab, setActiveTab] = useState<"ponder" | "spec" | "terminal" | "sdk">("ponder");
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  // Interactive Checklist State for Beginner Learning Center
+  const [completedSteps, setCompletedSteps] = useState<number[]>([1]);
+  const [expandedStep, setExpandedStep] = useState<number | null>(1);
+
+  const workflowSteps = useMemo(() => [
+    {
+      step: 1,
+      title: "1. Surface 1: Intent & Build Proposal",
+      subtitle: "Type plain language instructions and approve the structured Build Plan before files are created",
+      badge: "SURFACE 1: INTENT",
+      badgeColor: "bg-cyan-500/10 text-cyan-400 border-cyan-500/30",
+      tabId: "sovereignConstitution",
+      whyItMatters: "In ABIDE, you don't just type an instruction and blindly generate code! ABIDE first returns a structured Build Proposal: Project Type, Runtime (Node.js), Estimated Files, Dependencies, Tests, and Execution Cost. You review and approve the plan before any files touch the workspace.",
+      whatIfSkipped: "If you skip plan approval, you risk generating bloated dependencies or unverified architectures. Always verify the Build Proposal first!",
+      howToUse: "In your Intent specification, review the generated architecture summary. Check that the project type (API, Capability, Pipeline, or Skill) matches your goals before proceeding."
+    },
+    {
+      step: 2,
+      title: "2. Define ABIDE Project Object & Build Type",
+      subtitle: "Select Application/Service, Capability Unit, Automation Pipeline, or Skill/Tool",
+      badge: "CORE ARCHITECTURE",
+      badgeColor: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+      tabId: "interfaces",
+      whyItMatters: "Pipelines are not the whole IDE! Why? Because someone might use ABIDE to build a small API, an MCP server, an agent skill, a webhook, or a data transformer. The central object is an ABIDE Project (abide.project.json), which unifies Code, Capabilities, Pipelines, Schemas, Policies, and Tests in one clean workspace.",
+      whatIfSkipped: "Forcing every project into a visual pipeline graph creates artificial complexity. Use code-first for simple APIs and visual graphs for multi-stage automations!",
+      howToUse: "Open the 'Interfaces Inventory' tab to inspect your Zod schemas, API contracts, and capability definitions for your selected project type."
+    },
+    {
+      step: 3,
+      title: "3. Surface 2: Build (Visual View | Code View)",
+      subtitle: "Move seamlessly between automation graphs and generated source files",
+      badge: "SURFACE 2: BUILD",
+      badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+      tabId: "explorer",
+      whyItMatters: "The Build surface gives you two synchronized lenses into the same project: Visual View for pipelines, triggers, and handoffs; Code View for generated source files (server.ts, schemas.ts), tests, and configuration. Both represent the exact same bounded build environment.",
+      whatIfSkipped: "If you only look at one view, you might miss structural wiring or implementation details. Use Visual for flow and Code for logic!",
+      howToUse: "Open the 'Cognitive IDE' tab to inspect your scaffolded files in Code View or switch to Visual Workflow to see your automation nodes."
+    },
+    {
+      step: 4,
+      title: "4. Surface 3: Changes (Diff Review & Patching)",
+      subtitle: "Review and approve agent file patches (+ src/classify.ts, ~ src/server.ts)",
+      badge: "SURFACE 3: CHANGES",
+      badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+      tabId: "explorer",
+      whyItMatters: "When the AI coding agent proposes updates, it does NOT immediately overwrite your files! Instead, it returns a structured patch proposal showing exact line diffs. You approve, reject, or edit the diffs before they are written to the sandbox.",
+      whatIfSkipped: "Letting AI silently overwrite files leads to regressions and drift. Reviewing diffs ensures zero unapproved modifications touch your code.",
+      howToUse: "When an agent returns file operations, check the proposed diffs in the IDE before clicking 'Apply Approved Patches'."
+    },
+    {
+      step: 5,
+      title: "5. Surface 4: Run (Sandbox Build & Test Execution)",
+      subtitle: "Execute real commands: npm install -> typecheck -> test -> build -> start",
+      badge: "SURFACE 4: RUN",
+      badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+      tabId: "testHarness",
+      whyItMatters: "An IDE is only meaningful if it completes the real loop! In Surface 4, ABIDE creates an isolated sandbox and executes real commands: installing dependencies, running typechecks, running Jest/Vitest suites, building bundles, and starting endpoints (like POST /feedback). This is real process output, not animation-generated status!",
+      whatIfSkipped: "Without real sandbox execution, you only have virtual text strings. Running the build and tests proves your software actually works!",
+      howToUse: "Open the 'Test Harness & Simulator' tab to run your test suite, verify schema invariants, and inspect live execution logs."
+    },
+    {
+      step: 6,
+      title: "6. Surface 5: Evidence (Execution History & Hash Ledger)",
+      subtitle: "Record generated files, package versions, compile logs, and project hash",
+      badge: "SURFACE 5: EVIDENCE",
+      badgeColor: "bg-pink-500/10 text-pink-400 border-pink-500/30",
+      tabId: "agentPackets",
+      whyItMatters: "Every build and test run produces immutable evidence: generated files, changed files, pinned package versions, compile output, test output, and cryptographic project hashes. In Standalone ABIDE, this is stored locally; connected to Veklom, it feeds the PGL governance ledger.",
+      whatIfSkipped: "Without evidence ledgers, you cannot prove what code was executed or what model generated it when deploying to high-assurance environments.",
+      howToUse: "Open 'Projection & Trust' or check your Evidence Packets to inspect your project hash and verification ledger."
+    },
+    {
+      step: 7,
+      title: "7. Complete The Real Loop & Export Runnable Package",
+      subtitle: "Persist your project and download the verified ZIP or GitHub repository",
+      badge: "REAL LOOP COMPLETED",
+      badgeColor: "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white border-emerald-500/40",
+      tabId: "agentPackets",
+      whyItMatters: "Don't just type messy intent and immediately download a ZIP! Only after your project has traversed the 5 surfaces (Intent -> Build -> Changes -> Run -> Evidence) and completed the real loop is it a durable, tested, production-ready software package.",
+      whatIfSkipped: "Exporting before completing the loop gives you an unverified draft. Exporting after Surface 5 gives you a guaranteed working project!",
+      howToUse: "Once Steps 1 through 6 are verified, click 'Download ZIP' or export to GitHub to deploy your standalone ABIDE Project!"
+    }
+  ], []);
+
+  const toggleStepCompletion = (stepNum: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCompletedSteps(prev =>
+      prev.includes(stepNum) ? prev.filter(n => n !== stepNum) : [...prev, stepNum]
+    );
+  };
 
   // Live Blueprint Calculations (No Mocking)
   const activeBlueprint = useMemo(() => {
@@ -309,6 +401,355 @@ export default function CavemanGuide({ blueprint, userEmail = "developer@veklom.
             </div>
           </div>
         </div>
+      </div>
+
+      {/* NEW: THE 7-STEP WORKFLOW ROADMAP & LEARNING CENTER */}
+      <div className="bg-[#0A0A0A] border-2 border-[#00F0FF]/40 p-6 space-y-6 relative overflow-hidden rounded-none shadow-[0_0_25px_rgba(0,240,255,0.05)]">
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-48 h-48 bg-[#00F0FF]/5 rounded-full blur-3xl pointer-events-none" />
+        
+        {/* Banner header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#222] pb-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF]">
+              <Compass size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#00F0FF]">
+                  INTERACTIVE LEARNING CENTER & WORKFLOW TRACKER
+                </span>
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 font-mono font-bold border border-emerald-500/30 uppercase">
+                  {completedSteps.length} / 7 Steps Verified
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-white uppercase tracking-tight mt-0.5">
+                The 7-Step Road to Completing The Real Loop (ABIDE Workbench Guide)
+              </h2>
+            </div>
+          </div>
+          <div className="text-left md:text-right font-mono text-[11px] text-gray-400 max-w-sm">
+            <p className="leading-tight">
+              <strong className="text-white">Don&apos;t just hit Generate and Download ZIP!</strong> ABIDE is a bounded build environment that turns an instruction into a real, runnable project across 5 primary workbench surfaces.
+            </p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center text-[10px] font-mono uppercase font-bold text-gray-400">
+            <span>Sovereign Project Verification Progress:</span>
+            <span className="text-[#00F0FF] font-black">{Math.round((completedSteps.length / 7) * 100)}% COMPLETE</span>
+          </div>
+          <div className="w-full h-2 bg-[#111] border border-[#222] overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-[#00F0FF] via-[#9D4EDD] to-emerald-400 transition-all duration-300"
+              style={{ width: `${(completedSteps.length / 7) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 4 Project Types info cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+          {[
+            { title: "Application or Service", desc: "Small APIs, dashboards, webhooks, and microservices.", icon: Globe, border: "border-cyan-500/30 bg-cyan-950/10" },
+            { title: "Capability Unit", desc: "Reusable machine-to-machine actions with X402 sub-cent pricing.", icon: Zap, border: "border-purple-500/30 bg-purple-950/10" },
+            { title: "Automation Pipeline", desc: "Multi-stage execution flows, triggers, and approval handoffs.", icon: Layers, border: "border-pink-500/30 bg-pink-950/10" },
+            { title: "Skill or Agent Tool", desc: "SKILL.md instructions, MCP tools, and reference scripts.", icon: FileCode, border: "border-amber-500/30 bg-amber-950/10" }
+          ].map((item, idx) => {
+            const ItemIcon = item.icon;
+            return (
+              <div key={idx} className={`p-3 border ${item.border} rounded-none flex items-start gap-2.5`}>
+                <ItemIcon size={16} className="text-[#00F0FF] shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase font-mono">{item.title}</h4>
+                  <p className="text-[10px] text-gray-400 leading-tight mt-0.5">{item.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CANONICAL SEPARATION & VEKLOM ARCHITECTURAL ARCHITECTURE */}
+        <div className="bg-[#0A1015] border-2 border-[#9D4EDD] p-5 space-y-4 mt-6 mb-4 shadow-[0_0_25px_rgba(157,78,221,0.15)]">
+          <div className="border-b border-[#9D4EDD]/30 pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[10px] bg-[#9D4EDD]/20 text-[#9D4EDD] border border-[#9D4EDD]/40 px-2.5 py-0.5 font-bold uppercase tracking-widest font-mono">
+                🏛️ Canonical Architecture Mandate
+              </span>
+              <span className="text-xs text-gray-400 font-mono">
+                Ports: 3002 | 3003 | 3009 | 3011 | 80 | 8001 | 8002 | 8088 | 8092
+              </span>
+            </div>
+            <h3 className="text-base font-black text-white font-mono uppercase tracking-wide mt-2">
+              ABIDE vs. The Wider Veklom Ecosystem: Canonical Separation
+            </h3>
+            <div className="mt-2 p-3 bg-[#9D4EDD]/10 border-l-4 border-[#9D4EDD] text-xs font-mono text-gray-200 leading-relaxed">
+              <strong className="text-[#9D4EDD] block uppercase font-black text-[11px] mb-0.5">THE CORRECTED PRODUCT STATEMENT:</strong>
+              &quot;ABIDE is Veklom&apos;s intent-to-blueprint and bounded build workbench. It can operate independently with a lightweight local execution engine, but inside Veklom it hands approved plans and projects into the cAPI-connected backend mesh for governed execution.&quot;
+            </div>
+          </div>
+
+          <div className="text-xs font-mono text-gray-300 space-y-2">
+            <p className="text-amber-400 font-bold">
+              ⚠️ CRITICAL CORRECTION: ABIDE is NOT supposed to become the control surface for all of Veklom! It should NOT recreate the full Veklom Terminal, complete cAPI control interface, all backend administration, complete GPC runtime, or Governance Portal.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 font-mono text-xs">
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                1. Veklom Ops Command
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Developer workforce only.</strong> Sits outside the customer-facing Veklom runtime. Used strictly by internal engineers to code, test, harden, and submit PRs.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                2. cAPI (Canonical Port: 3003)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Unified MCP/API capability layer.</strong> Embedded in or locally available to each of the four backends. Enables agent spawns operating across backends to communicate.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                3. Governance Portal
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>cAPI&apos;s visual interface.</strong> Displays the cAPI mesh, capabilities, agents, activity, and evidence. Must NOT maintain a competing mocked backend.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                4. Terminal (Canonical Port: 80)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Real command &amp; control interface.</strong> Where operators initiate commands and agent work. Separate from VNP benchmarking.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#00F0FF] uppercase block border-b border-[#222] pb-1">
+                5. VNP (Veklom Nexus Protocol)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>API benchmarking &amp; measurement.</strong> Handles operational performance metrics across system nodes. This is NOT the Terminal.
+              </p>
+            </div>
+
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1">
+              <span className="text-[10px] font-black text-[#9D4EDD] uppercase block border-b border-[#222] pb-1">
+                6. ABIDE (Ports: 3009 | Abide: 3011)
+              </span>
+              <p className="text-gray-400 text-[11px] leading-normal font-sans">
+                <strong>Intent &amp; bounded build workbench.</strong> Focuses on: messy intent &gt; verified understanding &gt; blueprint &gt; architecture &gt; implementation plan &gt; generated code &gt; sandbox tests &gt; handoff to cAPI.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-[#222] pt-3 grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+            <div className="bg-[#0C1217] p-3 border border-[#1E293B]">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase block mb-1">
+                🔗 The 4 Canonical Backends &amp; Ports
+              </span>
+              <ul className="text-gray-300 space-y-1 text-[11px]">
+                <li><strong className="text-white">8001: Gnomledger</strong> — Cryptographic evidence &amp; immutable ledger.</li>
+                <li><strong className="text-white">8002: CAPPO Backend</strong> — Consequential action policy authorization.</li>
+                <li><strong className="text-white">8088: BYOS Backend</strong> — Bring-Your-Own-Server storage &amp; execution.</li>
+                <li><strong className="text-white">8092: LockerPhycer</strong> — Hardware key vault &amp; physical isolation.</li>
+                <li className="text-gray-500 pt-1 border-t border-[#222]">Control Plane: <strong className="text-gray-400">3002</strong> | Retired: <strong className="text-rose-400 line-through">3000</strong>, <strong className="text-rose-400 line-through">8000</strong></li>
+              </ul>
+            </div>
+
+            <div className="bg-[#0C1217] p-3 border border-[#1E293B]">
+              <span className="text-[10px] font-bold text-[#00F0FF] uppercase block mb-1">
+                🚀 The 6 Canonical Views of Proper ABIDE
+              </span>
+              <ol className="text-gray-300 space-y-1 text-[11px] list-decimal list-inside">
+                <li><strong className="text-white">Blueprint View:</strong> Messy intent &gt; architecture &amp; production plan.</li>
+                <li><strong className="text-white">Project View:</strong> Real files persisted in sandbox (not virtual!).</li>
+                <li><strong className="text-white">Code View:</strong> Limited editor for source, schemas, tests &amp; diff patches.</li>
+                <li><strong className="text-white">Flow View:</strong> Used ONLY for real multi-stage pipeline sequences.</li>
+                <li><strong className="text-white">Build View:</strong> Real install, typecheck, test, build &amp; preview output.</li>
+                <li><strong className="text-white">Handoff View:</strong> Delegates approved plan to cAPI (3003) &gt; GPC &gt; CAPPO.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="bg-[#111] p-2.5 border border-[#222] text-[11px] font-mono text-gray-400 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+            <div>
+              <strong className="text-white uppercase">The Immediate Dependency Priority Order:</strong>
+              <span className="block text-gray-400 mt-0.5">
+                1. Verify &amp; harden cAPI &gt; 2. Verify 4 backends relationship &gt; 3. Replace Governance Portal mock data with real cAPI &gt; 4. Verify Terminal command path &gt; 5. Finish ABIDE real build loop &gt; 6. Connect ABIDE to cAPI/GPC.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* INTERACTIVE ABIDE PROJECT FACTORY TUTORIAL & PROOF BUILDER */}
+        <div className="bg-[#0E1B22]/40 border-2 border-[#00F0FF] p-4 space-y-3 mt-4 mb-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[#00F0FF]/30 pb-2.5">
+            <div>
+              <h3 className="text-sm font-black text-[#00F0FF] font-mono uppercase flex items-center gap-2">
+                <Sparkles size={16} className="text-[#00F0FF]" />
+                <span>🎓 ABIDE Project Factory: The 10-Step Undeniable Ollama Proof Pipeline Tutorial</span>
+              </h3>
+              <p className="text-xs text-gray-300 font-sans mt-0.5">
+                Learn how ABIDE moves beyond simple textareas over virtual files into a bounded build environment that compiles, tests, and executes real packages.
+              </p>
+            </div>
+            {onSelectTab && (
+              <button
+                onClick={() => onSelectTab("explorer")}
+                className="px-4 py-2 bg-[#00F0FF] hover:bg-white text-black font-black text-xs font-mono uppercase tracking-wider shrink-0 transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] flex items-center gap-1.5"
+              >
+                <Layers size={14} />
+                <span>Open Project Factory Workbench -&gt;</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1.5">
+              <span className="text-[10px] font-bold text-amber-400 uppercase block border-b border-[#222] pb-1">
+                💡 Why Pipelines Aren&apos;t The Whole IDE
+              </span>
+              <p className="text-gray-300 font-sans text-xs leading-normal">
+                A pipeline builder is useful, but too narrow to be the central object of ABIDE. Users build: <strong>small APIs, MCP servers, agent skills, webhook automations, or data transformers</strong>. That is why ABIDE uses a unified <code>abide.project.json</code> manifest with 4 distinct project types!
+              </p>
+            </div>
+            <div className="bg-[#080808] border border-[#222] p-3 space-y-1.5">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase block border-b border-[#222] pb-1">
+                🛡️ The 5 Sovereign Surfaces
+              </span>
+              <ul className="text-gray-300 font-sans text-xs space-y-1 list-disc list-inside">
+                <li><strong>1. Intent:</strong> Plain language -&gt; Proposed build plan -&gt; Approve.</li>
+                <li><strong>2. Build:</strong> Synchronized Visual View &amp; Code View.</li>
+                <li><strong>3. Changes:</strong> Sovereign diff review (+ / ~ / -) before saving.</li>
+                <li><strong>4. Run:</strong> Real isolated sandbox (npm install, test, start).</li>
+                <li><strong>5. Evidence:</strong> Cryptographic ledger hashes &amp; ZIP/GitHub export.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* 7-Step Accordion Checklist */}
+        <div className="space-y-2.5 pt-2">
+          <h3 className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            <BookOpen size={14} className="text-[#00F0FF]" />
+            <span>Step-by-Step Lifecycle Guide (Click a step to explore or jump to tab):</span>
+          </h3>
+          <div className="space-y-2">
+            {workflowSteps.map((s) => {
+              const isChecked = completedSteps.includes(s.step);
+              const isExpanded = expandedStep === s.step;
+              return (
+                <div 
+                  key={s.step}
+                  onClick={() => setExpandedStep(isExpanded ? null : s.step)}
+                  className={`border transition-all duration-150 cursor-pointer rounded-none ${
+                    isExpanded 
+                      ? "bg-[#111] border-[#00F0FF]/60 shadow-[0_0_15px_rgba(0,240,255,0.08)]" 
+                      : "bg-[#080808] border-[#222] hover:border-[#333]"
+                  }`}
+                >
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={(e) => toggleStepCompletion(s.step, e)}
+                        className={`p-1 transition-colors ${isChecked ? "text-emerald-400" : "text-gray-600 hover:text-gray-400"}`}
+                        title={isChecked ? "Mark as unverified" : "Mark step verified"}
+                      >
+                        {isChecked ? <CheckSquare size={18} /> : <Square size={18} />}
+                      </button>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-xs font-bold font-mono uppercase ${isChecked ? "text-emerald-400 line-through opacity-80" : "text-white"}`}>
+                            {s.title}
+                          </span>
+                          <span className={`text-[9px] font-mono font-bold px-2 py-0.5 border uppercase ${s.badgeColor}`}>
+                            {s.badge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">{s.subtitle}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {onSelectTab && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectTab(s.tabId);
+                          }}
+                          className="px-2.5 py-1 bg-[#1A1A1A] hover:bg-[#00F0FF] text-gray-300 hover:text-black border border-[#333] hover:border-[#00F0FF] text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1"
+                        >
+                          <span>Open Tab</span>
+                          <ArrowRight size={12} />
+                        </button>
+                      )}
+                      <ChevronRight size={16} className={`text-gray-500 transition-transform ${isExpanded ? "rotate-90 text-[#00F0FF]" : ""}`} />
+                    </div>
+                  </div>
+
+                  {/* Expanded Teaching Content */}
+                  {isExpanded && (
+                    <div className="p-4 bg-black/60 border-t border-[#1F1F1F] space-y-3 font-mono text-xs text-gray-300 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-3 bg-[#080808] border border-[#222] space-y-1">
+                          <span className="text-[10px] font-bold text-[#00F0FF] uppercase block flex items-center gap-1">
+                            <Sparkles size={12} /> What happens in this step & why it matters:
+                          </span>
+                          <p className="text-[11px] text-gray-300 leading-relaxed font-sans">{s.whyItMatters}</p>
+                        </div>
+                        <div className="p-3 bg-[#080808] border border-[#222] space-y-1">
+                          <span className="text-[10px] font-bold text-amber-400 uppercase block flex items-center gap-1">
+                            <ShieldAlert size={12} /> What happens if you skip straight to ZIP:
+                          </span>
+                          <p className="text-[11px] text-gray-300 leading-relaxed font-sans">{s.whatIfSkipped}</p>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-[#0C0C0C] border border-[#1F1F1F] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="text-[11px]">
+                          <strong className="text-white uppercase">How to use:</strong> <span className="text-gray-300 font-sans">{s.howToUse}</span>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={(e) => toggleStepCompletion(s.step, e)}
+                            className={`px-3 py-1.5 text-[10px] font-bold uppercase border transition-colors flex items-center gap-1.5 ${
+                              isChecked 
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40" 
+                                : "bg-[#111] text-gray-300 hover:text-white border-[#333]"
+                            }`}
+                          >
+                            <Check size={12} />
+                            <span>{isChecked ? "Step Verified" : "Mark as Verified"}</span>
+                          </button>
+                          {onSelectTab && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectTab(s.tabId);
+                              }}
+                              className="px-3 py-1.5 bg-[#00F0FF] hover:bg-white text-black text-[10px] font-black uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                            >
+                              <span>Launch {s.title.split(". ")[1]}</span>
+                              <ExternalLink size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
 
       {/* DUAL COLUMN BENTO LAYOUT */}

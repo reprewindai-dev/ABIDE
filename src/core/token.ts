@@ -43,12 +43,12 @@ export function verifyAndValidateApprovalToken(tokenInput: any): any {
 
   const token = parsed.data;
 
-  // Cryptographic check
+  // Cryptographic check with buffer length validation to prevent RangeErrors
   const expectedSig = signApprovalToken(token);
-  const isValidSig = crypto.timingSafeEqual(
-    Buffer.from(token.signature, "hex"),
-    Buffer.from(expectedSig, "hex")
-  );
+  const sigBuf = Buffer.from(token.signature, "hex");
+  const expBuf = Buffer.from(expectedSig, "hex");
+  
+  const isValidSig = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
 
   if (!isValidSig) {
     throw new Error("Invalid token signature — cryptographic tampering detected");

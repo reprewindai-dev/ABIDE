@@ -1,0 +1,1 @@
+export class FeedbackStore { static save(record: any) { return true; } }

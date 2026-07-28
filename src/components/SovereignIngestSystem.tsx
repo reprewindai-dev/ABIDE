@@ -15,8 +15,7 @@ import {
   Layers,
   Activity,
   Plus,
-  Replace,
-  FolderOpen
+  Replace
 } from "lucide-react";
 
 interface SovereignIngestSystemProps {
@@ -33,65 +32,6 @@ interface IngestStep {
   desc: string;
 }
 
-// ---------------------------------------------------------------------------
-// FileSystem API helpers (recursive folder traversal)
-// ---------------------------------------------------------------------------
-
-function readEntryAsFile(entry: FileSystemFileEntry): Promise<File> {
-  return new Promise((resolve, reject) => entry.file(resolve, reject));
-}
-
-function readAllFilesFromEntry(entry: FileSystemEntry): Promise<File[]> {
-  if (entry.isFile) {
-    return readEntryAsFile(entry as FileSystemFileEntry).then(f => [f]);
-  }
-
-  if (entry.isDirectory) {
-    const dirEntry = entry as FileSystemDirectoryEntry;
-    return new Promise((resolve, reject) => {
-      const reader = dirEntry.createReader();
-      const allEntries: FileSystemEntry[] = [];
-
-      // The API only returns up to 100 entries per call — must loop until empty.
-      const readBatch = () => {
-        reader.readEntries((batch) => {
-          if (batch.length === 0) {
-            // No more entries — recurse into each collected entry
-            Promise.all(allEntries.map(readAllFilesFromEntry))
-              .then(nested => resolve(nested.flat()))
-              .catch(reject);
-          } else {
-            allEntries.push(...batch);
-            readBatch();
-          }
-        }, reject);
-      };
-      readBatch();
-    });
-  }
-
-  return Promise.resolve([]);
-}
-
-async function extractFilesFromDataTransfer(dt: DataTransfer): Promise<File[]> {
-  // Use the FileSystem API when available (Chrome/Edge/Firefox)
-  if (dt.items && dt.items.length > 0) {
-    const entries: FileSystemEntry[] = [];
-    for (let i = 0; i < dt.items.length; i++) {
-      const item = dt.items[i];
-      const entry = item.webkitGetAsEntry?.();
-      if (entry) entries.push(entry);
-    }
-    if (entries.length > 0) {
-      const nestedFiles = await Promise.all(entries.map(readAllFilesFromEntry));
-      return nestedFiles.flat();
-    }
-  }
-
-  // Fallback: plain files array (no folders)
-  return Array.from(dt.files);
-}
-
 export const SovereignIngestSystem: React.FC<SovereignIngestSystemProps> = ({
   notes,
   setNotes,
@@ -99,18 +39,18 @@ export const SovereignIngestSystem: React.FC<SovereignIngestSystemProps> = ({
   setTargetPlatform
 }) => {
   const [isDragActive, setIsDragActive] = useState<boolean>(false);
-  const [ingestedFiles, setIngestedFiles] = useState<{ name: string; size: number; type: string }[]>([]);
+  const [ingestedFile, setIngestedFile] = useState<{ name: string; size: number; type: string } | null>(null);
   const [pipelineState, setPipelineState] = useState<"idle" | "processing" | "done" | "error">("idle");
   const [activeStepIdx, setActiveStepIdx] = useState<number>(-1);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   
   // Custom user controls
   const [mergeMode, setMergeMode] = useState<"overwrite" | "append">("append");
-  const [parsedStats, setParsedStats] = useState<{ charCount: number; fileCount?: number; integrity: string } | null>(null);
+  const [parsedStats, setParsedStats] = useState<{ charCount: number; rowsCount?: number; integrity: string } | null>(null);
+  const [parsedPendingContent, setParsedPendingContent] = useState<string>("");
 
-  // Apex Trust Pipeline Architecture Steps
+  // Abide Trust Pipeline Architecture Steps
   const [steps, setSteps] = useState<IngestStep[]>([
     { id: "messy", label: "Messy Intent", status: "idle", desc: "Scan raw user input & transcribe document streams" },
     { id: "canonical", label: "Canonical BP", status: "idle", desc: "Align unstructured nodes with Blueprint canonical models" },
@@ -122,22 +62,26 @@ export const SovereignIngestSystem: React.FC<SovereignIngestSystemProps> = ({
     { id: "checkpoint", label: "Checkpoint", status: "idle", desc: "Commit memory snapshot to durable project state" }
   ]);
 
+  // Log message generator
   const addLog = (msg: string) => {
     setLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 15)]);
   };
 
-  const runPipeline = (label: string, rawContent: string, statsObj: typeof parsedStats) => {
+  // Run the full pipeline visualization sequences
+  const runPipeline = (fileName: string, rawContent: string, statsObj: typeof parsedStats) => {
     setPipelineState("processing");
     setActiveStepIdx(0);
     setLogs([]);
-    addLog(`INIT: Sovereign Ingestion System awakened for "${label}"`);
+    addLog(`INIT: Sovereign Ingestion System awakened for "${fileName}"`);
 
+    // Reset step states
     setSteps(prev => prev.map(s => ({ ...s, status: "idle" })));
 
     let currentStep = 0;
     
     const interval = setInterval(() => {
       if (currentStep < steps.length) {
+        // Update previous step to success, current to processing
         setSteps(prev => prev.map((s, idx) => {
           if (idx < currentStep) return { ...s, status: "success" };
           if (idx === currentStep) return { ...s, status: "processing" };
@@ -146,9 +90,10 @@ export const SovereignIngestSystem: React.FC<SovereignIngestSystemProps> = ({
         
         setActiveStepIdx(currentStep);
         
+        // Log custom pipeline progress messages
         switch (steps[currentStep].id) {
           case "messy":
-            addLog(`MESSY INTENT: Tokenizing ${statsObj?.charCount || 0} characters from ${statsObj?.fileCount || 1} file(s).`);
+            addLog(`MESSY INTENT: Tokenizing ${statsObj?.charCount || 0} characters from document stream.`);
             break;
           case "canonical":
             addLog(`CANONICAL BP: Fitting extracted parameters into standard blueprint specifications.`);
@@ -163,10 +108,11 @@ export const SovereignIngestSystem: React.FC<SovereignIngestSystemProps> = ({
             addLog(`BOUNDED PACKETS: Packaging code boundaries to prevent unrequested scope drift.`);
             break;
           case "ide":
-            addLog(`IDE SURF.: Injecting parsed document(s) directly into notes context state.`);
+            addLog(`IDE SURF.: Injecting parsed document directly into notes context state.`);
             
-            const heading = `--- SOVEREIGN INGESTED CONTEXT: ${label.toUpperCase()} ---
-[METADATA: ${statsObj?.fileCount || 1} file(s), ${statsObj?.charCount || 0} chars]
+            // Format notes layout with provenance
+            const heading = `--- SOVEREIGN INGESTED CONTEXT: ${fileName.toUpperCase()} ---
+[METADATA: Size: ${((ingestedFile?.size || 0) / 1024).toFixed(2)} KB, Format: ${fileName.split('.').pop()?.toUpperCase() || "Raw"}]
 [PROVENANCE: Ingested under Gnomledger Signature Match ${Math.random().toString(16).substring(2, 10).toUpperCase()}]
 
 ${rawContent}
@@ -193,16 +139,18 @@ ${rawContent}
         setSteps(prev => prev.map(s => ({ ...s, status: "success" })));
         setPipelineState("done");
         setActiveStepIdx(-1);
-        addLog(`SUCCESS: Committed "${label}" contents directly to 'notes' state.`);
+        addLog(`SUCCESS: Committed "${fileName}" contents directly to 'notes' state.`);
       }
-    }, 450);
+    }, 450); // Faster execution for snappy feedback
   };
 
+  // Parsing CSV to markdown representation
   const parseCsvToMarkdown = (csvText: string): string => {
     const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== "");
     if (lines.length === 0) return "Empty CSV document detected.";
     
     const rows = lines.map(line => {
+      // Handle simple quotes and commas
       const cells: string[] = [];
       let inQuotes = false;
       let currentCell = "";
@@ -223,7 +171,7 @@ ${rawContent}
     });
     
     const header = rows[0];
-    const body = rows.slice(1, 40);
+    const body = rows.slice(1, 40); // limit to first 40 rows for blueprint density
     
     let md = `## SPREADSHEET MATRIX EXTRACT (${rows.length} rows detected)\n\n`;
     md += `| ${header.join(" | ")} |\n`;
@@ -241,11 +189,13 @@ ${rawContent}
     return md;
   };
 
+  // PDF Text Extractor heuristic (fall back to simulated OCR if binary is obfuscated)
   const parsePdfBinary = (arrayBuffer: ArrayBuffer): string => {
     const bytes = new Uint8Array(arrayBuffer);
     let textContent = "";
     let tempString = "";
     
+    // Scan uncompressed ascii ranges inside PDF format streams
     for (let i = 0; i < bytes.length; i++) {
       const char = bytes[i];
       if ((char >= 32 && char <= 126) || char === 10 || char === 13) {
@@ -258,6 +208,7 @@ ${rawContent}
       }
     }
     
+    // Clean up typical PDF token operators
     let cleaned = textContent
       .replace(/\/[\w]+/g, "") 
       .replace(/<<[^>]+>>/g, "") 
@@ -265,9 +216,10 @@ ${rawContent}
       .replace(/\s+/g, " ") 
       .trim();
       
-    const words = cleaned.split(" ").filter(w => /^[a-zA-Z0-9\-\.,]{3,16}$/.test(w));
+    const words = cleaned.split(" ").filter(w => /^[a-zA-Z0-9\-\.\,]{3,16}$/.test(w));
     
     if (words.length > 25) {
+      // Format words into sentences
       let reconstructed = "### PDF STREAM CONTENT SUMMARY:\n\n";
       for (let i = 0; i < words.length; i += 12) {
         reconstructed += words.slice(i, i + 12).join(" ") + ".\n";
@@ -276,6 +228,7 @@ ${rawContent}
       return reconstructed;
     }
     
+    // High-fidelity structured fallback schema if PDF text stream is encrypted or image-only
     return `### COGNITIVE EXTRACTED BLUEPRINT CONTEXT (IMAGE/VECTOR FALLBACK):
 1. ARCHITECTURAL SCOPE:
    - Client requests modular microservice structure prioritizing performance sweeps.
@@ -289,65 +242,79 @@ ${rawContent}
    - Absolute zero-drift guarantees. Code generated must strictly resolve parameters specified.`;
   };
 
-  // Read a single File and return its content as a string
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const isTxt = file.name.endsWith(".txt") || file.name.endsWith(".json") || file.type === "text/plain";
-      const isMd = file.name.endsWith(".md") || file.name.endsWith(".markdown");
-      const isCsv = file.name.endsWith(".csv");
-      const isPdf = file.name.endsWith(".pdf");
-      const isCode = /\.(ts|tsx|js|jsx|py|rs|go|java|c|cpp|cs|html|css|yaml|yml|toml|sh|bash|env|sql)$/.test(file.name);
-
-      const reader = new FileReader();
-
-      if (isTxt || isMd || isCode) {
-        reader.onload = (e) => resolve(e.target?.result as string || "");
-        reader.readAsText(file);
-      } else if (isCsv) {
-        reader.onload = (e) => resolve(parseCsvToMarkdown(e.target?.result as string || ""));
-        reader.readAsText(file);
-      } else if (isPdf) {
-        reader.onload = (e) => resolve(parsePdfBinary(e.target?.result as ArrayBuffer));
-        reader.readAsArrayBuffer(file);
-      } else {
-        resolve(`### BINARY FILE: ${file.name}\nSize: ${file.size} bytes\nType: ${file.type || "unknown"}`);
-      }
-    });
-  };
-
-  // Core ingest handler — accepts one or many files (including from folders)
-  const handleFiles = async (files: File[]) => {
-    if (!files || files.length === 0) return;
-
-    // Filter out hidden files / system files
-    const filtered = files.filter(f => !f.name.startsWith(".") && f.size < 5 * 1024 * 1024);
-
-    addLog(`QUEUED: ${filtered.length} file(s) staged for ingestion.`);
-
-    const fileStats = filtered.map(f => ({ name: f.name, size: f.size, type: f.type || "application/octet-stream" }));
-    setIngestedFiles(fileStats);
-
-    // Read all files concurrently
-    const contents = await Promise.all(filtered.map(async (file) => {
-      const content = await readFileContent(file);
-      return `### FILE: ${file.name}\n${content}`;
-    }));
-
-    const combined = contents.join("\n\n---\n\n");
-    const totalChars = combined.length;
-
-    const statData = {
-      charCount: totalChars,
-      fileCount: filtered.length,
-      integrity: filtered.length > 1 ? "99.5% Multi-File Sync" : "99.8% Integrity Match"
+  // Ingest handler
+  const handleFile = (file: File) => {
+    const fileStats = {
+      name: file.name,
+      size: file.size,
+      type: file.type || "application/octet-stream"
     };
-    setParsedStats(statData);
+    
+    setIngestedFile(fileStats);
+    addLog(`FILE SELECTED: "${file.name}" of type ${fileStats.type}`);
 
-    const label = filtered.length === 1
-      ? filtered[0].name
-      : `${filtered.length} files`;
+    const fileReader = new FileReader();
+    const isTxt = file.name.endsWith(".txt") || file.name.endsWith(".json") || file.type === "text/plain";
+    const isMd = file.name.endsWith(".md") || file.name.endsWith(".markdown");
+    const isCsv = file.name.endsWith(".csv");
+    const isPdf = file.name.endsWith(".pdf");
 
-    runPipeline(label, combined, statData);
+    if (isTxt || isMd) {
+      fileReader.onload = (event) => {
+        const text = event.target?.result as string || "";
+        const statData = {
+          charCount: text.length,
+          integrity: "99.8% Integrity Match"
+        };
+        setParsedStats(statData);
+        runPipeline(file.name, text, statData);
+      };
+      fileReader.readAsText(file);
+    } else if (isCsv) {
+      fileReader.onload = (event) => {
+        const text = event.target?.result as string || "";
+        const markdownTable = parseCsvToMarkdown(text);
+        const rowsCount = text.split("\n").filter(Boolean).length;
+        const statData = {
+          charCount: text.length,
+          rowsCount,
+          integrity: "100% Matrix Alignment"
+        };
+        setParsedStats(statData);
+        runPipeline(file.name, markdownTable, statData);
+      };
+      fileReader.readAsText(file);
+    } else if (isPdf) {
+      fileReader.onload = (event) => {
+        const buffer = event.target?.result as ArrayBuffer;
+        const parsedText = parsePdfBinary(buffer);
+        const statData = {
+          charCount: parsedText.length,
+          integrity: "97.5% Cognitive Extraction"
+        };
+        setParsedStats(statData);
+        runPipeline(file.name, parsedText, statData);
+      };
+      fileReader.readAsArrayBuffer(file);
+    } else {
+      // General Fallback for files like Excel spreadsheets (.xlsx) or binary word docs
+      fileReader.onload = () => {
+        const genericContent = `### UNSTRUCTURED BINARY METADATA INGESTED:
+- File Name: ${file.name}
+- Byte Size: ${file.size}
+- Ingest Strategy: Hex Payload Align
+
+RECOMMENDED ACTION:
+Review and convert target specifications into plaintext/markdown lists to secure drift control limits on downstream nodes.`;
+        const statData = {
+          charCount: genericContent.length,
+          integrity: "94.0% Metadata Extraction"
+        };
+        setParsedStats(statData);
+        runPipeline(file.name, genericContent, statData);
+      };
+      fileReader.readAsArrayBuffer(file);
+    }
   };
 
   // Handle Drag Events
@@ -357,62 +324,49 @@ ${rawContent}
     if (e.type === "dragenter" || e.type === "dragover") {
       setIsDragActive(true);
     } else if (e.type === "dragleave") {
-      // Only deactivate if we actually left the drop zone (not moved to a child)
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      if (
-        e.clientX < rect.left || e.clientX >= rect.right ||
-        e.clientY < rect.top  || e.clientY >= rect.bottom
-      ) {
-        setIsDragActive(false);
-      }
+      setIsDragActive(false);
     }
   };
 
-  // Handle Drop Event — supports files AND folders recursively
-  const handleDrop = async (e: React.DragEvent) => {
+  // Handle Drop Event
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
 
-    addLog(`DROP: Intercepted drop event. Reading entries...`);
-    const files = await extractFilesFromDataTransfer(e.dataTransfer);
-    if (files.length > 0) {
-      handleFiles(files);
-    } else {
-      addLog(`DROP: No readable files found in drop.`);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
     }
   };
 
-  // Handle manual file picker
+  // Handle Click / Manual Select
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFiles(Array.from(e.target.files));
-      // Reset value so same selection triggers onChange again
-      e.target.value = "";
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
     }
   };
 
-  // Handle manual folder picker
-  const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFiles(Array.from(e.target.files));
-      e.target.value = "";
-    }
+  const triggerManualUploadClick = () => {
+    fileInputRef.current?.click();
   };
-
-  const triggerFileClick = () => fileInputRef.current?.click();
-  const triggerFolderClick = () => folderInputRef.current?.click();
 
   // Determine file-type icon
   const getFileIcon = () => {
-    if (ingestedFiles.length === 0) return <Upload className="text-[#00F0FF] animate-pulse" size={26} />;
-    if (ingestedFiles.length > 1) return <Layers className="text-[#00F0FF]" size={26} />;
+    if (!ingestedFile) return <Upload className="text-[#00F0FF] animate-pulse" size={26} />;
     
-    const ext = ingestedFiles[0].name.split('.').pop()?.toLowerCase();
-    if (ext === "csv" || ext === "xlsx") return <FileSpreadsheet className="text-emerald-400" size={26} />;
-    if (ext === "pdf") return <FileText className="text-red-400" size={26} />;
-    if (ext === "md" || ext === "markdown") return <FileText className="text-indigo-400" size={26} />;
-    if (["ts", "tsx", "rs", "py", "js"].includes(ext || "")) return <FileCode className="text-[#00F0FF]" size={26} />;
+    const ext = ingestedFile.name.split('.').pop()?.toLowerCase();
+    if (ext === "csv" || ext === "xlsx") {
+      return <FileSpreadsheet className="text-emerald-400" size={26} />;
+    }
+    if (ext === "pdf") {
+      return <FileText className="text-red-400" size={26} />;
+    }
+    if (ext === "md" || ext === "markdown") {
+      return <FileText className="text-indigo-400" size={26} />;
+    }
+    if (["ts", "tsx", "rs", "py", "js"].includes(ext || "")) {
+      return <FileCode className="text-[#00F0FF]" size={26} />;
+    }
     return <FileText className="text-amber-400" size={26} />;
   };
 
@@ -474,29 +428,19 @@ ${rawContent}
         onDragOver={handleDrag}
         onDragLeave={handleDrag}
         onDrop={handleDrop}
-        className={`border-2 border-dashed p-7 text-center transition-all duration-200 relative ${
+        onClick={triggerManualUploadClick}
+        className={`border-2 border-dashed p-7 text-center cursor-pointer transition-all duration-200 relative ${
           isDragActive 
             ? "border-[#00F0FF] bg-[#00F0FF]/5" 
             : "border-[#333] hover:border-[#00F0FF]/50 bg-black hover:bg-[#080808]"
         }`}
       >
-        {/* Hidden inputs */}
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           className="hidden"
-          multiple
-          accept=".txt,.csv,.json,.pdf,.xlsx,.xls,.doc,.docx,.ts,.tsx,.rs,.py,.js,.jsx,.html,.css,.md,.markdown,.yaml,.yml,.toml,.sh,.sql,.go,.java,.c,.cpp,.cs,.env"
-        />
-        <input
-          type="file"
-          ref={folderInputRef}
-          onChange={handleFolderChange}
-          className="hidden"
-          // @ts-ignore — webkitdirectory is not in React types but works in all modern browsers
-          webkitdirectory=""
-          multiple
+          accept=".txt,.csv,.json,.pdf,.xlsx,.xls,.doc,.docx,.ts,.tsx,.rs,.py,.js,.html,.css,.md,.markdown"
         />
 
         <div className="flex flex-col items-center justify-center space-y-3">
@@ -504,74 +448,36 @@ ${rawContent}
           
           <div className="space-y-1">
             <p className="text-xs font-bold text-white tracking-wider">
-              {ingestedFiles.length > 0
-                ? ingestedFiles.length === 1
-                  ? `ACTIVE FILE: ${ingestedFiles[0].name.toUpperCase()}`
-                  : `ACTIVE BATCH: ${ingestedFiles.length} FILES INGESTED`
-                : "DRAG & DROP FILES OR FOLDERS HERE"
+              {ingestedFile 
+                ? `ACTIVE FILE: ${ingestedFile.name.toUpperCase()}` 
+                : "DRAG & DROP FILE HERE OR CLICK TO SELECT"
               }
             </p>
             <p className="text-[9px] text-gray-500 normal-case leading-relaxed max-w-md mx-auto font-semibold">
-              {ingestedFiles.length > 0
-                ? `Total: ${(ingestedFiles.reduce((s, f) => s + f.size, 0) / 1024).toFixed(1)} KB across ${ingestedFiles.length} file(s)`
-                : "Drop entire folders — all files inside are recursively ingested and combined"
+              {ingestedFile 
+                ? `Format detected: ${ingestedFile.type} (${(ingestedFile.size / 1024).toFixed(1)} KB)` 
+                : "Supports PDFs, Spreadsheet files (CSV/Excel), Markdown docs (MD), or source codes"
               }
             </p>
           </div>
 
-          {/* Browse buttons */}
-          <div className="flex items-center gap-2 mt-1">
-            <button
-              type="button"
-              onClick={triggerFileClick}
-              className="flex items-center gap-1.5 bg-[#111] border border-[#333] hover:border-[#00F0FF] px-3 py-1.5 text-[9px] text-[#aaa] hover:text-white transition-all"
-            >
-              <Upload size={10} />
-              Browse Files
-            </button>
-            <button
-              type="button"
-              onClick={triggerFolderClick}
-              className="flex items-center gap-1.5 bg-[#111] border border-[#333] hover:border-[#00F0FF] px-3 py-1.5 text-[9px] text-[#aaa] hover:text-white transition-all"
-            >
-              <FolderOpen size={10} />
-              Browse Folder
-            </button>
+          <div className="flex items-center gap-2 bg-[#111] border border-[#222] px-3 py-1 text-[9px] text-[#888]">
+            <span>MANUAL OR DRAG EXTRACTION</span>
           </div>
         </div>
       </div>
-      
-      {/* Visual File Browser (New Addition based on User Feedback) */}
-      {ingestedFiles.length > 0 && (
-        <div className="bg-[#111] border border-[#222] p-3 space-y-2">
-          <div className="text-[10px] text-[#888] font-bold border-b border-[#222] pb-1">
-            VERIFIED INGESTION PAYLOAD ({ingestedFiles.length} FILES)
-          </div>
-          <div className="max-h-32 overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-[#333] scrollbar-track-transparent">
-            {ingestedFiles.map((f, i) => (
-              <div key={i} className="flex items-center justify-between bg-black border border-[#222] p-2 text-[9px]">
-                <div className="flex items-center gap-2 truncate">
-                  <FileCheck size={10} className="text-[#00F0FF] flex-shrink-0" />
-                  <span className="truncate text-gray-300 font-semibold">{f.name}</span>
-                </div>
-                <span className="text-gray-600 flex-shrink-0">{(f.size / 1024).toFixed(1)} KB</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Extracted Stats Block */}
       {parsedStats && (
         <div className="grid grid-cols-3 gap-2 bg-[#0a0a0a] border border-[#1e1e1e] p-2 text-center text-[9px]">
           <div>
             <span className="text-gray-500 block">CHARACTERS PARSED</span>
-            <span className="text-white font-black">{parsedStats.charCount.toLocaleString()} chars</span>
+            <span className="text-white font-black">{parsedStats.charCount} chars</span>
           </div>
           <div>
-            <span className="text-gray-500 block">FILES INGESTED</span>
+            <span className="text-gray-500 block">STRUCTURE DETECTED</span>
             <span className="text-[#00F0FF] font-black">
-              {parsedStats.fileCount ?? 1} file{(parsedStats.fileCount ?? 1) !== 1 ? "s" : ""}
+              {parsedStats.rowsCount ? `${parsedStats.rowsCount} Matrix Rows` : "Document Blocks"}
             </span>
           </div>
           <div>
@@ -581,12 +487,11 @@ ${rawContent}
         </div>
       )}
 
-      {/* Apex Trust Pipeline Architecture Visualizer */}
+      {/* Abide Trust Pipeline Architecture Visualizer */}
       <div className="space-y-3">
         <div className="flex items-center justify-between border-b border-[#111] pb-1">
-          <span className="text-[10px] text-[#00F0FF] font-bold tracking-widest block flex items-center gap-2">
-            [ APEX TRUST PIPELINE ARCHITECTURE ]
-            {pipelineState === "done" && <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] animate-pulse">VERIFIED</span>}
+          <span className="text-[10px] text-[#00F0FF] font-bold tracking-widest block">
+            [ ABIDE TRUST PIPELINE ARCHITECTURE ]
           </span>
           {pipelineState === "processing" && (
             <span className="text-[9px] text-[#00F0FF] animate-pulse font-black">
@@ -605,10 +510,10 @@ ${rawContent}
             let barStyle = "bg-[#222]";
 
             if (isSuccess) {
-              borderStyle = "border-emerald-500/40 bg-emerald-950/10 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]";
-              barStyle = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+              borderStyle = "border-emerald-500/40 bg-emerald-950/10 text-emerald-400";
+              barStyle = "bg-emerald-500";
             } else if (isProcessing) {
-              borderStyle = "border-[#00F0FF] bg-[#00F0FF]/5 text-white shadow-[0_0_15px_rgba(0,240,255,0.2)]";
+              borderStyle = "border-[#00F0FF] bg-[#00F0FF]/5 text-white shadow-[0_0_10px_rgba(0,240,255,0.1)]";
               barStyle = "bg-[#00F0FF] animate-pulse";
             }
 
@@ -670,4 +575,3 @@ ${rawContent}
     </div>
   );
 };
-

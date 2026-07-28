@@ -1,11 +1,11 @@
-# Apex Control Plane: Architectural Integration Map
+# ABIDE Control Plane: Architectural Integration Map
 *System Data-Flow & Technical Layout Routing. July 2026.*
 
 ---
 
 ## 1. Core Architectural Paradigm
 
-Sovereign operations within the Apex Control Plane are governed by three distinct layers:
+Sovereign operations within the ABIDE Control Plane are governed by three distinct layers:
 
 ```
 [ Layer 1: Ingestion & Cache ] ──(Pluggable Connectors)──> [ Layer 2: SEKED & Validators ] ──(Deterministic Directives)──> [ Layer 3: Main Server & API Routes ]

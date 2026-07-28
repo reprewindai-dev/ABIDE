@@ -36,5 +36,6 @@
     "temp*.tsx",
     "temp*.txt"
   ]
+  "exclude": ["workspace-sandbox", "node_modules", "dist"]
 }
 

@@ -41,7 +41,12 @@ import {
   ArrowRight,
   ArrowUpRight,
   Send,
-  Check
+  Check,
+  Key,
+  UserCheck,
+  User,
+  Server,
+  Plug
 } from "lucide-react";
 import JSZip from "jszip";
 import { TEMPLATES } from "./data/templates";
@@ -65,6 +70,12 @@ import { EinsteinRouterDashboard } from "./components/EinsteinRouterDashboard";
 import { ComputeCacheOptimizer } from "./components/ComputeCacheOptimizer";
 import { SovereignIngestSystem } from "./components/SovereignIngestSystem";
 import { ExportConfirmModal } from "./components/ExportConfirmModal";
+import { VnpAuthHub } from "./components/VnpAuthHub";
+import { VnpAnalyticsCards } from "./components/VnpAnalyticsCards";
+import EnterpriseHostController from "./components/EnterpriseHostController";
+import EnterpriseProtocolManuals from "./components/EnterpriseProtocolManuals";
+import VioMarketplace from "./components/VioMarketplace";
+
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -336,10 +347,9 @@ export default function App() {
 
   // Model selection configurations
   const [config, setConfig] = useState<ModelConfig>({
-    provider: "ollama",
+    provider: "gemini",
     apiKey: "",
-    modelName: "qwen2.5:3b",
-    customUrl: "http://localhost:11434/v1", // Seamlessly connect to local Ollama
+    modelName: "gemini-3.5-flash",
     temperature: 0.2,
     authMode: "bearer",
     customHeaderName: "X-API-Key"
@@ -368,9 +378,38 @@ export default function App() {
   const [isCompiling, setIsCompiling] = useState(false);
   const [compilationStep, setCompilationStep] = useState(0);
   const [compileError, setCompileError] = useState<string | null>(null);
+  const [compileWarning, setCompileWarning] = useState<{ contradictions: string[] } | null>(null);
   const [result, setResult] = useState<BlueprintResult | null>(DEFAULT_BLUEPRINT);
+  const [vnpAuthUser, setVnpAuthUser] = useState<any | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const t = localStorage.getItem("vnp_jwt_token");
+      if (!t) {
+        setVnpAuthUser(null);
+        return;
+      }
+      try {
+        const res = await fetch("/api/vnp/auth/profile", { headers: { Authorization: `Bearer ${t}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setVnpAuthUser(data.user);
+        } else {
+          setVnpAuthUser(null);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    checkUser();
+    const interval = setInterval(checkUser, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<
     | "overview"
+    | "vnpAuth"
+    | "vnpAnalytics"
     | "sovereignConstitution"
     | "capabilityGraph"
     | "productsBundles"
@@ -384,6 +423,8 @@ export default function App() {
     | "agentPackets"
     | "explorer"
     | "testHarness"
+    | "enterpriseControl"
+    | "protocolManuals"
   >("overview");
   const [overviewMode, setOverviewMode] = useState<"caveman" | "pitch">("caveman");
   const [showConfigPanel, setShowConfigPanel] = useState(false);
@@ -426,7 +467,7 @@ export default function App() {
   const [isAnalyzingGithub, setIsAnalyzingGithub] = useState(false);
   const [githubAnalysisResult, setGithubAnalysisResult] = useState<any>(null);
   const [githubError, setGithubError] = useState<string | null>(null);
-  const [githubPushBranch, setGithubPushBranch] = useState("apex-blueprint-alignment");
+  const [githubPushBranch, setGithubPushBranch] = useState("abide-blueprint-alignment");
   const [isPushingGithub, setIsPushingGithub] = useState(false);
   const [githubPushSuccess, setGithubPushSuccess] = useState<any>(null);
   const [githubPushError, setGithubPushError] = useState<string | null>(null);
@@ -578,6 +619,10 @@ export default function App() {
   const [cappoUrl, setCappoUrl] = useState(() => (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com");
   // CANONICAL — replaced from http://localhost:8083
   const [gnomeledgerUrl, setGnomeledgerUrl] = useState(() => (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com");
+  // CANONICAL — replaced from http://localhost:8085
+  const [delynUrl, setDelynUrl] = useState(() => (typeof process !== "undefined" ? process.env.DELYN_URL : undefined) || "https://delyn.veklom.com");
+  // CANONICAL — replaced from http://localhost:8086
+  const [cipherUrl, setCipherUrl] = useState(() => (typeof process !== "undefined" ? process.env.CIPHER_URL : undefined) || "https://cipher.veklom.com");
   // CANONICAL — replaced from http://localhost:8084
   const [vnpUrl, setVnpUrl] = useState(() => (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com");
   const [backendStatuses, setBackendStatuses] = useState<any[]>([]);
@@ -605,7 +650,7 @@ export default function App() {
         timestamp: new Date(Date.now() - 120000).toISOString(),
         type: "SUCCESS",
         claimState: "SCHEMA_VALIDATED",
-        message: "Gnomeledger schema audit matches stable APEX_BLUEPRINT model hashes"
+        message: "Gnomeledger schema audit matches stable ABIDE_BLUEPRINT model hashes"
       },
       {
         id: "evt-003",
@@ -852,7 +897,7 @@ export default function App() {
   const handleFetchBackendStatuses = async () => {
     setIsPingingBackends(true);
     try {
-      const response = await fetch(`/api/backends/status?byosUrl=${encodeURIComponent(byosUrl)}&cappoUrl=${encodeURIComponent(cappoUrl)}&gnomeledgerUrl=${encodeURIComponent(gnomeledgerUrl)}&vnpUrl=${encodeURIComponent(vnpUrl)}`);
+      const response = await fetch(`/api/backends/status?byosUrl=${encodeURIComponent(byosUrl)}&cappoUrl=${encodeURIComponent(cappoUrl)}&gnomeledgerUrl=${encodeURIComponent(gnomeledgerUrl)}&vnpUrl=${encodeURIComponent(vnpUrl)}&delynUrl=${encodeURIComponent(delynUrl)}&cipherUrl=${encodeURIComponent(cipherUrl)}`);
       if (!response.ok) {
         throw new Error("Failed to query decentralised backend routers.");
       }
@@ -874,13 +919,17 @@ export default function App() {
 
     const standardServices = [
       // CANONICAL — replaced from http://localhost:8081
-      { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8088, setter: setByosUrl },
+      { id: "byos", name: "Veklom BYOS Workspace Backend", url: (typeof process !== "undefined" ? process.env.VEKLOM_API_URL : undefined) || "https://api.veklom.com", port: 8081, setter: setByosUrl },
       // CANONICAL — replaced from http://localhost:8082
-      { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8002, setter: setCappoUrl },
+      { id: "cappo", name: "CAPPO Core Authorization Backend", url: (typeof process !== "undefined" ? process.env.CAPPO_URL : undefined) || "https://cappo.veklom.com", port: 8082, setter: setCappoUrl },
+      // CANONICAL — replaced from http://localhost:8085
+      { id: "delyn", name: "DELYN Sovereign Intelligence Backend", url: (typeof process !== "undefined" ? process.env.DELYN_URL : undefined) || "https://delyn.veklom.com", port: 8085, setter: setDelynUrl },
+      // CANONICAL — replaced from http://localhost:8086
+      { id: "cipher", name: "LOCK THE CIPHER Cryptographic Engine", url: (typeof process !== "undefined" ? process.env.CIPHER_URL : undefined) || "https://cipher.veklom.com", port: 8086, setter: setCipherUrl },
       // CANONICAL — replaced from http://localhost:8083
-      { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8001, setter: setGnomeledgerUrl },
+      { id: "gnomeledger", name: "Gnome Ledger Receipts Store", url: (typeof process !== "undefined" ? process.env.GNOMELEDGER_URL : undefined) || "https://pgl.veklom.com", port: 8083, setter: setGnomeledgerUrl },
       // CANONICAL — replaced from http://localhost:8084
-      { id: "vnp", name: "veklom-vnp Node", url: (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com", port: 80, setter: setVnpUrl }
+      { id: "vnp", name: "veklom-vnp Node", url: (typeof process !== "undefined" ? process.env.VNP_URL : undefined) || "https://vnp.veklom.com", port: 8084, setter: setVnpUrl }
     ];
 
     for (const service of standardServices) {
@@ -937,6 +986,8 @@ export default function App() {
         body: JSON.stringify({
           byosUrl,
           cappoUrl,
+          delynUrl,
+          cipherUrl,
           gnomeledgerUrl,
           vnpUrl,
           connectionId: result?.hash ? `conn-${result.hash.slice(0, 10)}` : "conn-default-402",
@@ -1081,7 +1132,7 @@ export default function App() {
 
   // Trigger confirmation modal for diagnostics export
   const triggerExportDiagnostics = () => {
-    const reportId = "VEKLOM-APEX-DIAG-" + Math.floor(Math.random() * 900000 + 100000);
+    const reportId = "VEKLOM-ABIDE-DIAG-" + Math.floor(Math.random() * 900000 + 100000);
     setExportConfirmModal({
       isOpen: true,
       type: "diagnostics",
@@ -1096,7 +1147,7 @@ export default function App() {
 
   // Export diagnostic report JSON to trigger download
   const handleExportDiagnostics = (reportId: string) => {
-    const finalReportId = reportId || "VEKLOM-APEX-DIAG-" + Math.floor(Math.random() * 900000 + 100000);
+    const finalReportId = reportId || "VEKLOM-ABIDE-DIAG-" + Math.floor(Math.random() * 900000 + 100000);
     const reportData = {
       report_timestamp: new Date().toISOString(),
       report_id: finalReportId,
@@ -1104,13 +1155,15 @@ export default function App() {
       configured_backend_routers: {
         veklom_byos_backend: byosUrl,
         cappo_backend: cappoUrl,
+        delyn_backend: delynUrl,
+        cipher_backend: cipherUrl,
         gnomeledger: gnomeledgerUrl,
         veklom_vnp: vnpUrl
       },
       interlink_cAPI_integration: {
         interlink_capi_repo: "https://github.com/reprewindai-dev/interlink-cAPI",
         capi_repo: "https://github.com/reprewindai-dev/cAPI",
-        binding_status: "CONVERGED_APEX_BLUEPRINT",
+        binding_status: "CONVERGED_ABIDE_BLUEPRINT",
         unified_call_interface: "connection.call({ capability, input, planId, idempotencyKey })",
         negotiation_mode: "MUTUAL_TRUST_HANDSHAKE_v2.0"
       },
@@ -1154,10 +1207,10 @@ export default function App() {
   }, [showConfigPanel]);
 
   // Refs for stable 60-second interval dependencies
-  const autoVerifyParamsRef = useRef({ byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses });
+  const autoVerifyParamsRef = useRef({ byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses });
   useEffect(() => {
-    autoVerifyParamsRef.current = { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses };
-  }, [byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, result?.hash, backendStatuses]);
+    autoVerifyParamsRef.current = { byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, resultHash: result?.hash, backendStatuses };
+  }, [byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, result?.hash, backendStatuses]);
 
   // Periodic background execution when auto-verify is enabled
   useEffect(() => {
@@ -1167,7 +1220,7 @@ export default function App() {
       const triggerVerification = async () => {
         const timestampStr = new Date().toISOString();
         const randId = "evt-" + Math.floor(Math.random() * 9000 + 1000);
-        const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, resultHash, backendStatuses } = autoVerifyParamsRef.current;
+        const { byosUrl, cappoUrl, delynUrl, cipherUrl, gnomeledgerUrl, vnpUrl, resultHash, backendStatuses } = autoVerifyParamsRef.current;
         
         try {
           const response = await fetch("/api/backends/verify-sync", {
@@ -1176,6 +1229,8 @@ export default function App() {
             body: JSON.stringify({
               byosUrl,
               cappoUrl,
+              delynUrl,
+              cipherUrl,
               gnomeledgerUrl,
               vnpUrl,
               connectionId: resultHash ? `conn-${resultHash.slice(0, 10)}` : "conn-default-402",
@@ -1353,15 +1408,11 @@ export default function App() {
     }
   };
 
-  // Secure API Compiler Call
-  const handleCompile = async () => {
-    if (!notes.trim()) {
-      setCompileError("Please enter some messy notes or ideas to compile first.");
-      return;
-    }
-
+  // Secure API Compiler Call with Validation Checker
+  const executeCompilation = async () => {
     setIsCompiling(true);
     setCompileError(null);
+    setCompileWarning(null);
     setResult(null);
     setCompilationStep(0);
 
@@ -1432,9 +1483,61 @@ export default function App() {
     }
   };
 
+  const handleCompile = (forceProceed?: boolean | any) => {
+    const isForced = forceProceed === true;
+    if (!notes.trim()) {
+      setCompileError("Please enter some messy notes or ideas to compile first.");
+      return;
+    }
+
+    if (!isForced) {
+      const contradictions: string[] = [];
+      const isRepoInspected = githubAnalysisResult && githubAnalysisResult.isRealConnection;
+      
+      // Check 1: Contradictory 'Verified' status on uninspected repositories
+      const hasVerifiedClaims = notes.toLowerCase().includes("verified") || 
+                                codebaseContext.toLowerCase().includes("verified") ||
+                                assumptions.some(a => a.status === "VERIFIED");
+      if (!isRepoInspected && hasVerifiedClaims) {
+        contradictions.push(
+          "Contradictory Label Detected: Found 'Verified' status or claims on an uninspected/unconnected repository. All repository claims must remain UNVERIFIED until physical codebase inspection occurs."
+        );
+      }
+
+      // Check 2: 'Production Ready' or 'Zero Drift' without repository inspection
+      if (!isRepoInspected && (notes.toLowerCase().includes("production ready") || notes.toLowerCase().includes("production eligible") || notes.toLowerCase().includes("zero drift"))) {
+        contradictions.push(
+          "Contradictory Label Detected: Claiming 'Production Ready/Eligible' or 'Zero Drift' status while operating in simulated/uninspected workspace mode."
+        );
+      }
+
+      // Check 3: Explicit '[PROVEN]' claims before formal academic grounding
+      if (notes.toLowerCase().includes("[proven]") || notes.toLowerCase().includes("100% proven")) {
+        contradictions.push(
+          "Contradictory Label Detected: Explicit '[PROVEN]' label found in raw intent feed prior to formal academic citation validation."
+        );
+      }
+
+      if (contradictions.length > 0) {
+        setCompileWarning({ contradictions });
+        return;
+      }
+    }
+
+    executeCompilation();
+  };
+
   // Unified, reactive file list that includes dynamic Sovereign compliance manifest files
   const combinedFiles = useMemo(() => {
     if (!result || !result.files) return [];
+    
+    if (result.quota_fallback) {
+      // Rule 1: quota_fallback: true should hard-block the whole export, not softly degrade it — no packet should reach the human-readable packs at all when this flag is set.
+      return result.files.map(f => ({
+        path: f.path,
+        content: `# [ABIDE MECHANICAL GATE REFUSAL] EXPORT & PACK GENERATION BLOCKED\n\n**REASON**: \`quota_fallback: true\` detected in active blueprint.\n**STATUS**: NO PACKETS OR HUMAN-READABLE PACKS GENERATED.\n\nThe active blueprint was generated by the local offline fallback mechanism due to LLM rate limiting or API quota exhaustion. Under ABIDE Sovereign Governance rules, **no human-readable packs, specification bundles, or cryptographic certificates may be generated from fallback or simulated data**.\n\n### Required Remediation\n1. Configure valid API credentials in the environment or switch to an active local model.\n2. Re-run blueprint compilation so that all claims, architectural reasoning, and academic grounding can be authenticated and verified against real-world sources.`
+      }));
+    }
     
     // Create the dynamic constitution manifest and jurisdiction policy files
     const manifestPath = "00_workspace_manifest/constitution_manifest.json";
@@ -1619,7 +1722,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       // Replace "locked, publishable, and agent-executable specification authority" with appropriate unverified planning specification text
       content = content.replace(
         /locked,\s*publishable,\s*and\s*agent-executable\s*specification\s*authority/g,
-        "unverified planning specification (APEX PLANNING EXPORT, NOT CRYPTOGRAPHICALLY SIGNED, NOT HUMAN APPROVED, NOT REPOSITORY VERIFIED, NOT BUILDABLE, NOT EXECUTABLE, NOT PRODUCTION ELIGIBLE)"
+        "unverified planning specification (ABIDE PLANNING EXPORT, NOT CRYPTOGRAPHICALLY SIGNED, NOT HUMAN APPROVED, NOT REPOSITORY VERIFIED, NOT BUILDABLE, NOT EXECUTABLE, NOT PRODUCTION ELIGIBLE)"
       );
 
       // Replace "Sovereign Production" with "UNVERIFIED_DESIGN_INTENT"
@@ -1645,7 +1748,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 
       // Replace any manufactured timestamp/approval mentions in manifest.md
       if (f.path === "00_workspace_manifest/manifest.md") {
-        content = `# APEX PLANNING EXPORT
+        content = `# ABIDE PLANNING EXPORT
 **STATUS**: NOT CRYPTOGRAPHICALLY SIGNED
 **GOVERNANCE**: NOT HUMAN APPROVED
 **REPOSITORY**: NOT REPOSITORY VERIFIED
@@ -1705,6 +1808,22 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       { path: overridesPath, content: overridesContent },
       { path: downstreamPath, content: downstreamContent }
     );
+
+    // Rule 2: SEKED R score gates confidence labels across all exported documents.
+    // An R: 0 should make it structurally impossible for manifest.md or any pack to say [VERIFIED].
+    const rScore = result.sekedTriage?.R?.score ?? 0;
+    const hasVerifiedCitations = result.academicGrounding && result.academicGrounding.length > 0 && result.academicGrounding.some(p => p.verificationStatus === "VERIFIED" || p.verificationStatus === "RETRIEVED_AND_VALIDATED");
+    if (rScore === 0 || !hasVerifiedCitations) {
+      return filteredList.map(f => {
+        let content = f.content;
+        content = content.replace(/\[VERIFIED\]/gi, "[UNVERIFIED_CITATION_GATED] (SEKED R Score: 0/10 - Peer Review Required)");
+        content = content.replace(/VERIFIED_EXISTING/g, "UNVERIFIED_CITATION_GATED");
+        content = content.replace(/\[PROVEN\]/gi, "[UNVERIFIED_CITATION_GATED]");
+        content = content.replace(/\bVerified\b/g, "Unverified (Citation Gated)");
+        return { path: f.path, content };
+      });
+    }
+
     return filteredList;
   }, [result, selectedJurisdiction, constitutionVersion, constitutionState, userEmail]);
 
@@ -1795,6 +1914,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       alert("Please compile your own project first before downloading.");
       return;
     }
+    if (result.quota_fallback) {
+      alert("[ABIDE Mechanical Gate Refusal] Export blocked: This blueprint was generated via offline fallback during rate limiting (quota_fallback: true). Under ABIDE Sovereign Governance rules, no human-readable packs, specification bundles, or cryptographic certificates may be exported from fallback or simulated data. Please provide valid API credentials or compile with an active model.");
+      return;
+    }
     const fileCount = (combinedFiles?.length || 0) + 4; // files + manifest/meta leaves
     setExportConfirmModal({
       isOpen: true,
@@ -1813,6 +1936,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
   const handleDownloadZip = async () => {
     if (!result || result.source === "default") {
       alert("Please compile your own project first before downloading.");
+      return;
+    }
+    if (result.quota_fallback) {
+      alert("[ABIDE Mechanical Gate Refusal] Export blocked: Cannot generate export archives from a fallback/simulated blueprint (quota_fallback: true).");
       return;
     }
     if (!combinedFiles) return;
@@ -2142,7 +2269,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
           <div>
             <div className="flex items-center gap-3">
               <span className="font-black tracking-tighter text-white text-xl uppercase">
-                APEXBLUEPRINT v4.02
+                ABIDE BLUEPRINT v4.02
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 bg-[#1A1A1A] text-[#00F0FF] border border-[#333] font-black uppercase">
                 HRM-MODULAR
@@ -2158,7 +2285,25 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
           <div>Encryption: <span className="text-[#00F0FF] font-bold">AES-256</span></div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveTab("vnpAuth")}
+            className={`px-3 py-1.5 border text-[10px] font-black uppercase transition-all duration-150 tracking-widest flex items-center gap-1.5 ${
+              vnpAuthUser
+                ? "bg-[#00F0FF]/15 border-[#00F0FF] text-[#00F0FF] glow-cyan"
+                : "bg-[#111] border-[#333] hover:border-[#00F0FF] text-white"
+            }`}
+          >
+            <UserCheck size={13} />
+            <span>{vnpAuthUser ? `VNP: ${vnpAuthUser.name.split(" ")[0]}` : "VNP Auth"}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("vnpAnalytics")}
+            className="px-3 py-1.5 border border-[#10B981]/50 bg-[#10B981]/15 hover:bg-[#10B981]/25 text-[#10B981] text-[10px] font-black uppercase transition-all duration-150 tracking-widest flex items-center gap-1.5 glow-emerald"
+          >
+            <Activity size={13} />
+            <span>VNP Telemetry</span>
+          </button>
           <button
             onClick={() => setShowConfigPanel(true)}
             className="px-3 py-1.5 bg-[#E0E0E0] hover:bg-white text-black text-[10px] font-bold uppercase transition-all duration-150 tracking-widest"
@@ -2169,7 +2314,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
       </header>
 
       {/* Main Page Container */}
-      <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 print:p-0">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10 print:p-0">
         
         {/* Intro Banner */}
         <section className="max-w-4xl mx-auto mb-12 print:hidden text-center">
@@ -2180,7 +2325,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#1A1A1A] border border-[#333] text-[10px] font-mono uppercase tracking-widest text-[#00F0FF] mb-4">
               <Sparkles size={11} className="text-[#00F0FF]" />
-              <span>Hierarchical abstract plan controller for anti-gravity & cursor agents</span>
+              <span>Universal hierarchical abstract plan controller for ANY coding agent</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9] text-white my-2">
@@ -2309,6 +2454,39 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 
               {/* Trigger compiler */}
               <div className="pt-2">
+                {compileWarning && (
+                  <div className="bg-[#151000] border-2 border-amber-500 p-4 mb-4 font-mono animate-in fade-in">
+                    <div className="flex items-center gap-2 text-amber-400 font-black uppercase text-xs mb-2">
+                      <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+                      <span>Validation Checker: Contradictory Labels Detected</span>
+                    </div>
+                    <p className="text-gray-300 text-[11px] mb-3 leading-relaxed normal-case font-sans">
+                      The compiler validation checker detected contradictory labels in your workspace prior to finalized compilation:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1.5 text-amber-300 text-[11px] mb-4 font-mono">
+                      {compileWarning.contradictions.map((c, idx) => (
+                        <li key={idx}>{c}</li>
+                      ))}
+                    </ul>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleCompile(true)}
+                        className="py-2 px-4 bg-amber-500 hover:bg-white text-black font-black text-[10px] uppercase tracking-wider transition-all"
+                      >
+                        Ignore Warning & Proceed
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCompileWarning(null)}
+                        className="py-2 px-4 bg-transparent border border-amber-500/50 hover:border-amber-400 text-amber-400 font-black text-[10px] uppercase tracking-wider transition-all"
+                      >
+                        Cancel & Edit Input
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleCompile}
@@ -2403,6 +2581,40 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     </div>
                   </div>
                 </motion.div>
+              ) : compileWarning ? (
+                // Warning visual
+                <motion.div
+                  key="warning-visual"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex-1 flex flex-col items-center justify-center text-center p-4 my-6"
+                >
+                  <AlertTriangle className="text-amber-500 mb-3 animate-bounce" size={40} />
+                  <h4 className="text-amber-500 font-black mb-2 text-sm uppercase tracking-wider">Validation Checker: Contradictory Labels</h4>
+                  <p className="text-xs font-mono text-[#AAA] max-w-sm leading-relaxed mb-4">
+                    Before finalized compilation, the validation engine detected potential metadata contradictions:
+                  </p>
+                  <div className="bg-[#110D00] border border-amber-500/50 p-3 text-left max-w-md mb-4 font-mono text-[10px] text-amber-300 space-y-1">
+                    {compileWarning.contradictions.map((c, idx) => (
+                      <div key={idx}>• {c}</div>
+                    ))}
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleCompile(true)}
+                      className="px-4 py-2 bg-amber-500 hover:bg-white text-black font-black text-[10px] uppercase tracking-wider transition-all"
+                    >
+                      Ignore Warning & Proceed
+                    </button>
+                    <button
+                      onClick={() => setCompileWarning(null)}
+                      className="px-4 py-2 border border-amber-500/40 hover:border-amber-400 text-amber-400 font-bold text-[10px] uppercase tracking-wider transition-all"
+                    >
+                      Cancel & Review
+                    </button>
+                  </div>
+                </motion.div>
               ) : compileError ? (
                 // Error visual
                 <motion.div
@@ -2481,13 +2693,38 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             transition={{ duration: 0.5 }}
             className="space-y-8 animate-fadeIn"
           >
+            {result.quota_fallback && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-amber-500/10 border-2 border-amber-500/30 text-amber-200 font-mono text-[11px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-none uppercase"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500 animate-pulse text-lg">⚠️</span>
+                  <div>
+                    <span className="font-black text-amber-500">API QUOTA EXHAUSTED:</span>
+                    <span className="ml-1 text-gray-300">The Gemini API Free Tier rate-limit was reached (250K tokens/min). To keep your testing seamless, our local high-fidelity compiler compiled a fully validated blueprint tailored to your input!</span>
+                  </div>
+                </div>
+                <div className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-1 border border-amber-500/30 whitespace-nowrap font-bold">
+                  ABIDE COMPILER ACTIVE
+                </div>
+              </motion.div>
+            )}
 
             {/* Header Banner */}
             <div className="p-6 md:p-8 bg-[#080808] border-2 border-[#222] relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 rounded-none">
               <div className="absolute top-0 right-0 w-80 h-80 bg-[#00F0FF]/1 rounded-full blur-[100px] pointer-events-none" />
               
               <div className="space-y-3 flex-1">
-                <span className="text-[10px] font-mono text-[#00F0FF] font-black tracking-widest uppercase block">[ SYSTEM ARTIFACT UNLOCKED ]</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-mono text-[#00F0FF] font-black tracking-widest uppercase block">[ SYSTEM ARTIFACT UNLOCKED ]</span>
+                  {result.source === "default" && (
+                    <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/40 px-1.5 py-0.5 font-bold uppercase tracking-wider block">
+                      ⚡ DEMO PURPOSE ONLY / PREVIEW REFERENCE
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">{result.title}</h2>
                 <p className="text-xs font-mono uppercase tracking-wider text-[#666]">{result.tagline}</p>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[#555] text-[10px] font-mono uppercase">
@@ -2562,9 +2799,13 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             {/* Tab Navigation */}
             <div className="flex flex-wrap border-b-2 border-[#222] bg-[#050505] p-1 rounded-none print:hidden">
               {[
-                { id: "overview", label: "Overview", icon: Layers },
+                { id: "overview", label: "Blueprint (Overview)", icon: Layers },
+                { id: "enterpriseControl", label: "Enterprise Control", icon: Server },
+                { id: "vnpAuth", label: "VNP Auth & Identity", icon: UserCheck },
+                { id: "vnpAnalytics", label: "VNP Telemetry & Gating", icon: Activity },
                 { id: "sovereignConstitution", label: "Sovereign Constitution", icon: Lock },
-                { id: "capabilityGraph", label: "Capability Graph", icon: Globe },
+                { id: "protocolManuals", label: "Protocol & Security Manuals", icon: BookOpen },
+                { id: "capabilityGraph", label: "Architecture (Graph)", icon: Globe },
                 { id: "productsBundles", label: "Products & Bundles", icon: Coins },
                 { id: "interfaces", label: "Interfaces Inventory", icon: Code },
                 { id: "repositories", label: "Repositories Alignment", icon: Github },
@@ -2573,9 +2814,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 { id: "evidenceVerification", label: "Evidence & Verification", icon: Lock },
                 { id: "gapsDuplicates", label: "Gaps & Duplicates", icon: AlertTriangle },
                 { id: "roadmap", label: "System Roadmap", icon: Clock },
-                { id: "agentPackets", label: "Projection & Trust", icon: Cpu },
+                { id: "agentPackets", label: "Agents (Work Orders)", icon: Cpu },
                 { id: "explorer", label: "Cognitive IDE", icon: FileCode },
-                { id: "testHarness", label: "Test Harness", icon: Sliders }
+                { id: "vioMarketplace", label: "VIO Marketplace & IDE Plugins", icon: Plug },
+                { id: "testHarness", label: "Command Ops (Execution)", icon: Sliders }
               ].map((tab) => {
                 const IconComponent = tab.icon;
                 const isSel = activeTab === tab.id;
@@ -2607,8 +2849,51 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   setDepthMode={setDepthMode}
                   result={result}
                   userEmail={userEmail}
+                  revisions={revisions}
                 >
               
+              {/* DEMO / PREVIEW REFERENCE SAMPLE NOTICE BANNER */}
+              {result?.source === "default" && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-cyan-950/60 via-blue-950/40 to-neutral-900 border-2 border-[#00F0FF]/80 rounded-none relative shadow-[0_0_20px_rgba(0,240,255,0.15)] animate-fadeIn">
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2 bg-[#00F0FF]/10 border border-[#00F0FF]/40 shrink-0 text-[#00F0FF]">
+                      <Zap size={20} className="animate-pulse" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 text-[10px] font-mono font-black bg-[#00F0FF] text-black uppercase tracking-wider">
+                          DEMO PURPOSE ONLY / PREVIEW REFERENCE SAMPLE
+                        </span>
+                        <span className="text-xs font-mono text-cyan-300 font-bold">
+                          Illustrative Pre-Compiled Showcase Blueprint
+                        </span>
+                      </div>
+                      <p className="text-xs font-mono text-neutral-300 leading-relaxed">
+                        This default workspace (featuring Lamport &amp; Nakamoto citation samples, SEKED R-Score triage, and X402 settlement models) is <strong className="text-white underline">literally for demo purposes only</strong>. It is provided so you or a buyer can see what you receive out of this tool when you compile your own architecture.
+                      </p>
+                      <div className="p-2 bg-black/60 border border-cyan-500/30 flex items-center gap-2 text-xs font-mono text-[#00F0FF] font-bold">
+                        <ArrowRight size={14} className="shrink-0" />
+                        <span>When you put in your own messy intent and press 'Abide Generate', all this demo stuff is completely gone! It strictly focuses on what you ingested.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab: VNP Auth & Identity */}
+              {activeTab === "vnpAuth" && (
+                <div className="animate-fadeIn">
+                  <VnpAuthHub />
+                </div>
+              )}
+
+              {/* Tab: VNP Telemetry & Feasibility Gating */}
+              {activeTab === "vnpAnalytics" && (
+                <div className="animate-fadeIn">
+                  <VnpAnalyticsCards />
+                </div>
+              )}
+
               {/* Tab: Sovereign Constitution */}
               {activeTab === "sovereignConstitution" && (
                 <div className="animate-fadeIn">
@@ -2624,6 +2909,20 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     revisions={revisions}
                     setRevisions={setRevisions}
                   />
+                </div>
+              )}
+
+              {/* Tab: Enterprise Control */}
+              {activeTab === "enterpriseControl" && (
+                <div className="animate-fadeIn">
+                  <EnterpriseHostController />
+                </div>
+              )}
+
+              {/* Tab: Protocol & Security Manuals */}
+              {activeTab === "protocolManuals" && (
+                <div className="animate-fadeIn">
+                  <EnterpriseProtocolManuals />
                 </div>
               )}
 
@@ -2660,7 +2959,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   </div>
 
                   {overviewMode === "caveman" ? (
-                    <CavemanGuide blueprint={result} userEmail={userEmail} />
+                    <CavemanGuide blueprint={result} userEmail={userEmail} onSelectTab={(tabId) => setActiveTab(tabId as any)} />
                   ) : (
                     <PresentationDeck blueprintTitle={result.title} />
                   )}
@@ -3190,10 +3489,14 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         />
                         <div className="flex flex-wrap gap-1.5">
                           {[
-                            { name: "cappo-backend", url: "https://github.com/reprewindai-dev/cappo-backend" },
-                            { name: "byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" },
-                            { name: "lockerphycer", url: "https://github.com/reprewindai-dev/lockerphycer" },
-                            { name: "gnomledger", url: "https://github.com/reprewindai-dev/gnomledger" }
+                            { name: "ABIDE (Proposer)", url: "https://github.com/reprewindai-dev/ABIDE" },
+                            { name: "cappo-backend (Disposer)", url: "https://github.com/reprewindai-dev/cappo-backend" },
+                            { name: "veklom-byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" },
+                            { name: "lockerphycer (Security Layer)", url: "https://github.com/reprewindai-dev/lockerphycer" },
+                            { name: "gnomledger (PGL)", url: "https://github.com/reprewindai-dev/gnomledger" },
+                            { name: "interlink-cAPI (Unified Asset)", url: "https://github.com/reprewindai-dev/interlink-cAPI" },
+                            { name: "UACPV5-TERMINAL", url: "https://github.com/reprewindai-dev/UACPV5-TERMINAL/" },
+                            { name: "delyn-backend (DELYN)", url: "https://github.com/reprewindai-dev/delyn-backend" }
                           ].map((r) => (
                             <button
                               key={r.name}
@@ -3290,7 +3593,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     </div>
 
                     <p className="text-[10px] text-gray-400 normal-case leading-relaxed">
-                      This will push the active compiled sovereign blueprint as <code className="text-[#00F0FF]">APEX_BLUEPRINT.json</code> directly to a specified branch in your repository. Note: A GitHub Personal Access Token (PAT) with <code className="text-[#00F0FF]">repo</code> permissions is required for this action.
+                      This will push the active compiled sovereign blueprint as <code className="text-[#00F0FF]">ABIDE_BLUEPRINT.json</code> directly to a specified branch in your repository. Note: A GitHub Personal Access Token (PAT) with <code className="text-[#00F0FF]">repo</code> permissions is required for this action.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono uppercase">
@@ -3300,7 +3603,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                           type="text"
                           value={githubPushBranch}
                           onChange={(e) => setGithubPushBranch(e.target.value)}
-                          placeholder="e.g. apex-blueprint-alignment"
+                          placeholder="e.g. abide-blueprint-alignment"
                           className="w-full bg-[#111] border border-[#222] p-2.5 text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none"
                         />
                       </div>
@@ -3330,7 +3633,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         ) : (
                           <>
                             <Send size={14} />
-                            <span>Commit & Push APEX_BLUEPRINT.json</span>
+                            <span>Commit & Push ABIDE_BLUEPRINT.json</span>
                           </>
                         )}
                       </button>
@@ -4366,8 +4669,14 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     setEinsteinJitter={setEinsteinJitter}
                     vnpUrl={vnpUrl}
                     gnomeledgerUrl={gnomeledgerUrl}
-                    config={config}
                   />
+                </div>
+              )}
+
+              {/* Tab: VIO Marketplace & IDE Plugins */}
+              {activeTab === "vioMarketplace" && (
+                <div className="animate-fadeIn">
+                  <VioMarketplace blueprint={result} />
                 </div>
               )}
 
@@ -4384,6 +4693,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     }
                   `}</style>
                   
+                  <EnterpriseHostController />
+
                   {/* Top Intro Header */}
                   <div className="p-6 bg-[#0A0A0A] border-2 border-[#222] rounded-none relative overflow-hidden">
                     <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-[#00F0FF]/5 to-transparent pointer-events-none" />
@@ -4548,15 +4859,21 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                           </button>
 
                           {/* Individual discovery results indicator badges */}
-                          <div className="grid grid-cols-4 gap-1.5 text-[8px] font-mono text-center pt-0.5 font-bold uppercase">
+                          <div className="grid grid-cols-6 gap-1.5 text-[8px] font-mono text-center pt-0.5 font-bold uppercase">
                             <div className={`p-1 border transition-colors ${discoveryResults.byos === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.byos === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
                               BYOS:8081
                             </div>
                             <div className={`p-1 border transition-colors ${discoveryResults.cappo === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.cappo === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
                               CAPPO:8082
                             </div>
+                            <div className={`p-1 border transition-colors ${discoveryResults.delyn === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.delyn === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
+                              DELYN:8085
+                            </div>
+                            <div className={`p-1 border transition-colors ${discoveryResults.cipher === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.cipher === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
+                              CIPHER:8086
+                            </div>
                             <div className={`p-1 border transition-colors ${discoveryResults.gnomeledger === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.gnomeledger === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
-                              GNOME:8083
+                              PGL:8083
                             </div>
                             <div className={`p-1 border transition-colors ${discoveryResults.vnp === "detected" ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-400" : discoveryResults.vnp === "missing" ? "bg-red-500/10 border-red-500/35 text-red-400 font-bold" : "bg-[#0c0c0c] border-[#222] text-gray-600"}`}>
                               VNP:8084
@@ -4599,6 +4916,34 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                               type="text"
                               value={cappoUrl}
                               onChange={(e) => setCappoUrl(e.target.value)}
+                              className="w-full bg-[#111] border border-[#222] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#00F0FF] rounded-none"
+                            />
+                          </div>
+
+                          {/* DELYN URL */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-[#666]">
+                              <span className="font-bold">DELYN URL (Sovereign Intelligence):</span>
+                              <span className="text-[8px] text-gray-400">Cognitive &amp; Neurosymbolic</span>
+                            </div>
+                            <input
+                              type="text"
+                              value={delynUrl}
+                              onChange={(e) => setDelynUrl(e.target.value)}
+                              className="w-full bg-[#111] border border-[#222] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#00F0FF] rounded-none"
+                            />
+                          </div>
+
+                          {/* LOCK THE CIPHER URL */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-[#666]">
+                              <span className="font-bold">LOCK THE CIPHER URL (Crypto Engine):</span>
+                              <span className="text-[8px] text-gray-400">Groth16/PLONK &amp; Enclaves</span>
+                            </div>
+                            <input
+                              type="text"
+                              value={cipherUrl}
+                              onChange={(e) => setCipherUrl(e.target.value)}
                               className="w-full bg-[#111] border border-[#222] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#00F0FF] rounded-none"
                             />
                           </div>
@@ -4772,7 +5117,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         </div>
                         
                         <p className="text-[10px] text-gray-400 leading-relaxed normal-case">
-                          The <code className="text-[#00F0FF]">interlink-cAPI</code> serves as the discovery, negotiation, and composition layer between the <code className="text-[#00F0FF]">APEX_BLUEPRINT</code> intent specification and the underlying persistent <code className="text-white">BYOS</code> workspace nodes.
+                          The <code className="text-[#00F0FF]">interlink-cAPI</code> serves as the discovery, negotiation, and composition layer between the <code className="text-[#00F0FF]">ABIDE_BLUEPRINT</code> intent specification and the underlying persistent <code className="text-white">BYOS</code> workspace nodes.
                         </p>
 
                         <div className="p-3 bg-[#050505] border border-[#222] rounded-none space-y-2.5 font-mono text-[9px] uppercase">
@@ -4784,11 +5129,15 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                             <div className="text-gray-500 font-bold">Repository Gates:</div>
                             <div className="flex flex-col gap-1 pl-2 text-gray-300 select-all leading-normal normal-case">
                               <a href="https://github.com/reprewindai-dev/interlink-cAPI" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
-                                <span>[ interlink-cAPI Repository ]</span>
+                                <span>[ interlink-cAPI (Unified MCP &amp; API Asset) ]</span>
                                 <ExternalLink size={10} />
                               </a>
-                              <a href="https://github.com/reprewindai-dev/cAPI" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
-                                <span>[ cAPI Core Gateway Repository ]</span>
+                              <a href="https://github.com/reprewindai-dev/UACPV5-TERMINAL/" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
+                                <span>[ UACPV5-TERMINAL (Sovereign Command Console) ]</span>
+                                <ExternalLink size={10} />
+                              </a>
+                              <a href="https://github.com/reprewindai-dev/ABIDE" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
+                                <span>[ ABIDE (Planning &amp; Intent Compiler Layer) ]</span>
                                 <ExternalLink size={10} />
                               </a>
                             </div>
@@ -5043,7 +5392,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.provider}
                     onChange={(e: any) => {
                       const prov = e.target.value;
-                      let dModel = "qwen2.5:3b";
+                      let dModel = "gemini-3.5-flash";
                       let dUrl = "";
                       if (prov === "openai") {
                         dModel = "gpt-4o";
@@ -5055,8 +5404,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         dModel = "deepseek-chat";
                         dUrl = "";
                       } else if (prov === "llama") {
-                        dModel = "llama3";
-                        dUrl = "";
+                        dModel = "llama-3-8b-instruct";
+                        dUrl = "http://localhost:11434/v1";
                       } else if (prov === "custom") {
                         dModel = "custom-model";
                         dUrl = "http://localhost:1234/v1";
@@ -5065,11 +5414,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     }}
                     className="w-full bg-[#0A0A0A] border border-[#222] p-2.5 text-xs text-[#E0E0E0] focus:outline-none focus:border-[#00F0FF] rounded-none font-mono"
                   >
-                    <option value="llama">Ollama / Local Llama API</option>
                     <option value="gemini">Google Gemini AI</option>
                     <option value="openai">OpenAI (GPT Models)</option>
                     <option value="anthropic">Anthropic (Claude Models)</option>
                     <option value="deepseek">DeepSeek AI</option>
+                    <option value="llama">Ollama / Local Llama API</option>
                     <option value="custom">Custom OpenAI-Compatible</option>
                   </select>
                 </div>
@@ -5102,9 +5451,11 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     value={config.customUrl || ""}
                     onChange={(e) => setConfig({ ...config, customUrl: e.target.value })}
                     placeholder={
-                        config.provider === "openai"
+                      config.provider === "gemini"
+                        ? "e.g. http://localhost:1106/modelfarm/gemini (or leave blank)"
+                        : config.provider === "openai"
                         ? "e.g. http://localhost:1106/modelfarm/openai (or leave blank)"
-                        : config.provider === "ollama"
+                        : config.provider === "llama"
                         ? "e.g. http://localhost:11434/v1"
                         : config.provider === "deepseek"
                         ? "e.g. https://api.deepseek.com/v1 (or leave blank)"
@@ -5123,8 +5474,10 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                 <div>
                   <label className="block text-xs font-mono font-black text-[#666] uppercase tracking-wider mb-1.5 flex justify-between">
                     <span>Provider API Key:</span>
-                    {(config.provider === "ollama" || config.provider === "custom" || config.customUrl) ? (
+                    {(config.provider === "llama" || config.provider === "custom" || config.customUrl) ? (
                       <span className="text-[9px] text-emerald-400 lowercase font-mono">Optional for local/Ollama style</span>
+                    ) : config.provider === "gemini" ? (
+                      <span className="text-[9px] text-emerald-400 lowercase font-mono">Uses automatic server key if empty</span>
                     ) : null}
                   </label>
                   <input
@@ -5381,9 +5734,9 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
 
       {/* Global Footer */}
       <footer className="border-t-2 border-[#222] bg-[#050505] py-8 mt-16 print:hidden">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
           <p className="text-xs font-mono uppercase text-[#666] tracking-wider">
-            ApexBlueprint Compiler. Created on high-contrast obsidian dark patterns. Verified for cross-device responsiveness.
+            Abide Blueprint Compiler. Created on high-contrast obsidian dark patterns. Verified for cross-device responsiveness.
           </p>
           <div className="flex justify-center gap-6 text-[10px] font-mono text-[#444] uppercase tracking-widest">
             <span>PLATFORM: CLOUD CONTAINER</span>
@@ -5402,7 +5755,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
             <h1 className="text-4xl font-extrabold tracking-tight uppercase">{result.title}</h1>
             <p className="text-lg italic text-gray-700">{result.tagline}</p>
             <div className="text-xs font-mono space-y-1 text-gray-600 pt-4">
-              <p>COMPILED BY: APEXBLUEPRINT HIERARCHICAL REASONING CORE</p>
+              <p>COMPILED BY: ABIDE BLUEPRINT HIERARCHICAL REASONING CORE</p>
               <p>MINT DATE: {new Date(result.timestamp).toLocaleString()}</p>
               <p>REGISTRANT INTELLECTUAL OWNER: {userEmail}</p>
               <p>CRYPTOGRAPHIC PROOF OF CREATION HASH: {result.hash}</p>
@@ -5469,7 +5822,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
           <div className="pt-12 text-center border-t-2 border-black space-y-2">
             <p className="font-bold text-base uppercase">Certificate of Verification & Intellectual Protection</p>
             <p className="text-xs text-gray-600 max-w-lg mx-auto">
-              This system blueprint has been compiled utilizing the elite APEXBLUEPRINT Hierarchical Reasoning Engine. All assets compiled herewith are mathematically backed, academically grounded, and cryptographically signed to protect concept authorship.
+              This system blueprint has been compiled utilizing the elite ABIDE BLUEPRINT Hierarchical Reasoning Engine. All assets compiled herewith are mathematically backed, academically grounded, and cryptographically signed to protect concept authorship.
             </p>
             <p className="font-mono text-xs font-bold pt-4">MINT SEAL AUTHENTICATION: {result.hash.substring(0, 32).toUpperCase()}</p>
           </div>

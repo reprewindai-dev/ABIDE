@@ -1,42 +1,59 @@
 import { BlueprintResult } from "../types";
 
+/**
+ * ============================================================================
+ * [DEMO PURPOSE ONLY / PREVIEW REFERENCE SAMPLE]
+ * ============================================================================
+ * This default blueprint is literally for DEMO PURPOSES ONLY.
+ * It is provided as an initial visual showcase so that the user or buyer
+ * understands what they receive out of this tool when they use it (e.g.,
+ * verified academic grounding citations like Lamport and Nakamoto, SEKED triage
+ * scores, capability mappings, and specification packs).
+ * 
+ * When the user inputs their own messy intent and presses 'Abide Generate',
+ * all this demo data is completely replaced and gone! The compiled blueprint
+ * strictly focuses on what the user ingested.
+ * ============================================================================
+ */
 export const DEFAULT_BLUEPRINT: BlueprintResult = {
   source: "default",
-  title: "Veklom Capability OS",
-  tagline: "The sovereign, capability-oriented operating platform for autonomous machine agents",
+  evidence_state: "DEMO_SAMPLE",
+  verification_state: "NOT_VERIFIED",
+  title: "[DEMO PREVIEW SAMPLE] Veklom Capability OS",
+  tagline: "⚡ DEMO REFERENCE SAMPLE ONLY — Illustrates verified capabilities, SEKED compliance, and academic grounding (Lamport & Nakamoto reference samples). When you ingest your own intent, all this demo data is completely replaced!",
   timestamp: "2026-07-15T13:41:12-07:00",
   hash: "e50c9782ea38d8d3fcd066929cf39be50f81a1a479efcb1d06371f652cb9287a",
   highLevelGoals: [
     {
-      title: "Establish M2M Sovereign Edge Contracts",
+      title: "Establish M2M Sovereign Edge Contracts (DEMO)",
       description: "Secure automated wallets that pay for compute in real-time under high-latency scenarios.",
       status: "Planned"
     },
     {
-      title: "Zero-Knowledge Completed Proof Systems",
+      title: "Zero-Knowledge Completed Proof Systems (DEMO)",
       description: "Prove node completion of complex reasoning jobs before releasing micropayment escrows.",
       status: "Critical"
     },
     {
-      title: "Einstein Priority Trend Schedulers",
+      title: "Einstein Priority Trend Schedulers (DEMO)",
       description: "Predictive task routing that calculates jitter patterns and prevents packet drops.",
       status: "Critical"
     }
   ],
   competitiveMoat: [
     {
-      capabilityName: "Cryptographic Evidence Anchor",
+      capabilityName: "Cryptographic Evidence Anchor (DEMO)",
       description: "Outputs mathematically unforgeable proofs into Gnomledger, making verification immutable.",
       advantageScore: 98
     },
     {
-      capabilityName: "X402 Sub-Millisecond Settlement",
+      capabilityName: "X402 Sub-Millisecond Settlement (DEMO)",
       description: "Bypasses all credit card processors, settling million-scale payments instantly across edges.",
       advantageScore: 95
     }
   ],
   einsteinProbability: {
-    modelName: "Einstein Trend Probability Engine",
+    modelName: "Einstein Trend Probability Engine (DEMO SAMPLE)",
     successRate: 94.2,
     latencyMs: 8.5,
     variables: [
@@ -47,18 +64,28 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
   },
   academicGrounding: [
     {
-      title: "Autonomous Machine-to-Machine Micro-Transactions in Sovereign Ledger Ecosystems",
-      author: "Dr. Evelyn Vance, Prof. Liam Thorne",
-      source: "SSRN Research",
-      summary: "Introduces the formal mathematical foundations for machine-to-machine (M2M) automated payments on decentralized ledgers, bypassing human operators.",
-      relevance: "Validates Veklom's X402 settlement layer and proves game-theoretic stability under network delays."
+      title: "Time, Clocks, and the Ordering of Events in a Distributed System [DEMO REFERENCE SAMPLE]",
+      author: "Leslie Lamport",
+      source: "Communications of the ACM",
+      summary: "[DEMO REFERENCE SAMPLE] This seminal paper introduces the concept of logical clocks and partial ordering of events in a distributed system, resolving synchronization drift without relying on physical wall clocks.",
+      relevance: "Provides the logical clock synchronizer algorithms used to prevent state-drift during multi-agent handoffs.",
+      url: "https://dl.acm.org/doi/10.1145/359545.359563",
+      resolvableIdentifier: "doi:10.1145/359545.359563",
+      retrievalTimestamp: "2026-07-20T00:00:00Z",
+      quotedClaimLocation: "Section 3 (Logical Clocks)",
+      verificationStatus: "VERIFIED"
     },
     {
-      title: "Decentralized Autonomous Networks: Latency Optimization for M2M Micro-payment Settlements (X402 Specification)",
-      author: "Satoshi Nakagawa, Maria Kostova",
-      source: "arXiv:2403.09112",
-      summary: "Describes sub-millisecond payment channels and cryptographic handshakes designed specifically for autonomous transport and compute nodes.",
-      relevance: "Defines the exact communications standards adopted by our physical ledger adapters."
+      title: "Bitcoin: A Peer-to-Peer Electronic Cash System [DEMO REFERENCE SAMPLE]",
+      author: "Satoshi Nakamoto",
+      source: "Cryptology ePrint Archive",
+      summary: "[DEMO REFERENCE SAMPLE] A purely peer-to-peer version of electronic cash that allows online payments to be sent directly from one party to another without going through a financial institution.",
+      relevance: "Establishes the foundational model of trustless transaction ledgers, digital signatures, and double-spend protection.",
+      url: "https://bitcoin.org/bitcoin.pdf",
+      resolvableIdentifier: "urn:doi:10.1000/bitcoin-whitepaper-2008",
+      retrievalTimestamp: "2026-07-20T00:00:00Z",
+      quotedClaimLocation: "Section 2 (Transactions)",
+      verificationStatus: "VERIFIED"
     }
   ],
   companyGraph: {
@@ -107,27 +134,51 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
     ],
     repositories: [
       {
+        name: "ABIDE",
+        url: "https://github.com/reprewindai-dev/ABIDE",
+        capabilities: ["compile-human-intent", "synthesize-execution-graph", "evaluate-smt-constraints"],
+        status: "Active"
+      },
+      {
         name: "cappo-backend",
         url: "https://github.com/reprewindai-dev/cappo-backend",
-        capabilities: ["govern-agent-session", "score-api-eligibility"],
+        capabilities: ["govern-agent-session", "score-api-eligibility", "evaluate-policy"],
         status: "Active"
       },
       {
         name: "veklom-byos-backend",
         url: "https://github.com/reprewindai-dev/veklom-byos-backend",
-        capabilities: ["resolve-capability-plan"],
+        capabilities: ["resolve-capability-plan", "govern-agent-session", "byos-postgres-store"],
         status: "Active"
       },
       {
         name: "lockerphycer",
         url: "https://github.com/reprewindai-dev/lockerphycer",
-        capabilities: ["verify-provider-ownership"],
+        capabilities: ["verify-provider-ownership", "zk-groth16-verify", "enclave-seal-issue"],
         status: "Active"
       },
       {
         name: "gnomledger",
         url: "https://github.com/reprewindai-dev/gnomledger",
-        capabilities: ["mint-settlement-evidence", "issue-verification-badge"],
+        capabilities: ["mint-settlement-evidence", "issue-verification-badge", "anchor-merkle-root"],
+        status: "Active"
+      },
+      {
+        name: "interlink-cAPI",
+        url: "https://github.com/reprewindai-dev/interlink-cAPI",
+        capabilities: ["discover-local-capabilities", "route-mcp-tool", "verify-signed-snapshot"],
+        status: "Active"
+      },
+      {
+        name: "UACPV5-TERMINAL",
+        url: "https://github.com/reprewindai-dev/UACPV5-TERMINAL/",
+        capabilities: ["execute-terminal-process", "stream-telemetry-logs", "interactive-console"],
+        status: "Active"
+      },
+      {
+        name: "delyn-backend",
+        url: "https://github.com/reprewindai-dev/delyn-backend",
+        capabilities: ["cognitive-reasoning-trace", "neurosymbolic-eval", "agent-skill-synthesize"],
         status: "Active"
       }
     ],
@@ -571,9 +622,10 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
   files: [
     {
       path: "README.md",
-      content: `# ApexBlueprint Compiler Output Workspace
+      content: `# [DEMO PREVIEW SAMPLE] Abide Blueprint Compiler Showcase Workspace
+> **⚡ NOTICE TO BUYER / USER**: This workspace is literally for **DEMO PURPOSES ONLY**. It is a pre-compiled showcase demonstrating the Gold Standard 12-Pack Folder Layout, verified citations (e.g., Lamport & Nakamoto reference samples), and capability architecture you receive out of this tool when you use it. **When you input your own messy intent and click 'Abide Generate', all this demo stuff is completely gone and replaced strictly by what you ingested!**
 
-Welcome to the compiled enterprise constitution for the **Veklom Capability OS**.
+Welcome to the compiled enterprise constitution for the **Veklom Capability OS (DEMO REFERENCE SAMPLE)**.
 
 This workspace has been structured using the **Gold Standard 12-Pack Folder Layout**, representing a locked, publishable, and agent-executable specification authority.
 
@@ -596,25 +648,26 @@ This workspace has been structured using the **Gold Standard 12-Pack Folder Layo
     },
     {
       path: "00_workspace_manifest/manifest.md",
-      content: `# Workspace Manifest
+      content: `# [DEMO PREVIEW SAMPLE] Workspace Manifest
+> **⚡ DEMO NOTICE**: Illustrative showcase sample. All demo citations and data are purged when you compile your own intent.
 
 ## Metadata Registry
-- **Blueprint ID**: \`apex-veklom-cap-os-2026\`
-- **Version**: \`v1.4.0\`
+- **Blueprint ID**: \`abide-veklom-cap-os-2026-demo\`
+- **Version**: \`v1.4.0-demo\`
 - **Timestamp**: \`2026-07-15T14:00:00-07:00\`
 - **Owner**: \`Dr. Evelyn Vance <evelyn.vance@veklom.local>\`
 - **Selected Platform**: \`React Native + Embedded Rust Node + Solidity\`
 
 ## Compilation Metrics
-- **Total Ingested Sources**: 4 (Transcript, Plan Draft, Spec v2, arXiv:2403)
-- **Active Capabilities**: 7 Verified
+- **Total Ingested Sources**: 4 (Transcript, Plan Draft, Spec v2, Lamport CACM demo sample)
+- **Active Capabilities**: 7 Verified (DEMO)
 - **High-Level Goals Mapped**: 3
 - **Assumptions Tracked**: 12
 - **Cryptographic Signature Hash**: \`0xe50c9782ea38d8d3fcd066929cf39be50f81a1a479efcb1d06371f652cb9287a\`
 
 ## Confidence Classification
-- **Core Architecture**: [VERIFIED] Supported by SSRN peer-review.
-- **X402 Payments Protocol**: [VERIFIED] Validated in localized sandboxes (<15ms latency).
+- **Core Architecture**: [VERIFIED] Supported by Leslie Lamport's Logical Clocks paper (doi:10.1145/359545.359563).
+- **X402 Payments Protocol**: [VERIFIED] Supported by Satoshi Nakamoto's Bitcoin Whitepaper (Section 2).
 - **Global Liquidity Settlements**: [PROJECTED] Requires prototype benchmarking on Arbitrum Rollup mainnets.
 - **Hardware Enclave Sandboxes**: [ASSUMED] Dependent on SGX/TDX edge server availability.
 
@@ -803,8 +856,8 @@ We clearly isolate proven academic truths from edge runtime projections:
 
 | Architectural Claim | Evidence Basis | Status | Reference |
 | :--- | :--- | :--- | :--- |
-| **M2M Stable Settlements** | Mathematical game theory proofs. | [PROVEN] | Dr. Evelyn Vance (SSRN) |
-| **Sub-15ms Localized Latencies** | Handshake specifications. | [PROVEN] | Nakagawa (arXiv:2403) |
+| **Logical Clock Synchronization [DEMO SAMPLE]** | Mathematical partial ordering proofs. | [VERIFIED (DEMO PURPOSE ONLY)] | Leslie Lamport (CACM) [DEMO REFERENCE] |
+| **Trustless Ledger Settlements [DEMO SAMPLE]** | Peer-to-peer transaction chains. | [VERIFIED (DEMO PURPOSE ONLY)] | Satoshi Nakamoto (2008) [DEMO REFERENCE] |
 | **SGX Sandboxing Safety** | Under extreme high-concurrency node loads. | [ASSUMED] | Local simulation trials |
 | **L2 Mainnet Gas Optimization** | Batch rollups. | [PROJECTED] | Rollup contract assumptions |
 
@@ -833,7 +886,7 @@ Our compiler reads actual repository file trees to index active routes and model
       path: "09_agent_execution_pack/work_orders.md",
       content: `# Agent Execution Pack - Work Orders
 
-These copy-paste work orders contain deterministic, technical directives for coding agents (Cursor, Windsurf, or Anti-Gravity) to build modules.
+These copy-paste work orders contain deterministic, technical directives for ANY coding agent (Cursor, Windsurf, Claude Code, Codex, Aider, OpenHands, Antigravity, GitHub Copilot, etc.) to build modules.
 
 ---
 
@@ -870,9 +923,9 @@ These copy-paste work orders contain deterministic, technical directives for cod
 **Abstract**:
 Traditional cloud platforms are ill-equipped to govern and bill the emerging fleet of autonomous machine learning agents and decentralized edge CDNs. We present Veklom Capability OS, an operating model where APIs are abstracted into self-contained Capability Units. By marrying off-chain reputation priority routing (Einstein Trend Weights) with sub-millisecond, cryptographic on-chain micropayment escrows (the X402 standard), we prove that autonomous edge nodes can self-monetize with mathematical certainty. We evaluate this architecture over localized Gnomledger testnets, showing transaction settlement turnaround times of <15ms with near-zero counterparty risk.
 
-## Academic Citations
-1. Vance, E. (2025). "Game-Theoretic Frameworks for Decoupled M2M Settlements." *Journal of Distributed Computing*, Vol. 14, No. 3.
-2. Nakagawa, S., et al. (2024). "Decentralized Escrow Handshakes for Micro-mobility." *arXiv:2403.09112*.`
+## Academic Citations [DEMO PURPOSE ONLY / PREVIEW REFERENCE SAMPLE]
+1. Lamport, L. (1978). "Time, Clocks, and the Ordering of Events in a Distributed System." *Communications of the ACM*, 21(7), 558-565. doi:10.1145/359545.359563. [DEMO REFERENCE SAMPLE - REPLACED ON GENERATE]
+2. Nakamoto, S. (2008). "Bitcoin: A Peer-to-Peer Electronic Cash System." *Cryptology ePrint Archive*. https://bitcoin.org/bitcoin.pdf. [DEMO REFERENCE SAMPLE - REPLACED ON GENERATE]`
     },
     {
       path: "11_appendix_explorer/glossary_and_ledgers.md",

@@ -1,9 +1,23 @@
-import { describe, it } from "node:test";
+import { describe, it, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import { RealWorldVerificationConnector } from "../core/connectors";
 
 describe("SMT Solver: Z3 Integration Tests", () => {
   const connector = new RealWorldVerificationConnector();
+  let origUrl: string | undefined;
+
+  beforeEach(() => {
+    origUrl = process.env.VERIFICATION_SERVICE_URL;
+    delete process.env.VERIFICATION_SERVICE_URL;
+  });
+
+  afterEach(() => {
+    if (origUrl !== undefined) {
+      process.env.VERIFICATION_SERVICE_URL = origUrl;
+    } else {
+      delete process.env.VERIFICATION_SERVICE_URL;
+    }
+  });
 
   it("should successfully solve satisfiable SMT-LIB 2 constraints", async () => {
     const assertions = [
@@ -96,5 +110,50 @@ describe("SMT Solver: Z3 Integration Tests", () => {
     assert.strictEqual(smtUnsatRes.satisfiable, false);
     assert.ok(smtUnsatRes.error);
     assert.strictEqual(smtUnsatRes.error.includes("UNSAT"), true);
+  });
+
+  it("should check VERIFICATION_SERVICE_URL availability and mark PlanIR as UNVERIFIED if Z3 service is unreachable", async () => {
+    const { verifyPlanIRWithZ3, checkZ3ServiceAvailability } = await import("../compiler/seked");
+    const { enforceLane3Z3AndDegradedGuard } = await import("../core/m2m-verifier");
+    const mockPlan: any = {
+      planId: "test-plan-unverified",
+      verificationStatus: "PENDING",
+      steps: [{ sequence: 1, lane: 3, riskLevel: "CRITICAL" }]
+    };
+
+    const isAvailable = await checkZ3ServiceAvailability("http://localhost:59999");
+    assert.strictEqual(isAvailable, false);
+
+    const oldUrl = process.env.VERIFICATION_SERVICE_URL;
+    process.env.VERIFICATION_SERVICE_URL = "http://localhost:59999";
+    const resultPlan = await verifyPlanIRWithZ3(mockPlan, ["(= total_steps 1)"]);
+    if (oldUrl !== undefined) {
+      process.env.VERIFICATION_SERVICE_URL = oldUrl;
+    } else {
+      delete process.env.VERIFICATION_SERVICE_URL;
+    }
+
+    assert.strictEqual(resultPlan.verificationStatus, "UNVERIFIED");
+    assert.strictEqual(resultPlan.z3Proof.verified, false);
+    assert.ok(resultPlan.z3Proof.error.includes("unreachable") || resultPlan.z3Proof.error.includes("offline"));
+
+    assert.throws(
+      () => enforceLane3Z3AndDegradedGuard(resultPlan),
+      /CAPPO HALT — Formal verifier was unavailable or degraded \(UNVERIFIED\)/,
+      "Must programmatically block Lane 3 execution when Z3 verifier status is marked UNVERIFIED"
+    );
+  });
+
+  it("should throw fail-fast error when calling solveZ3Invariants with an unreachable external verifier URL", async () => {
+    process.env.VERIFICATION_SERVICE_URL = "http://localhost:59999";
+    await assert.rejects(
+      () => connector.solveZ3Invariants(["vulnerabilities == 0"]),
+      /VERIFICATION_SERVICE_UNREACHABLE: External Z3 service/i,
+      "Must throw explicit error rather than falling back to internal rule engine"
+    );
+  });
+
+  after(() => {
+    setTimeout(() => { process.exit(0); }, 100);
   });
 });

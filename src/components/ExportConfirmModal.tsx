@@ -135,7 +135,7 @@ export const ExportConfirmModal: React.FC<ExportConfirmModalProps> = ({
               <div className="space-y-2 text-[10px]">
                 <div className="flex justify-between border-b border-[#111] pb-1">
                   <span className="text-gray-400">Report Reference:</span>
-                  <span className="text-white font-black">{metadata.reportId || "VEKLOM-APEX-DIAG-000000"}</span>
+                  <span className="text-white font-black">{metadata.reportId || "VEKLOM-ABIDE-DIAG-000000"}</span>
                 </div>
                 <div className="flex justify-between border-b border-[#111] pb-1">
                   <span className="text-gray-400">Timestamp:</span>
