@@ -50,7 +50,9 @@ if (process.env.ENABLE_VNP_AUTH === "true") {
   });
 }
 
+app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
+app.get("/ready", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
 app.get("/readyz", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/api/ready", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
