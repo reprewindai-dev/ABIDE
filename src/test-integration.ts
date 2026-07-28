@@ -38,7 +38,7 @@ async function runDiagnostics() {
   // 2. Local API Port Availability & Service Health
   console.log("\n[TEST 2/4] Testing Local API Gateway Connection...");
   try {
-    const healthUrl = `${LOCAL_SERVER_URL}/api/health`;
+    const healthUrl = `${LOCAL_SERVER_URL}/healthz`;
     console.log(`  Connecting to: ${healthUrl}...`);
     
     const response = await fetch(healthUrl).catch(() => null);
@@ -123,3 +123,4 @@ async function runDiagnostics() {
 }
 
 runDiagnostics();
+

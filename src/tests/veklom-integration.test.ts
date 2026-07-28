@@ -8,10 +8,13 @@ const { app } = await import("../../server");
 // We start a mock/test server instance using our Express app to test /api/generate
 import http from "node:http";
 
+const RUN_LIVE_VEKLOM_TESTS = process.env.RUN_LIVE_VEKLOM_TESTS === "true";
+const liveTest = RUN_LIVE_VEKLOM_TESTS ? it : it.skip;
+
 describe("Milestone 2: Veklom Adapter & Live Integration Tests", () => {
   const LIVE_API_BASE = "https://api.veklom.com";
 
-  it("1. Live API /api/v1/health must respond with healthy status and fresh timestamp", async () => {
+  liveTest("1. Live API /api/v1/health must respond with healthy status and fresh timestamp", async () => {
     const res = await fetch(`${LIVE_API_BASE}/api/v1/health`);
     assert.strictEqual(res.status, 200, "Health endpoint should return HTTP 200");
 
@@ -32,7 +35,7 @@ describe("Milestone 2: Veklom Adapter & Live Integration Tests", () => {
     );
   });
 
-  it("2. Live v1/exec must reject invalid credentials with authentication failure", async () => {
+  liveTest("2. Live v1/exec must reject invalid credentials with authentication failure", async () => {
     const res = await fetch(`${LIVE_API_BASE}/v1/exec`, {
       method: "POST",
       headers: {
@@ -55,7 +58,7 @@ describe("Milestone 2: Veklom Adapter & Live Integration Tests", () => {
     );
   });
 
-  it("3. Execution path validation (Live Inference or dynamic fallback checks)", async () => {
+  liveTest("3. Execution path validation (Live Inference or dynamic fallback checks)", async () => {
     const apiKey = process.env.VEKLOM_API_KEY;
 
     if (!apiKey) {
@@ -136,3 +139,5 @@ describe("Milestone 2: Veklom Adapter & Live Integration Tests", () => {
     }
   });
 });
+
+

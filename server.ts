@@ -14,6 +14,11 @@ import { PlanIRSchema, CanonicalBlueprintV1Schema } from "./src/core/validation"
 import { compileSekedDirective, normalizeTelemetry, signAgentPacket, verifyAgentPacket, triageBlueprintIntakeV1 } from "./src/compiler/seked";
 import { cacheManager } from "./src/core/cache";
 import { dbConnector, x402Connector, verificationConnector, otelExporter } from "./src/core/connectors";
+import { WigoloResearchAdapter } from "./src/integrations/research/wigolo";
+import { GptResearcherAdapter } from "./src/integrations/research/gpt-researcher";
+import { ResearchProvider } from "./src/integrations/research/types";
+import { createCodeGraphRagAdapter } from "./src/integrations/repository/code-graph-rag";
+import { discoverPiExtensionsConfiguration } from "./src/integrations/agents/pi-extensions";
 
 dotenv.config();
 
@@ -249,6 +254,8 @@ async function isOllamaReachable(): Promise<boolean> {
 
 app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/readyz", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
+app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
+app.get("/api/ready", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
 
 app.get("/api/integrations/status", (_req, res) => {
   const env = process.env;
@@ -3312,3 +3319,4 @@ async function startServer() {
 if (process.env.NODE_ENV !== "test") {
   startServer();
 }
+
