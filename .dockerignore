@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.git/
+.wrangler/
+.env*
+!.env.example
+temp*.ts
+temp*.tsx
+temp*.txt
+abide-db-store.json
+checkpoints_db.json
+pgl-persistent-ledger.json
+vnp-users-db.json
+jean.json
