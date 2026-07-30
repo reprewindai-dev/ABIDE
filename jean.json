@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "setup": "npm ci",
+    "teardown": null,
+    "run": "npm run dev"
+  },
+  "ports": [
+    {
+      "port": 3009,
+      "label": "abide port"
+    }
+  ]
+}

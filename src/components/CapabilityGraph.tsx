@@ -929,9 +929,9 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
                           <div className="pt-2 border-t border-[#111]">
                             <span className="text-[#555] block text-[8.5px]">Capability Dependencies:</span>
                             <div className="flex flex-wrap gap-1.5 mt-1">
-                              {cap.dependencies.map((dep, i) => (
+                              {cap.dependencies.map((dep: any, i: number) => (
                                 <span key={i} className="text-[8px] px-2 py-0.5 bg-[#111] border border-[#222] text-[#AAA] rounded-none">
-                                  {dep}
+                                  {typeof dep === 'string' ? dep : `${dep.name}@${dep.version}`}
                                 </span>
                               ))}
                             </div>

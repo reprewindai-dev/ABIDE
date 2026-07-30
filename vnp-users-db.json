@@ -1,0 +1,73 @@
+[
+  {
+    "id": "usr-vance-001",
+    "email": "dr.vance@veklom.com",
+    "passwordHash": "$2b$10$MTNt6VlpyxXYht/QQUDL7./HRUSpuiEZTi193knvc/99mK2gvxTpO",
+    "name": "Dr. Evelyn Vance",
+    "role": "VNP Sovereign Architect",
+    "organization": "Veklom Sovereign Infrastructure & CAPPO Authority",
+    "avatarUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&h=200&q=80",
+    "bio": "Chief Sovereign Architect. Directing cryptographic consensus and physical telemetry routing across global VNP node clusters.",
+    "assignedVnpNodes": [
+      "vnp-us-ashburn-1",
+      "vnp-eu-falkenstein-1",
+      "vnp-ap-singapore-1",
+      "vnp-us-hillsboro-1"
+    ],
+    "sshPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG18V9Vn VanceSovereignKey+VNP2026",
+    "mfaEnabled": true,
+    "apiKeys": [
+      {
+        "keyId": "key-vance-primary",
+        "keyName": "Ashish-Ashburn-Telemetry-Ingest",
+        "prefix": "vnp_live_sk_9fa8...",
+        "keyHash": "adbb75149273aa4b8413f0c736f18722946dfaa3c0f4f17d17834e6def247f74",
+        "createdAt": "2026-06-01T10:00:00Z",
+        "lastUsedAt": "2026-07-26T14:30:00Z"
+      }
+    ],
+    "oauthProvider": null,
+    "createdAt": "2026-01-15T08:30:00Z",
+    "lastLoginAt": "2026-07-26T23:25:35.602Z"
+  },
+  {
+    "id": "usr-satoshi-002",
+    "email": "satoshi@veklom.com",
+    "passwordHash": "$2b$10$uO6hLC7Yk775qSZaQdt8Me.T0Oezw6ZPnXz0kzJEfMqV5tt.KC7l2",
+    "name": "Satoshi Nakagawa",
+    "role": "Node Telemetry Operator",
+    "organization": "Veklom Network Protocol (VNP) Telemetry Labs",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80",
+    "bio": "Lead Telemetry Engineer. Specializing in hardware-enforced M2M latency optimization and sub-millisecond physical node heartbeats.",
+    "assignedVnpNodes": [
+      "vnp-ap-singapore-1",
+      "vnp-us-hillsboro-1"
+    ],
+    "sshPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHKnakagawaVNPTelemetryKey2026",
+    "mfaEnabled": true,
+    "apiKeys": [],
+    "oauthProvider": null,
+    "createdAt": "2026-02-10T11:15:00Z",
+    "lastLoginAt": "2026-07-26T23:25:33.241Z"
+  },
+  {
+    "id": "usr-anthony-003",
+    "email": "anthony@veklom.com",
+    "passwordHash": "$2b$10$YnBPwDzsy64sxmye7MiRDe.vfxUYxP4Ruj4mpBzmF8LkyGHZjjJXi",
+    "name": "Anthony Node-Operator",
+    "role": "Security Auditor",
+    "organization": "VNP Node Enforcement & Compliance",
+    "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80",
+    "bio": "Physical Node Security Auditor. Overseeing zero-trust access control, TLA+ invariant validation, and real-time anomaly detection.",
+    "assignedVnpNodes": [
+      "vnp-us-hillsboro-1",
+      "vnp-eu-nuremberg-1"
+    ],
+    "sshPublicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCAnthonyNodeAuditKey...",
+    "mfaEnabled": false,
+    "apiKeys": [],
+    "oauthProvider": "github",
+    "createdAt": "2026-03-20T09:45:00Z",
+    "lastLoginAt": "2026-07-26T23:25:33.327Z"
+  }
+]

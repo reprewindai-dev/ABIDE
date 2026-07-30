@@ -106,8 +106,9 @@ export class RealWorldX402Connector implements X402PaymentConnector {
     console.log(`[X402 Connector] Locking $${amountUsd} USD for lease ${leaseId} from payer ${payerAddress}.`);
 
     if (process.env.X402_LEDGER_URL) {
+      const baseUrl = process.env.X402_LEDGER_URL.startsWith('http') ? process.env.X402_LEDGER_URL : `https://${process.env.X402_LEDGER_URL}`;
       try {
-        const response = await fetch(`${process.env.X402_LEDGER_URL}/api/escrow/lock`, {
+        const response = await fetch(`${baseUrl}/api/escrow/lock`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ leaseId, amountUsd, payerAddress })
@@ -131,8 +132,9 @@ export class RealWorldX402Connector implements X402PaymentConnector {
     console.log(`[X402 Connector] Releasing escrow of $${amountUsd} USD for lease ${leaseId} to payee ${payeeAddress}.`);
 
     if (process.env.X402_LEDGER_URL) {
+      const baseUrl = process.env.X402_LEDGER_URL.startsWith('http') ? process.env.X402_LEDGER_URL : `https://${process.env.X402_LEDGER_URL}`;
       try {
-        const response = await fetch(`${process.env.X402_LEDGER_URL}/api/escrow/release`, {
+        const response = await fetch(`${baseUrl}/api/escrow/release`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ leaseId, amountUsd, payeeAddress })

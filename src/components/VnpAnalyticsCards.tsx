@@ -18,7 +18,20 @@ import {
   Check,
   XCircle,
   HelpCircle,
-  Search
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Clock,
+  DollarSign,
+  Sparkles,
+  Filter,
+  BarChart2,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Layers
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -34,6 +47,163 @@ import {
   Legend
 } from "recharts";
 import { TechnologyReadiness, gateMaturityClaim, FeasibilityCheckResult } from "../core/feasibilityGate";
+
+export interface AiProviderMetric {
+  id: string;
+  provider: string;
+  model: string;
+  type: "Proprietary Cloud" | "Open Fleet Node" | "Specialized Edge" | "Self-Hosted";
+  latencyMs: number;
+  inputCostPer1M: number;
+  outputCostPer1M: number;
+  avgCostPerQuery: number;
+  throughputTps: number;
+  sekedScore: number;
+  uptimeSla: number;
+  contextWindow: string;
+  region: string;
+  status: "OPTIMAL" | "ONLINE" | "DEGRADED";
+  recommendedFor: string;
+}
+
+const INITIAL_AI_PROVIDERS: AiProviderMetric[] = [
+  {
+    id: "cerebras-llama31-8b",
+    provider: "Cerebras AI",
+    model: "llama-3.1-8b",
+    type: "Specialized Edge",
+    latencyMs: 24,
+    inputCostPer1M: 0.10,
+    outputCostPer1M: 0.10,
+    avgCostPerQuery: 0.00015,
+    throughputTps: 1800,
+    sekedScore: 8.9,
+    uptimeSla: 99.85,
+    contextWindow: "128k tokens",
+    region: "Wafer-Scale Engine US",
+    status: "OPTIMAL",
+    recommendedFor: "Sub-50ms ultra-low latency real-time API loops"
+  },
+  {
+    id: "groq-llama33-70b",
+    provider: "Groq Cloud",
+    model: "llama-3.3-70b-versatile",
+    type: "Specialized Edge",
+    latencyMs: 38,
+    inputCostPer1M: 0.59,
+    outputCostPer1M: 0.79,
+    avgCostPerQuery: 0.00098,
+    throughputTps: 310,
+    sekedScore: 9.4,
+    uptimeSla: 99.92,
+    contextWindow: "128k tokens",
+    region: "US LPU Farm",
+    status: "OPTIMAL",
+    recommendedFor: "Ultra-fast high-reasoning agent loops"
+  },
+  {
+    id: "hetzner-fleet-ollama",
+    provider: "Hetzner Fleet Node",
+    model: "llama3.2:latest",
+    type: "Open Fleet Node",
+    latencyMs: 48,
+    inputCostPer1M: 0.00,
+    outputCostPer1M: 0.00,
+    avgCostPerQuery: 0.00000,
+    throughputTps: 145,
+    sekedScore: 9.3,
+    uptimeSla: 100.0,
+    contextWindow: "128k tokens",
+    region: "EU-Hetzner (167.233.202.195)",
+    status: "OPTIMAL",
+    recommendedFor: "Sovereign zero-cost private in-enclave processing"
+  },
+  {
+    id: "google-gemini-15-flash",
+    provider: "Google Gemini",
+    model: "gemini-1.5-flash",
+    type: "Proprietary Cloud",
+    latencyMs: 85,
+    inputCostPer1M: 0.075,
+    outputCostPer1M: 0.30,
+    avgCostPerQuery: 0.00022,
+    throughputTps: 180,
+    sekedScore: 9.8,
+    uptimeSla: 99.99,
+    contextWindow: "1.0M tokens",
+    region: "Global Multi-Region",
+    status: "OPTIMAL",
+    recommendedFor: "High-volume multimodal & million-token contexts"
+  },
+  {
+    id: "openai-gpt4o-mini",
+    provider: "OpenAI",
+    model: "gpt-4o-mini",
+    type: "Proprietary Cloud",
+    latencyMs: 110,
+    inputCostPer1M: 0.15,
+    outputCostPer1M: 0.60,
+    avgCostPerQuery: 0.00045,
+    throughputTps: 120,
+    sekedScore: 9.6,
+    uptimeSla: 99.95,
+    contextWindow: "128k tokens",
+    region: "US / EU Multi-Region",
+    status: "ONLINE",
+    recommendedFor: "Lightweight general task automation"
+  },
+  {
+    id: "mistral-small-latest",
+    provider: "Mistral AI",
+    model: "mistral-small-latest",
+    type: "Proprietary Cloud",
+    latencyMs: 130,
+    inputCostPer1M: 0.20,
+    outputCostPer1M: 0.60,
+    avgCostPerQuery: 0.00050,
+    throughputTps: 135,
+    sekedScore: 9.2,
+    uptimeSla: 99.90,
+    contextWindow: "32k tokens",
+    region: "EU Paris (Sovereign)",
+    status: "ONLINE",
+    recommendedFor: "European regulatory compliance & tool use"
+  },
+  {
+    id: "deepseek-v3",
+    provider: "DeepSeek",
+    model: "deepseek-v3",
+    type: "Proprietary Cloud",
+    latencyMs: 165,
+    inputCostPer1M: 0.14,
+    outputCostPer1M: 0.28,
+    avgCostPerQuery: 0.00028,
+    throughputTps: 95,
+    sekedScore: 9.5,
+    uptimeSla: 99.60,
+    contextWindow: "64k tokens",
+    region: "Asia / Global Edge",
+    status: "ONLINE",
+    recommendedFor: "Ultra-budget code synthesis & logic reasoning"
+  },
+  {
+    id: "anthropic-claude-35-sonnet",
+    provider: "Anthropic",
+    model: "claude-3-5-sonnet",
+    type: "Proprietary Cloud",
+    latencyMs: 220,
+    inputCostPer1M: 3.00,
+    outputCostPer1M: 15.00,
+    avgCostPerQuery: 0.01050,
+    throughputTps: 85,
+    sekedScore: 9.9,
+    uptimeSla: 99.90,
+    contextWindow: "200k tokens",
+    region: "AWS us-east-1",
+    status: "ONLINE",
+    recommendedFor: "Maximum precision code auditing & complex research"
+  }
+];
 
 // Colors for Pie/Donut charts
 const SEVERITY_COLORS = ["#EF4444", "#F97316", "#EAB308", "#00F0FF", "#10B981"];
@@ -66,6 +236,17 @@ const radarData = [
 ];
 
 export function VnpAnalyticsCards() {
+  // AI Provider Benchmark & Efficiency Telemetry State
+  const [providers, setProviders] = useState<AiProviderMetric[]>(INITIAL_AI_PROVIDERS);
+  const [sortField, setSortField] = useState<keyof AiProviderMetric>("latencyMs");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [autoSortMode, setAutoSortMode] = useState<"LATENCY" | "COST" | "QUALITY" | "THROUGHPUT" | "CUSTOM">("LATENCY");
+  const [providerSearch, setProviderSearch] = useState("");
+  const [providerTypeFilter, setProviderTypeFilter] = useState<string>("ALL");
+  const [expandedProviderId, setExpandedProviderId] = useState<string | null>(null);
+  const [isProbingProviders, setIsProbingProviders] = useState(false);
+  const [lastProbeTime, setLastProbeTime] = useState<string>("Just now");
+
   // Feasibility Tester State
   const [testCapName, setTestCapName] = useState("Sovereign M2M Scooter Fleet");
   const [testReadiness, setTestReadiness] = useState<TechnologyReadiness>(TechnologyReadiness.PUBLIC_AVAILABLE_TODAY);
@@ -81,6 +262,80 @@ export function VnpAnalyticsCards() {
   const [customTitle, setCustomTitle] = useState("");
   const [customAuthor, setCustomAuthor] = useState("");
   const [customId, setCustomId] = useState("");
+
+  const handleSortChange = (field: keyof AiProviderMetric, modeOverride?: "LATENCY" | "COST" | "QUALITY" | "THROUGHPUT") => {
+    if (modeOverride) {
+      setAutoSortMode(modeOverride);
+      setSortField(field);
+      if (field === "latencyMs" || field === "avgCostPerQuery" || field === "inputCostPer1M" || field === "outputCostPer1M") {
+        setSortDirection("asc");
+      } else {
+        setSortDirection("desc");
+      }
+      return;
+    }
+
+    if (sortField === field) {
+      setSortDirection(prev => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      if (field === "latencyMs" || field === "avgCostPerQuery" || field === "inputCostPer1M" || field === "outputCostPer1M") {
+        setSortDirection("asc");
+      } else {
+        setSortDirection("desc");
+      }
+    }
+    setAutoSortMode("CUSTOM");
+  };
+
+  const probeAllProviders = async () => {
+    setIsProbingProviders(true);
+    await new Promise(resolve => setTimeout(resolve, 600));
+    setProviders(prev =>
+      prev.map(p => {
+        const jitter = Math.floor((Math.random() - 0.5) * 6);
+        const newLat = Math.max(12, p.latencyMs + jitter);
+        return {
+          ...p,
+          latencyMs: newLat
+        };
+      })
+    );
+    setIsProbingProviders(false);
+    setLastProbeTime(new Date().toLocaleTimeString());
+  };
+
+  // Filtered and sorted providers
+  const filteredProviders = providers.filter(p => {
+    const matchesSearch =
+      p.provider.toLowerCase().includes(providerSearch.toLowerCase()) ||
+      p.model.toLowerCase().includes(providerSearch.toLowerCase()) ||
+      p.recommendedFor.toLowerCase().includes(providerSearch.toLowerCase());
+    const matchesType = providerTypeFilter === "ALL" || p.type === providerTypeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  const sortedProviders = [...filteredProviders].sort((a, b) => {
+    let valA = a[sortField];
+    let valB = b[sortField];
+
+    if (typeof valA === "string" && typeof valB === "string") {
+      const cmp = valA.localeCompare(valB);
+      return sortDirection === "asc" ? cmp : -cmp;
+    }
+
+    if (typeof valA === "number" && typeof valB === "number") {
+      return sortDirection === "asc" ? valA - valB : valB - valA;
+    }
+
+    return 0;
+  });
+
+  // Category leaders
+  const fastestProvider = [...providers].sort((a, b) => a.latencyMs - b.latencyMs)[0];
+  const cheapestProvider = [...providers].sort((a, b) => a.avgCostPerQuery - b.avgCostPerQuery)[0];
+  const highestQualityProvider = [...providers].sort((a, b) => b.sekedScore - a.sekedScore)[0];
+  const highestThroughputProvider = [...providers].sort((a, b) => b.throughputTps - a.throughputTps)[0];
 
   const runFeasibilityTest = (
     name: string,

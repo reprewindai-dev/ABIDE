@@ -1269,17 +1269,17 @@ ${emailToUse}`;
         });
         return response.text || "";
       }, { maxRetries: 3, initialDelayMs: 1000 }, "Gemini Blueprint Generation");
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       // Determine base URL to use
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+      } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
-        openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "http://localhost:1106/modelfarm/openai";
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
       }
 
       // Clean the endpoint: strip trailing slashes, make sure it has /chat/completions
@@ -1389,7 +1389,7 @@ ${emailToUse}`;
         throw new Error("Free server compilation key is currently exhausted. Please provide your own LLM Key under settings.");
       }
 
-      const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "http://localhost:1106/modelfarm/gemini";
+      const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
       const aiOptions: any = {
         apiKey: activeApiKey,
         httpOptions: { headers: { "User-Agent": "aistudio-build" } },
@@ -1582,16 +1582,16 @@ export class ProviderService {
           },
         });
       }, { maxRetries: 2, initialDelayMs: 500 }, "Gemini Connection Test");
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+      } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
-        openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "http://localhost:1106/modelfarm/openai";
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || "https://api.openai.com/v1";
       }
 
       let cleanUrl = openAiBaseUrl.replace(/\/+$/, "");
@@ -1618,7 +1618,7 @@ export class ProviderService {
       }
 
       const payload = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama-3-8b-instruct"),
         messages: [{ role: "user", content: testPrompt }],
         max_tokens: 10,
         temperature: 0.1,
@@ -1694,7 +1694,8 @@ export class ProviderService {
 
   public static async listOllamaModels(req: any, res: any): Promise<any> {
   const { customUrl } = req.body;
-  const baseUrl = (customUrl || "http://localhost:11434").replace(/\/+$/, "");
+  const rawUrl = customUrl || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434";
+  const baseUrl = rawUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
   const startTime = Date.now();
   try {
     const response = await fetch(`${baseUrl}/api/tags`, {

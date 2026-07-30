@@ -5,6 +5,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3009
 
+LABEL org.opencontainers.image.source="abide-sovereign-control-plane"
+LABEL org.opencontainers.image.revision="3458a3183d1914799cc16e7e3064cd69f4e27bae"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*

@@ -338,19 +338,19 @@ ${JSON.stringify(blueprint, null, 2)}`;
         }
       });
       generatedCode = response.text || "";
-    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
+    } else if (selectedProvider === "openai" || selectedProvider === "llama" || selectedProvider === "ollama" || selectedProvider === "deepseek" || selectedProvider === "custom") {
       // OpenAI/Ollama compatible endpoint
       let openAiBaseUrl = "https://api.openai.com/v1";
       if (customUrl) {
         openAiBaseUrl = customUrl;
-      } else if (selectedProvider === "llama") {
-        openAiBaseUrl = "http://localhost:11434/v1";
+      } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       }
 
       const activeApiKey = apiKey || (selectedProvider === "openai" ? process.env.OPENAI_API_KEY : "ollama");
-      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct");
+      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama-3-8b-instruct");
 
       const fetchHeaders: any = {
         "Content-Type": "application/json"

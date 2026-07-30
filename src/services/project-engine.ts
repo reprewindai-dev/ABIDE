@@ -263,8 +263,8 @@ export interface ClassificationResult {
   rawText: string;
 }
 
-export async function runOllamaClassification(text: string, model = "qwen2.5:3b"): Promise<ClassificationResult> {
-  const baseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+export async function runOllamaClassification(text: string, model = "llama3.2:latest"): Promise<ClassificationResult> {
+  const baseUrl = process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434";
   const prompt = \`Classify this feedback into one category: BUG_REPORT, FEATURE_REQUEST, GENERAL_FEEDBACK, or SECURITY_ALERT.\\nText: "\${text}"\\nRespond with ONLY the category name.\`;
 
   try {

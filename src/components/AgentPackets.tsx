@@ -432,7 +432,7 @@ ${pkt.files.map(f => `- ${f}`).join("\n")}
 ${pkt.contracts}
 
 #### 5. ALLOWED SYSTEM DEPENDENCIES
-${pkt.dependencies.map(d => `- \`${d}\``).join("\n")}
+${pkt.dependencies.map(d => `- \`${typeof d === 'string' ? d : `${d.name}@${d.version}`}\``).join("\n")}
 
 #### 6. REQUIRED TEST COVERAGE MATRIX
 ${pkt.tests.map(t => `- ${t}`).join("\n")}
@@ -611,8 +611,8 @@ ${pkt.rollbackNotes}
             <div className="space-y-1.5 p-4 border border-[#111] bg-[#0A0A0A]">
               <span className="text-white font-black">5. Allowed Dependencies</span>
               <div className="space-y-1 text-gray-500 font-black text-[10px]">
-                {selectedPacket.dependencies.map((d, i) => (
-                  <div key={i} className="normal-case font-mono block">- {d}</div>
+                {selectedPacket.dependencies.map((d: any, i: number) => (
+                  <div key={i} className="normal-case font-mono block">- {typeof d === 'string' ? d : `${d.name}@${d.version}`}</div>
                 ))}
               </div>
             </div>

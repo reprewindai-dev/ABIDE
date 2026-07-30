@@ -14,11 +14,6 @@ import { PlanIRSchema, CanonicalBlueprintV1Schema } from "./src/core/validation"
 import { compileSekedDirective, normalizeTelemetry, signAgentPacket, verifyAgentPacket, triageBlueprintIntakeV1 } from "./src/compiler/seked";
 import { cacheManager } from "./src/core/cache";
 import { dbConnector, x402Connector, verificationConnector, otelExporter } from "./src/core/connectors";
-import { WigoloResearchAdapter } from "./src/integrations/research/wigolo";
-import { GptResearcherAdapter } from "./src/integrations/research/gpt-researcher";
-import { ResearchProvider } from "./src/integrations/research/types";
-import { createCodeGraphRagAdapter } from "./src/integrations/repository/code-graph-rag";
-import { discoverPiExtensionsConfiguration } from "./src/integrations/agents/pi-extensions";
 import { downgradeFallbackClaims } from "./src/core/fallback-downgrade";
 import { verifyCitation, VerificationStatus } from "./src/core/citationVerifier";
 import { gateMaturityClaim, TechnologyReadiness } from "./src/core/feasibilityGate";
@@ -50,25 +45,6 @@ if (process.env.ENABLE_VNP_AUTH === "true") {
   });
 }
 
-app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
-app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
-app.get("/ready", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
-app.get("/readyz", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
-app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
-app.get("/api/ready", (_req, res) => res.status(200).json({ status: "ready", checks: { process: "ok" } }));
-
-app.get("/api/integrations/status", (_req, res) => {
-  const env = process.env;
-  return res.json({
-    integrations: {
-      wigolo: { configured: Boolean(env.WIGOLO_BASE_URL), verified: false },
-      gptResearcher: { configured: Boolean(env.GPT_RESEARCHER_BASE_URL), verified: false },
-      codeGraphRag: { configured: Boolean(env.CODE_GRAPH_RAG_URL), verified: false },
-      piExtensions: { configured: false, verified: false },
-    },
-    verification: "configuration-only",
-  });
-});
 // Mount ABIDE Universal Portable Workspace Enterprise API (11 Capability Groups)
 app.use("/api/v1", enterpriseRouter);
 app.use("/api/v1/enterprise", enterpriseRouter);
@@ -867,7 +843,7 @@ ${emailToUse}`;
       if (customUrl) {
         openAiBaseUrl = customUrl;
       } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
-        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || "http://localhost:11434/v1";
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
@@ -1865,7 +1841,7 @@ app.post("/api/test-connection", async (req, res) => {
       if (customUrl) {
         openAiBaseUrl = customUrl;
       } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
-        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || "http://localhost:11434/v1";
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       } else if (selectedProvider === "openai") {
@@ -3038,13 +3014,13 @@ ${JSON.stringify(blueprint, null, 2)}`;
       if (customUrl) {
         openAiBaseUrl = customUrl;
       } else if (selectedProvider === "llama" || selectedProvider === "ollama") {
-        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || "http://localhost:11434/v1";
+        openAiBaseUrl = process.env.AI_INTEGRATIONS_OLLAMA_BASE_URL || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434/v1";
       } else if (selectedProvider === "deepseek") {
         openAiBaseUrl = "https://api.deepseek.com/v1";
       }
 
       const activeApiKey = apiKey || (selectedProvider === "openai" ? process.env.OPENAI_API_KEY : "ollama");
-      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct");
+      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama-3-8b-instruct");
 
       const fetchHeaders: any = {
         "Content-Type": "application/json"
@@ -3872,7 +3848,8 @@ app.post("/api/cache/clear", (req, res) => {
 // 7. OLLAMA REAL-TIME LOCAL MODEL DISCOVERY
 app.post("/api/ollama/models", async (req, res) => {
   const { customUrl } = req.body;
-  const baseUrl = (customUrl || "http://localhost:11434").replace(/\/+$/, "");
+  const rawUrl = customUrl || process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434";
+  const baseUrl = rawUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
   const startTime = Date.now();
   try {
     const response = await fetch(`${baseUrl}/api/tags`, {
@@ -4124,4 +4101,3 @@ async function startServer() {
 if (process.env.NODE_ENV !== "test") {
   startServer();
 }
-

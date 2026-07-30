@@ -252,9 +252,9 @@ const providerStore = new Map<string, ProviderConfig>();
 providerStore.set("prov-ollama-local", {
   id: "prov-ollama-local",
   runtime: "ollama",
-  name: "Local Ollama Runtime",
-  baseUrl: "http://localhost:11434",
-  models: ["qwen2.5:3b", "qwen2.5:7b", "llama3:8b", "deepseek-r1:7b"],
+  name: "Hetzner Fleet Ollama Node (167.233.202.195:11434)",
+  baseUrl: process.env.OLLAMA_BASE_URL || "http://167.233.202.195:11434",
+  models: ["llama3.2:latest", "qwen2.5-coder:1.5b", "qwen2.5:3b"],
   status: "ONLINE",
   lastTested: new Date().toISOString(),
   latencyMs: 142

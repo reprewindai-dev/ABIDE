@@ -1793,9 +1793,9 @@ export async function executeCapability(payload: any) {
                           </div>
                           <span className="text-[10px] font-bold text-gray-400 uppercase block pt-2 border-b border-[#222] pb-1">Approved Package Dependencies</span>
                           <div className="flex flex-wrap gap-1.5 pt-1">
-                            {(activeProject.dependencies || ["zod@^3.22.4", "express@^4.18.2", "@types/node@^20.0.0"]).map((dep: string, idx: number) => (
+                            {(activeProject.dependencies || ["zod@^3.22.4", "express@^4.18.2", "@types/node@^20.0.0"]).map((dep: any, idx: number) => (
                               <span key={idx} className="px-2 py-0.5 bg-[#1A1A1A] border border-[#333] text-purple-300 text-[10px]">
-                                {dep}
+                                {typeof dep === 'string' ? dep : `${dep.name}@${dep.version}`}
                               </span>
                             ))}
                           </div>
