@@ -375,6 +375,8 @@ export default function App() {
   const [isQueryingOllama, setIsQueryingOllama] = useState(false);
 
   // UI interaction states
+  const [abideMode, setAbideMode] = useState<"learning" | "auto" | "custom">("auto");
+  const [isDemoMode, setIsDemoMode] = useState(true);
   const [isCompiling, setIsCompiling] = useState(false);
   const [compilationStep, setCompilationStep] = useState(0);
   const [compileError, setCompileError] = useState<string | null>(null);
@@ -1495,6 +1497,7 @@ export default function App() {
   };
 
   const handleCompile = (forceProceed?: boolean | any) => {
+    setIsDemoMode(false);
     const isForced = forceProceed === true;
     if (!notes.trim()) {
       setCompileError("Please enter some messy notes or ideas to compile first.");
@@ -2341,6 +2344,28 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
           </motion.div>
         </section>
 
+        {/* Mode Selector */}
+        <div className="flex gap-4 mb-8 print:hidden">
+          <button 
+            onClick={() => setAbideMode("learning")}
+            className={`flex-1 py-3 px-4 font-bold uppercase tracking-wider text-xs border transition-all ${abideMode === "learning" ? "bg-[#00F0FF] text-black border-[#00F0FF]" : "bg-[#0A0A0A] text-[#666] border-[#222] hover:border-[#00F0FF]/50"}`}
+          >
+            Learning Mode
+          </button>
+          <button 
+            onClick={() => setAbideMode("auto")}
+            className={`flex-1 py-3 px-4 font-bold uppercase tracking-wider text-xs border transition-all ${abideMode === "auto" ? "bg-[#00F0FF] text-black border-[#00F0FF]" : "bg-[#0A0A0A] text-[#666] border-[#222] hover:border-[#00F0FF]/50"}`}
+          >
+            Auto Mode
+          </button>
+          <button 
+            onClick={() => setAbideMode("custom")}
+            className={`flex-1 py-3 px-4 font-bold uppercase tracking-wider text-xs border transition-all ${abideMode === "custom" ? "bg-[#00F0FF] text-black border-[#00F0FF]" : "bg-[#0A0A0A] text-[#666] border-[#222] hover:border-[#00F0FF]/50"}`}
+          >
+            Custom Mode
+          </button>
+        </div>
+
         {/* Input & Compiler Section */}
         <section id="input-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 print:hidden mb-12">
           
@@ -2505,7 +2530,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                   ) : (
                     <>
                       <Play fill="currentColor" size={12} className="text-black" />
-                      <span>Compile Full Blueprint Package</span>
+                      <span>Compile Production Payload</span>
                     </>
                   )}
                 </button>
@@ -2842,23 +2867,25 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                     <div className="p-2 bg-[#00F0FF]/10 border border-[#00F0FF]/40 shrink-0 text-[#00F0FF]">
                       <Zap size={20} className="animate-pulse" />
                     </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2 py-0.5 text-[10px] font-mono font-black bg-[#00F0FF] text-black uppercase tracking-wider">
-                          DEMO PURPOSE ONLY / PREVIEW REFERENCE SAMPLE
-                        </span>
-                        <span className="text-xs font-mono text-cyan-300 font-bold">
-                          Illustrative Pre-Compiled Showcase Blueprint
-                        </span>
+                    {isDemoMode && (
+                      <div className="space-y-1.5 mb-6">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 text-[10px] font-mono font-black bg-[#00F0FF] text-black uppercase tracking-wider">
+                            DEMO PURPOSE ONLY / PREVIEW REFERENCE SAMPLE
+                          </span>
+                          <span className="text-xs font-mono text-cyan-300 font-bold">
+                            Illustrative Pre-Compiled Showcase Blueprint
+                          </span>
+                        </div>
+                        <p className="text-xs font-mono text-neutral-300 leading-relaxed">
+                          This default workspace (featuring Lamport &amp; Nakamoto citation samples, SEKED R-Score triage, and X402 settlement models) is <strong className="text-white underline">literally for demo purposes only</strong>. It is provided so you or a buyer can see what you receive out of this tool when you compile your own architecture.
+                        </p>
+                        <div className="p-2 bg-black/60 border border-cyan-500/30 flex items-center gap-2 text-xs font-mono text-[#00F0FF] font-bold">
+                          <ArrowRight size={14} className="shrink-0" />
+                          <span>When you put in your own messy intent and press 'Compile Production Payload', all this demo stuff is completely gone! It strictly focuses on what you ingested.</span>
+                        </div>
                       </div>
-                      <p className="text-xs font-mono text-neutral-300 leading-relaxed">
-                        This default workspace (featuring Lamport &amp; Nakamoto citation samples, SEKED R-Score triage, and X402 settlement models) is <strong className="text-white underline">literally for demo purposes only</strong>. It is provided so you or a buyer can see what you receive out of this tool when you compile your own architecture.
-                      </p>
-                      <div className="p-2 bg-black/60 border border-cyan-500/30 flex items-center gap-2 text-xs font-mono text-[#00F0FF] font-bold">
-                        <ArrowRight size={14} className="shrink-0" />
-                        <span>When you put in your own messy intent and press 'Abide Generate', all this demo stuff is completely gone! It strictly focuses on what you ingested.</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
