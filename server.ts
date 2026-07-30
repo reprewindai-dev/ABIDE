@@ -4079,6 +4079,27 @@ async function startServer() {
     }
   }
 
+  // Register with cAPI on boot as the secondary edge gateway
+  try {
+    console.log("[Abide] Registering presence and telemetry with cAPI...");
+    await fetch("http://capi-container:3003/api/registry/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        serviceName: "abide-node",
+        internalDomain: "abide.veklom.com",
+        port: 3009,
+        role: "secondary-edge-gateway",
+        capabilities: ["seked", "deterministic-routing", "cryptographic-signature-passing"],
+        status: "active",
+        timestamp: new Date().toISOString()
+      })
+    });
+    console.log("[Abide] Successfully registered with cAPI.");
+  } catch (err) {
+    console.warn("[Abide] Failed to register with cAPI. Ensure capi-container is running.", err);
+  }
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

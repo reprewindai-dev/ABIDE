@@ -62,32 +62,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
       { name: "Sovereign Ledger Throughput", impact: "High positive impact" }
     ]
   },
-  academicGrounding: [
-    {
-      title: "Time, Clocks, and the Ordering of Events in a Distributed System [DEMO REFERENCE SAMPLE]",
-      author: "Leslie Lamport",
-      source: "Communications of the ACM",
-      summary: "[DEMO REFERENCE SAMPLE] This seminal paper introduces the concept of logical clocks and partial ordering of events in a distributed system, resolving synchronization drift without relying on physical wall clocks.",
-      relevance: "Provides the logical clock synchronizer algorithms used to prevent state-drift during multi-agent handoffs.",
-      url: "https://dl.acm.org/doi/10.1145/359545.359563",
-      resolvableIdentifier: "doi:10.1145/359545.359563",
-      retrievalTimestamp: "2026-07-20T00:00:00Z",
-      quotedClaimLocation: "Section 3 (Logical Clocks)",
-      verificationStatus: "VERIFIED"
-    },
-    {
-      title: "Bitcoin: A Peer-to-Peer Electronic Cash System [DEMO REFERENCE SAMPLE]",
-      author: "Satoshi Nakamoto",
-      source: "Cryptology ePrint Archive",
-      summary: "[DEMO REFERENCE SAMPLE] A purely peer-to-peer version of electronic cash that allows online payments to be sent directly from one party to another without going through a financial institution.",
-      relevance: "Establishes the foundational model of trustless transaction ledgers, digital signatures, and double-spend protection.",
-      url: "https://bitcoin.org/bitcoin.pdf",
-      resolvableIdentifier: "urn:doi:10.1000/bitcoin-whitepaper-2008",
-      retrievalTimestamp: "2026-07-20T00:00:00Z",
-      quotedClaimLocation: "Section 2 (Transactions)",
-      verificationStatus: "VERIFIED"
-    }
-  ],
+  academicGrounding: [],
   companyGraph: {
     domains: [
       {

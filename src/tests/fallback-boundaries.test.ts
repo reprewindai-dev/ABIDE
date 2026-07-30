@@ -9,6 +9,20 @@ describe("ABIDE Sovereign Governance: Provenance-Aware Evidence Class & Mode Bou
     // Clone the default blueprint which contains demo claims ("Verified", real names, "Sovereign Production", etc.)
     const inputBlueprint = JSON.parse(JSON.stringify(DEFAULT_BLUEPRINT));
     
+    // Inject a demo reference to test the downgrade since DEFAULT_BLUEPRINT is now empty of demo records
+    inputBlueprint.academicGrounding = [{
+      title: "Demo Citation",
+      author: "Demo Author",
+      source: "Demo Source",
+      summary: "Demo Summary",
+      relevance: "Demo Relevance",
+      url: "https://demo.url",
+      resolvableIdentifier: "demo:123",
+      retrievalTimestamp: "2026-07-20T00:00:00Z",
+      quotedClaimLocation: "Demo Section",
+      verificationStatus: "VERIFIED"
+    }];
+    
     // Verify initial demo state has production/verified claims
     assert.strictEqual(inputBlueprint.capabilities[0].verificationState, "Verified");
     assert.strictEqual(inputBlueprint.capabilities[0].maturityState, "Sovereign Production");
@@ -25,7 +39,7 @@ describe("ABIDE Sovereign Governance: Provenance-Aware Evidence Class & Mode Bou
 
     // 2. Academic grounding demo citation downgrade
     assert.ok(result.academicGrounding.length > 0);
-    result.academicGrounding.forEach((paper) => {
+    result.academicGrounding.forEach((paper: any) => {
       assert.strictEqual(paper.verificationStatus, "NOT_VERIFIED", "Academic citations must not claim verified status in fallback proposals");
       assert.ok(paper.summary.includes("Offline proposal reference"), "Summary must note offline proposal reference");
       assert.strictEqual(paper.evidence_state, "DEMO_REFERENCE", "Demo citations must be marked DEMO_REFERENCE");
@@ -106,15 +120,25 @@ describe("ABIDE Sovereign Governance: Provenance-Aware Evidence Class & Mode Bou
       retrieved_at: "2026-07-25T10:00:00Z",
       claim_validation_state: "NOT_VALIDATED"
     };
+    
+    // Add dummy demo citation
+    const dummyDemoPaper = {
+      title: "Time, Clocks [DEMO]",
+      author: "Leslie Lamport",
+      source: "CACM",
+      summary: "Demo",
+      resolvableIdentifier: "demo:lamport",
+      verificationStatus: "VERIFIED"
+    };
 
-    inputBlueprint.academicGrounding.push(realOpenAlexPaper as any, retrievedArxivPaper as any);
+    inputBlueprint.academicGrounding.push(realOpenAlexPaper as any, retrievedArxivPaper as any, dummyDemoPaper as any);
 
     const result = downgradeFallbackClaims(inputBlueprint);
 
     // Find our papers in result
-    const openAlexRes = result.academicGrounding.find((p) => p.resolvableIdentifier === "doi:10.1038/s41586-021-03819-2");
-    const arxivRes = result.academicGrounding.find((p) => p.resolvableIdentifier === "arxiv:2301.12345");
-    const demoRes = result.academicGrounding[0]; // From DEFAULT_BLUEPRINT
+    const openAlexRes = result.academicGrounding.find((p: any) => p.resolvableIdentifier === "doi:10.1038/s41586-021-03819-2");
+    const arxivRes = result.academicGrounding.find((p: any) => p.resolvableIdentifier === "arxiv:2301.12345");
+    const demoRes = result.academicGrounding.find((p: any) => p.resolvableIdentifier === "demo:lamport");
 
     // Assert real OpenAlex paper survives
     assert.ok(openAlexRes, "Real OpenAlex paper must survive fallback downgrade");

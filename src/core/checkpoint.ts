@@ -1,9 +1,6 @@
-import fs from "fs";
-import path from "path";
 import crypto from "crypto";
 import { CheckpointSchema } from "./validation";
-
-const DB_PATH = path.join(process.cwd(), "checkpoints_db.json");
+import { Pool } from "pg";
 
 export interface Checkpoint {
   checkpointId: string;
@@ -18,39 +15,31 @@ export interface Checkpoint {
   timestamp: string;
 }
 
-/**
- * Loads all checkpoints from durable disk storage.
- */
-export function loadAllCheckpoints(): Checkpoint[] {
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS abide_checkpoints (
+    checkpointId VARCHAR(255) PRIMARY KEY,
+    checkpoint JSONB NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`).catch(err => console.error("[PG Checkpoint] Failed to initialize table:", err.message));
+
+
+export async function loadAllCheckpoints(): Promise<Checkpoint[]> {
+  if (!process.env.DATABASE_URL) return [];
   try {
-    if (!fs.existsSync(DB_PATH)) {
-      return [];
-    }
-    const data = fs.readFileSync(DB_PATH, "utf8");
-    const list = JSON.parse(data);
-    if (!Array.isArray(list)) return [];
-    return list;
-  } catch (err) {
-    console.error("Failed to load checkpoints from disk:", err);
+    const res = await pool.query("SELECT checkpoint FROM abide_checkpoints ORDER BY timestamp ASC");
+    return res.rows.map(r => r.checkpoint as Checkpoint);
+  } catch (err: any) {
+    console.error("[PG Checkpoint] Failed to load checkpoints:", err.message);
     return [];
   }
 }
 
-/**
- * Saves a list of checkpoints to durable disk storage.
- */
-function saveAllCheckpoints(checkpoints: Checkpoint[]): void {
-  try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(checkpoints, null, 2), "utf8");
-  } catch (err) {
-    console.error("Failed to save checkpoints to disk:", err);
-  }
-}
-
-/**
- * Validates and records a new checkpoint.
- */
-export function createCheckpoint(input: Omit<Checkpoint, "checkpointId" | "timestamp">): Checkpoint {
+export async function createCheckpoint(input: Omit<Checkpoint, "checkpointId" | "timestamp">): Promise<Checkpoint> {
   const checkpointId = "chk-" + crypto.randomBytes(8).toString("hex");
   const timestamp = new Date().toISOString();
   
@@ -60,23 +49,34 @@ export function createCheckpoint(input: Omit<Checkpoint, "checkpointId" | "times
     ...input
   };
 
-  // Zod structural & type validation
   const parsed = CheckpointSchema.safeParse(checkpoint);
   if (!parsed.success) {
     throw new Error(`Checkpoint validation failed: ${parsed.error.issues.map(e => e.path.join(".") + ": " + e.message).join(", ")}`);
   }
 
-  const checkpoints = loadAllCheckpoints();
-  checkpoints.push(checkpoint);
-  saveAllCheckpoints(checkpoints);
+  if (process.env.DATABASE_URL) {
+    try {
+      await pool.query(
+        "INSERT INTO abide_checkpoints (checkpointId, checkpoint, timestamp) VALUES ($1, $2, NOW())",
+        [checkpointId, JSON.stringify(checkpoint)]
+      );
+    } catch (err: any) {
+      console.error("[PG Checkpoint] Failed to save checkpoint:", err.message);
+    }
+  } else {
+    throw new Error("CAPPO HALT - DATABASE_URL is required for checkpoint persistence.");
+  }
 
   return checkpoint;
 }
 
-/**
- * Retrieves a single checkpoint by its unique ID.
- */
-export function getCheckpoint(checkpointId: string): Checkpoint | null {
-  const checkpoints = loadAllCheckpoints();
-  return checkpoints.find(c => c.checkpointId === checkpointId) || null;
+export async function getCheckpoint(checkpointId: string): Promise<Checkpoint | null> {
+  if (!process.env.DATABASE_URL) return null;
+  try {
+    const res = await pool.query("SELECT checkpoint FROM abide_checkpoints WHERE checkpointId = $1", [checkpointId]);
+    if (res.rows.length > 0) return res.rows[0].checkpoint as Checkpoint;
+  } catch (err: any) {
+    console.error("[PG Checkpoint] Failed to get checkpoint:", err.message);
+  }
+  return null;
 }

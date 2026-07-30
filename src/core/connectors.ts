@@ -4,6 +4,7 @@ import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { solveZ3InvariantsWrapper } from "./verification";
+import { Pool } from "pg";
 
 const execAsync = promisify(exec);
 
@@ -31,69 +32,70 @@ export interface OpenTelemetryExporter {
   exportSpan(spanName: string, attributes: Record<string, any>): Promise<void>;
 }
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS abide_blueprints (
+    id VARCHAR(255) PRIMARY KEY,
+    blueprint JSONB NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`).catch(err => console.error("[PG Connector] Failed to initialize table:", err.message));
+
+
 /**
  * Real-world pluggable database connector.
- * If process.env.DATABASE_URL (PostgreSQL) is set, wire your Drizzle/ORM queries below.
- * Otherwise, falls back to local memory (non-persistent — resets on restart).
- * NOTE: no Firebase/Firestore path here on purpose — this stack's locked decision is
- * no Firebase and no external CDNs anywhere (Hetzner/Coolify for Canadian data sovereignty).
+ * Strict PostgreSQL usage via DATABASE_URL. JSON fallback has been explicitly purged.
  */
 export class RealWorldDBConnector implements DBConnector {
-  private memoryStore = new Map<string, any>();
-  private storagePath = path.resolve(process.cwd(), "abide-db-store.json");
-
-  constructor() {
-    this.loadFromDisk();
-  }
-
-  private loadFromDisk(): void {
-    try {
-      if (fs.existsSync(this.storagePath)) {
-        const raw = fs.readFileSync(this.storagePath, "utf-8");
-        const obj = JSON.parse(raw);
-        for (const [key, val] of Object.entries(obj)) {
-          this.memoryStore.set(key, val);
-        }
-      }
-    } catch (err: any) {
-      console.warn("[DB Connector] Could not load disk store:", err.message);
-    }
-  }
-
-  private saveToDisk(): void {
-    try {
-      const obj: Record<string, any> = {};
-      for (const [key, val] of this.memoryStore.entries()) {
-        obj[key] = val;
-      }
-      fs.writeFileSync(this.storagePath, JSON.stringify(obj, null, 2), "utf-8");
-    } catch (err: any) {
-      console.warn("[DB Connector] Could not persist disk store:", err.message);
-    }
-  }
-
   async saveBlueprint(id: string, blueprint: any): Promise<void> {
-    // Relational/PostgreSQL Drizzle Ingress Hook
-    if (process.env.DATABASE_URL) {
-      try {
-        console.log(`[DB Connector] DATABASE_URL is set — writing to PostgreSQL ORM and filesystem sync.`);
-      } catch (err: any) {
-        console.warn("[DB Connector] PostgreSQL save failed:", err.message);
-      }
+    if (!process.env.DATABASE_URL) {
+      throw new Error("CAPPO HALT - DATABASE_URL is required for strict persistence. JSON fallbacks are forbidden.");
     }
-
-    this.memoryStore.set(id, blueprint);
-    this.saveToDisk();
+    
+    try {
+      await pool.query(
+        `INSERT INTO abide_blueprints (id, blueprint, updated_at) 
+         VALUES ($1, $2, NOW()) 
+         ON CONFLICT (id) DO UPDATE SET blueprint = EXCLUDED.blueprint, updated_at = NOW();`,
+        [id, JSON.stringify(blueprint)]
+      );
+      console.log(`[DB Connector] Successfully persisted blueprint ${id} to PostgreSQL.`);
+    } catch (err: any) {
+      throw new Error(`[DB Connector] PostgreSQL save failed: ${err.message}`);
+    }
   }
 
   async getBlueprint(id: string): Promise<any | null> {
-    return this.memoryStore.get(id) || null;
+    if (!process.env.DATABASE_URL) return null;
+    try {
+      const res = await pool.query(
+        `SELECT blueprint FROM abide_blueprints WHERE id = $1;`,
+        [id]
+      );
+      if (res.rows.length > 0) {
+        return res.rows[0].blueprint;
+      }
+    } catch (err: any) {
+      console.error("[DB Connector] PostgreSQL fetch failed:", err.message);
+    }
+    return null;
   }
 
   async deleteBlueprint(id: string): Promise<boolean> {
-    const res = this.memoryStore.delete(id);
-    this.saveToDisk();
-    return res;
+    if (!process.env.DATABASE_URL) return false;
+    try {
+      const res = await pool.query(
+        `DELETE FROM abide_blueprints WHERE id = $1 RETURNING id;`,
+        [id]
+      );
+      return res.rowCount !== null && res.rowCount > 0;
+    } catch (err: any) {
+      console.error("[DB Connector] PostgreSQL delete failed:", err.message);
+      return false;
+    }
   }
 }
 
