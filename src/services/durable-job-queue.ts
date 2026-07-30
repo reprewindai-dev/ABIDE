@@ -59,7 +59,10 @@ export class DurableJobQueueService {
   
   // In-memory & filesystem durable storage for standalone / fallback mode
   private static fallbackJobs = new Map<string, DurableJobRecord>();
-  private static storagePath = path.join(process.cwd(), ".abide", "durable-jobs.json");
+  private static storagePath = path.join(
+    process.env.ABIDE_STORAGE_DIR || "/tmp/.abide",
+    "durable-jobs.json"
+  );
   private static processors = new Map<string, JobProcessor>();
   private static isProcessingFallback = false;
 
