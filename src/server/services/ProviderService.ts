@@ -6,8 +6,30 @@ import { triageBlueprintIntakeV1 } from "../../compiler/seked";
 import { cacheManager } from "../../core/cache";
 import { downgradeFallbackClaims } from "../../core/fallback-downgrade";
 
-export function calculateCanonicalHash(blueprint: any, intent?: string, compilerVersion = "v4.02"): string {
-  return calculateBlueprintHash(blueprint);
+export function calculateCanonicalHash(
+  blueprint: unknown,
+  intent = "",
+  compilerVersion = "v4.02"
+): string {
+  const blueprintHash = calculateBlueprintHash(blueprint);
+
+  const intentHash = crypto
+    .createHash("sha256")
+    .update(intent.normalize("NFC"), "utf8")
+    .digest("hex");
+
+  return crypto
+    .createHash("sha256")
+    .update(
+      JSON.stringify({
+        schema: "veklom.abide.canonical-hash.v1",
+        blueprintHash,
+        intentHash,
+        compilerVersion,
+      }),
+      "utf8",
+    )
+    .digest("hex");
 }
 
 export interface RetryOptions {
@@ -1204,11 +1226,13 @@ CRITICAL STRUCTURAL OUTPUT CONSTRAINTS:
 3. The companyGraph MUST be populated with valid nodes (domains, products, canonicalSystems, repositories, environments, owners, revenueStreams, policies, externalProviders).
 4. Each capability MUST contain a fully populated governance block (budgetRules, requiredApprovals, etc.) and pricingModel block (billingUnit, priceFloor, etc. where pricing contains at least 2 line items or parameters).
 5. DO NOT output any introductory text, explanatory notes, markdown formatting, code fences or wrappers outside the raw JSON object itself. Respond with ONLY the pure, valid JSON object.
+6. DATA BREACH COST GUARDRAILS: Every generated capability must enforce absolute financial guardrails against data breaches. The 'governance' block MUST contain strict liability caps, data-spillage insurance limits, and breach containment thresholds to ensure financial continuity in the event of compromised execution.
 
 Below is the exact JSON Schema that your output MUST match:
 ${JSON.stringify(blueprintJsonSchema, null, 2)}
 
-Make sure your output is mathematically rigorous, fully detailed, and matches this schema letter for letter. Do not include placeholders like "..." or list items without completing them.`;
+Make sure your output is mathematically rigorous, fully detailed, and matches this schema letter for letter. Do not include placeholders like "..." or list items without completing them.
+IMPORTANT INSTRUCTION: YOU MUST RETURN ONLY RAW JSON. NO CONVERSATIONAL TEXT. NO MARKDOWN FENCES. YOUR RESPONSE MUST START EXACTLY WITH { AND END EXACTLY WITH }.`;
 
     const userPrompt = `Messy notes/intent:
 ${notes}
@@ -1323,7 +1347,7 @@ ${emailToUse}`;
       };
 
       // Only pass JSON response format if using a provider known to support it natively
-      if (selectedProvider === "openai" || selectedProvider === "deepseek") {
+      if (selectedProvider === "openai" || selectedProvider === "deepseek" || selectedProvider === "ollama" || selectedProvider === "llama") {
         payload.response_format = { type: "json_object" };
       }
 
@@ -1498,31 +1522,9 @@ ${emailToUse}`;
     if (updateProgress) await updateProgress(100, "Blueprint compilation complete");
     return parsedData;
   } catch (error: any) {
-    console.warn("Gemini API Error or Quota Exhaustion, generating local fallback blueprint:", error);
-    try {
-      const latencyMs = Date.now() - startTime;
-      const fallbackBlueprint = generateFallbackBlueprint(
-        notes,
-        targetPlatform,
-        userEmail,
-        selectedJurisdiction,
-        constitutionVersion,
-        constitutionState
-      );
-      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "gemini-3.5-flash", jurisdictionProfileName, latencyMs);
-      fallbackBlueprint.cacheStatus = {
-        hit: false,
-        key: cacheKey,
-        type: "MEMORY",
-        latencyMs,
-        isFallback: true
-      };
-      if (updateProgress) await updateProgress(100, "Fallback blueprint generated");
-      return fallbackBlueprint;
-    } catch (fallbackErr: any) {
-      console.error("Local compilation fallback failed:", fallbackErr);
-      throw new Error("Compilation failed: " + (error.message || "Internal Server Error"));
-    }
+    console.error("Blueprint compilation failed:", error);
+    if (updateProgress) await updateProgress(100, `Generation Failed: ${error.message || String(error)}`);
+    throw new Error("Compilation failed: " + (error.message || "Internal Server Error"));
   }
 }
 

@@ -891,7 +891,7 @@ ${emailToUse}`;
       };
 
       // Only pass JSON response format if using a provider known to support it natively
-      if (selectedProvider === "openai" || selectedProvider === "deepseek") {
+      if (selectedProvider === "openai" || selectedProvider === "deepseek" || selectedProvider === "llama" || selectedProvider === "ollama") {
         payload.response_format = { type: "json_object" };
       }
 
@@ -1060,31 +1060,9 @@ ${emailToUse}`;
     if (updateProgress) await updateProgress(100, "Blueprint compilation complete");
     return parsedData;
   } catch (error: any) {
-    console.warn("Gemini API Error or Quota Exhaustion, generating local fallback blueprint:", error);
-    try {
-      const latencyMs = Date.now() - startTime;
-      const fallbackBlueprint = generateFallbackBlueprint(
-        notes,
-        targetPlatform,
-        userEmail,
-        selectedJurisdiction,
-        constitutionVersion,
-        constitutionState
-      );
-      cacheManager.set(cacheKey, fallbackBlueprint, modelName || "gemini-3.5-flash", jurisdictionProfileName, latencyMs);
-      fallbackBlueprint.cacheStatus = {
-        hit: false,
-        key: cacheKey,
-        type: "MEMORY",
-        latencyMs,
-        isFallback: true
-      };
-      if (updateProgress) await updateProgress(100, "Fallback blueprint generated");
-      return fallbackBlueprint;
-    } catch (fallbackErr: any) {
-      console.error("Local compilation fallback failed:", fallbackErr);
-      throw new Error("Compilation failed: " + (error.message || "Internal Server Error"));
-    }
+    console.error("Blueprint generation or parsing failed:", error);
+    if (updateProgress) await updateProgress(100, `Generation Failed: ${error.message || String(error)}`);
+    throw error;
   }
 }
 
