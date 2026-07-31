@@ -882,7 +882,7 @@ ${emailToUse}`;
 
       // Build payload
       const payload: any = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama3.2:latest"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -1872,7 +1872,7 @@ app.post("/api/test-connection", async (req, res) => {
       }
 
       const payload = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama-3-8b-instruct"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama3.2:latest"),
         messages: [{ role: "user", content: testPrompt }],
         max_tokens: 10,
         temperature: 0.1,
@@ -1932,7 +1932,7 @@ app.post("/api/test-connection", async (req, res) => {
     console.error("Connection test error:", error);
     let errorMsg = error.message || "Connection test failed.";
     if (errorMsg.includes("11434") || errorMsg.includes("ECONNREFUSED") || (error.cause && error.cause.toString().includes("11434"))) {
-      errorMsg = "Ollama (Llama) at localhost:11434 is unreachable from our secure cloud sandbox. To connect your local LLM, please expose it via a secure tunnel (like Ngrok or localtunnel) and provide the public URL in Custom URL, or use our server-side Gemini API instead!";
+      errorMsg = `AI Engine connection failed: ${errorMsg}. Please ensure the server (167.233.202.195) is reachable and the model is pulled.`;
     }
     return res.status(200).json({
       success: false,
@@ -3020,7 +3020,7 @@ ${JSON.stringify(blueprint, null, 2)}`;
       }
 
       const activeApiKey = apiKey || (selectedProvider === "openai" ? process.env.OPENAI_API_KEY : "ollama");
-      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama-3-8b-instruct");
+      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama3.2:latest");
 
       const fetchHeaders: any = {
         "Content-Type": "application/json"
