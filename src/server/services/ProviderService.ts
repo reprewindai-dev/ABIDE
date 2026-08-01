@@ -173,7 +173,7 @@ export function generateFallbackBlueprint(
 
   const lowercaseNotes = notes.toLowerCase();
   
-  if (lowercaseNotes.includes("scooter") || lowercaseNotes.includes("fleet") || lowercaseNotes.includes("charging") || lowercaseNotes.includes("solar")) {
+  if (false) { // DISABLED M2M SCOOTER DEMO MODE
     title = "Sovereign M2M Scooter Fleet";
     tagline = "Electric micro-mobility units with automated solar re-charging via X402 payment settlements";
     
