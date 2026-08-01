@@ -4060,7 +4060,8 @@ async function startServer() {
   // Register with cAPI on boot as the secondary edge gateway
   try {
     console.log("[Abide] Registering presence and telemetry with cAPI...");
-    await fetch("http://capi-container:3003/api/registry/register", {
+    const capiUrl = process.env.CAPI_INTERNAL_URL || "http://capi-container:3003";
+    await fetch(`${capiUrl}/api/registry/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
