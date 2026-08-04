@@ -26,7 +26,9 @@ export function getPool(): Pool {
   if (!pool) {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      options: "-c search_path=abide"
+      // Keep ABIDE-owned objects first while allowing types/extensions such as
+      // pgvector, which are commonly installed in the public schema, to resolve.
+      options: "-c search_path=abide,public"
     });
   }
   return pool;
