@@ -882,7 +882,7 @@ ${emailToUse}`;
 
       // Build payload
       const payload: any = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama3.2:latest"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? (openAiBaseUrl.includes("11434") || openAiBaseUrl.includes("167.233.202.195") ? "llama3.2:1b" : "gpt-4o") : "llama3.2:latest"),
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -1850,7 +1850,7 @@ app.post("/api/test-connection", async (req, res) => {
       }
 
       const payload = {
-        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : "llama3.2:latest"),
+        model: modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? (openAiBaseUrl.includes("11434") || openAiBaseUrl.includes("167.233.202.195") ? "llama3.2:1b" : "gpt-4o") : "llama3.2:latest"),
         messages: [{ role: "user", content: testPrompt }],
         max_tokens: 10,
         temperature: 0.1,
@@ -2998,7 +2998,7 @@ ${JSON.stringify(blueprint, null, 2)}`;
       }
 
       const activeApiKey = apiKey || (selectedProvider === "openai" ? process.env.OPENAI_API_KEY : "ollama");
-      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? "gpt-4o" : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama3.2:latest");
+      const model = modelName || (selectedProvider === "deepseek" ? "deepseek-chat" : selectedProvider === "openai" ? (openAiBaseUrl && (openAiBaseUrl.includes("11434") || openAiBaseUrl.includes("167.233.202.195")) ? "llama3.2:1b" : "gpt-4o") : (selectedProvider === "llama" || selectedProvider === "ollama") ? "llama3.2:latest" : "llama3.2:latest");
 
       const fetchHeaders: any = {
         "Content-Type": "application/json"
