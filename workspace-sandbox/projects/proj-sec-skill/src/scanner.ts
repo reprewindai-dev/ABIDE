@@ -1,1 +1,0 @@
-export function scanForSecrets(code: string): string[] { const findings = []; if (code.includes("sk_live_")) findings.push("Exposed Stripe live secret"); return findings; }

@@ -1,1 +1,0 @@
-export function classifySentiment(text: string) { return text.includes("love") ? "POSITIVE" : "NEUTRAL"; }

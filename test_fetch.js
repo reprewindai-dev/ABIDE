@@ -1,0 +1,1 @@
+const payload = { model: 'llama3.2:1b', messages: [{role: 'user', content: 'A'.repeat(200000)}] }; fetch('http://167.233.202.195:11434/v1/chat/completions', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }).then(async r => { console.log(r.status); console.log(await r.text()); }).catch(e => console.error(e));
