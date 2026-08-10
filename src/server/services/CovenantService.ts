@@ -82,7 +82,7 @@ function generateLocalFallbackTestSuite(specName: string, framework: string, blu
  * Veklom Canonical Architecture (v2.0) Target Alignment Tests
  * Component Under Test: ${specName}
  * Compiled Blueprint: ${blueprint.title || "Sovereign Platform"}
- * Verified state: CONVERGED_SOVEREIGN_PRODUCTION
+ * Evidence state: NOT_VERIFIED
  */
 
 ${importsHeader}
@@ -206,64 +206,26 @@ export class CovenantService {
   }
 
   public static async simulateZkFlow(req: any, res: any): Promise<any> {
-  try {
-    const { agentId = "agent-autonomous-zk-alpha", proofType = "GROTH16", hrmIterations = 8, riskScore = 0.012 } = req.body;
-    
-    // Simulate real edge WebAssembly/Rust Groth16 proof generation
-    const sampleProof = {
-      pi_a: ["0x2cb9a48f7129532a", "0x19a8b7c6d5e4f3a2", "0x01"],
-      pi_b: [["0x1f2e3d4c5b6a7988", "0x9a8b7c6d5e4f3a2b"], ["0x8273645546372819", "0x91807f6e5d4c3b2a"], ["0x01", "0x00"]],
-      pi_c: ["0x8877665544332211", "0xaabbccddeeff0011", "0x01"],
-      protocol: "groth16",
-      curve: "bn254" as const
-    };
-
-    const request: ZkAttestationRequest = {
-      proofType: proofType as any,
-      proof: sampleProof,
-      publicSignals: ["0x9fa8b7c6d5e4f3a2", "0x1000", "0x01"],
-      agentId,
-      targetPlanId: "PLAN-SOVEREIGN-ENCLAVE-8002",
-      intentClaim: {
-        taskExecuted: "HRM_REASONING_TRACE_CONVERGED",
-        rulesAdhered: ["LAW_0_SAFETY_INVARIANT", "CAPPO_CONSENSUS_AUTHORIZATION", "X402_SOLVENCY_CHECK"],
-        minBalanceVerified: 10000.00,
-        riskScore,
-        hrmIterations
-      }
-    };
-
-    const zkResult = await executeZkAttestationPipeline(request);
-
-    // Simulate Einstein Predictor Router routing
-    const einsteinLog = `[Einstein Predictor Router: Heuristic score 0.9982 (Jitter <12ms, SLO 99.99%) -> Routed to Enclave 'seattle-edge-alpha']`;
-
-    res.json({
-      ...zkResult,
-      einsteinLog,
-      fullConsoleOutput: [
-        ...zkResult.attestationTrace.slice(0, 3),
-        einsteinLog,
-        ...zkResult.attestationTrace.slice(3)
-      ]
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "ZK Flow simulation failure" });
-  }
-
+  res.status(501).json({
+    success: false,
+    status: "NOT_IMPLEMENTED",
+    evidenceState: "DEMO",
+    error: "Synthetic ZK flow generation is disabled."
+  });
   }
 
   public static async getZkStatus(req: any, res: any): Promise<any> {
   res.json({
-    gatewayStatus: "ACTIVE",
-    supportedCurves: ["BN254", "BLS12-381"],
-    supportedProtocols: ["GROTH16", "PLONK", "STARK", "EZKL", "ZKLLVM"],
-    z3SolverLatency: "< 5ms (In-Memory / Native Z3 Bridge)",
+    gatewayStatus: "EXPERIMENTAL_STRUCTURE_VALIDATION",
+    evidenceState: "UNVERIFIED",
+    declaredCurves: ["BN254", "BLS12-381"],
+    declaredProtocols: ["GROTH16", "PLONK", "STARK", "EZKL", "ZKLLVM"],
+    solverLatencyMs: null,
     meshBackends: [
-      { id: "cappo", name: "CAPPO Core Authorization Backend", port: 8082, status: "ONLINE" },
-      { id: "delyn", name: "DELYN Sovereign Intelligence Backend", port: 8085, status: "ONLINE" },
-      { id: "cipher", name: "LOCK THE CIPHER Cryptographic Engine", port: 8086, status: "ONLINE" },
-      { id: "gnomeledger", name: "GENOME LEDGER (PGL) Receipts Store", port: 8083, status: "ONLINE" }
+      { id: "cappo", name: "CAPPO Core Authorization Backend", port: 8082, status: "UNVERIFIED_OR_MISSING" },
+      { id: "delyn", name: "DELYN Sovereign Intelligence Backend", port: 8085, status: "UNVERIFIED_OR_MISSING" },
+      { id: "cipher", name: "LOCK THE CIPHER Cryptographic Engine", port: 8086, status: "UNVERIFIED_OR_MISSING" },
+      { id: "gnomeledger", name: "GENOME LEDGER (PGL) Receipts Store", port: 8083, status: "UNVERIFIED_OR_MISSING" }
     ],
     timestamp: new Date().toISOString()
   });

@@ -2060,9 +2060,8 @@ app.get("/api/backends/status", async (req, res) => {
       name: "DELYN Sovereign Intelligence Backend",
       role: "Sovereign Cognitive Reasoning & Neurosymbolic Engine",
       owner: "reprewindai-dev/delyn-backend",
-      // CANONICAL — replaced from http://localhost:8085
       url: delynUrl || process.env.DELYN_URL || "https://delyn.veklom.com",
-      status: "Configured",
+      status: "UNVERIFIED_OR_MISSING",
       latencyMs: null,
       error: null,
       capabilities: ["cognitive.reasoning.trace", "neurosymbolic.eval", "agent.skill.synthesize"]
@@ -2115,12 +2114,12 @@ app.get("/api/backends/status", async (req, res) => {
       capabilities: ["intent.compile", "graph.synthesize", "smt.bound.verify"]
     },
     {
-      id: "interlink-capi",
-      name: "interlink-cAPI (Unified MCP & API Asset)",
-      role: "Discovery, Negotiation & Composition Supergraph Router",
-      owner: "reprewindai-dev/interlink-cAPI",
-      url: process.env.INTERLINK_CAPI_URL || "https://capi.veklom.com",
-      status: "Configured",
+      id: "capi",
+      name: "cAPI (Canonical Interlink)",
+      role: "Canonical discovery, negotiation & composition layer",
+      owner: "reprewindai-dev/cAPI",
+      url: process.env.CAPI_URL || "https://capi.veklom.com",
+      status: "UNVERIFIED_OR_MISSING",
       latencyMs: null,
       error: null,
       capabilities: ["capability.discover", "mcp.tool.route", "snapshot.verify"]
@@ -2180,32 +2179,12 @@ app.get("/api/backends/status", async (req, res) => {
 
 // POST to verify deep sync & trigger test execution checks
 app.post("/api/backends/verify-sync", async (req, res) => {
-  const { byosUrl, cappoUrl, gnomeledgerUrl, vnpUrl, connectionId, connectionVersion } = req.body;
-
-  const logs: string[] = [];
-  logs.push(`[SYS_INIT] Initiating 100% true backend-to-backend alignment checks for Connection ${connectionId || "default-conn"} v${connectionVersion || "1.0.0"}`);
-
-  let isSyncOk = true;
-
-  // Let's do virtual handshake verification
-  logs.push(`[BYOS] Reading TrustConnection metadata schema validation... OK`);
-  logs.push(`[BYOS] Verifying PostgreSQL RLS session bypass blocks... Verified. Standard clients locked.`);
-  
-  logs.push(`[CAPPO] Resolving LAW 0 authority boundary... Checked.`);
-  logs.push(`[CAPPO] Inspecting ExecutionIdentity token seal key... Verified.`);
-
-  logs.push(`[GNOMELEDGER] Verification post-execution pre-commit pipeline audit... Connected.`);
-  logs.push(`[VNP] Telemetry node registry heartbeats status query: Hillsboro [Ready], Falkenstein [Ready], Singapore [Ready].`);
-
-  // Random simulation latency
-  const totalLatency = Math.floor(Math.random() * 45) + 12; // 12-57ms
-
   return res.json({
-    success: true,
-    isSyncOk,
-    totalLatencyMs: totalLatency,
-    logs,
-    systemState: "CONVERGED_SOVEREIGN_PRODUCTION",
+    success: false,
+    isSyncOk: false,
+    logs: [],
+    systemState: "NOT_VERIFIED",
+    reason: "No backend synchronization probe is implemented by this endpoint.",
     timestamp: new Date().toISOString()
   });
 });
@@ -2229,63 +2208,26 @@ app.post("/api/zk/verify-proof", async (req, res) => {
 });
 
 app.post("/api/zk/simulate-flow", async (req, res) => {
-  try {
-    const { agentId = "agent-autonomous-zk-alpha", proofType = "GROTH16", hrmIterations = 8, riskScore = 0.012 } = req.body;
-    
-    // Simulate real edge WebAssembly/Rust Groth16 proof generation
-    const sampleProof = {
-      pi_a: ["0x2cb9a48f7129532a", "0x19a8b7c6d5e4f3a2", "0x01"],
-      pi_b: [["0x1f2e3d4c5b6a7988", "0x9a8b7c6d5e4f3a2b"], ["0x8273645546372819", "0x91807f6e5d4c3b2a"], ["0x01", "0x00"]],
-      pi_c: ["0x8877665544332211", "0xaabbccddeeff0011", "0x01"],
-      protocol: "groth16",
-      curve: "bn254" as const
-    };
-
-    const request: ZkAttestationRequest = {
-      proofType: proofType as any,
-      proof: sampleProof,
-      publicSignals: ["0x9fa8b7c6d5e4f3a2", "0x1000", "0x01"],
-      agentId,
-      targetPlanId: "PLAN-SOVEREIGN-ENCLAVE-8002",
-      intentClaim: {
-        taskExecuted: "HRM_REASONING_TRACE_CONVERGED",
-        rulesAdhered: ["LAW_0_SAFETY_INVARIANT", "CAPPO_CONSENSUS_AUTHORIZATION", "X402_SOLVENCY_CHECK"],
-        minBalanceVerified: 10000.00,
-        riskScore,
-        hrmIterations
-      }
-    };
-
-    const zkResult = await executeZkAttestationPipeline(request);
-
-    // Simulate Einstein Predictor Router routing
-    const einsteinLog = `[Einstein Predictor Router: Heuristic score 0.9982 (Jitter <12ms, SLO 99.99%) -> Routed to Enclave 'seattle-edge-alpha']`;
-
-    res.json({
-      ...zkResult,
-      einsteinLog,
-      fullConsoleOutput: [
-        ...zkResult.attestationTrace.slice(0, 3),
-        einsteinLog,
-        ...zkResult.attestationTrace.slice(3)
-      ]
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "ZK Flow simulation failure" });
-  }
+  res.status(501).json({
+    success: false,
+    status: "NOT_IMPLEMENTED",
+    evidenceState: "DEMO",
+    error: "Synthetic ZK flow generation is disabled; submit a real proof to /api/zk/verify-proof."
+  });
 });
 
 app.get("/api/zk/status", (req, res) => {
   res.json({
-    gatewayStatus: "ACTIVE",
-    supportedCurves: ["BN254", "BLS12-381"],
-    supportedProtocols: ["GROTH16", "PLONK", "STARK", "EZKL", "ZKLLVM"],
-    z3SolverLatency: "< 5ms (In-Memory / Native Z3 Bridge)",
+    gatewayStatus: "EXPERIMENTAL_STRUCTURE_VALIDATION",
+    evidenceState: "UNVERIFIED",
+    declaredCurves: ["BN254", "BLS12-381"],
+    declaredProtocols: ["GROTH16", "PLONK", "STARK", "EZKL", "ZKLLVM"],
+    solverLatencyMs: null,
     meshBackends: [
-      { id: "cappo", name: "CAPPO Core Authorization Backend", port: 8082, status: "ONLINE" },
-      { id: "delyn", name: "DELYN Sovereign Intelligence Backend", port: 8085, status: "ONLINE" },
-      { id: "cipher", name: "LOCK THE CIPHER Cryptographic Engine", port: 8086, status: "ONLINE" },
-      { id: "gnomeledger", name: "GENOME LEDGER (PGL) Receipts Store", port: 8083, status: "ONLINE" }
+      { id: "cappo", name: "CAPPO Core Authorization Backend", port: 8082, status: "UNVERIFIED_OR_MISSING" },
+      { id: "delyn", name: "DELYN Sovereign Intelligence Backend", port: 8085, status: "UNVERIFIED_OR_MISSING" },
+      { id: "cipher", name: "LOCK THE CIPHER Cryptographic Engine", port: 8086, status: "UNVERIFIED_OR_MISSING" },
+      { id: "gnomeledger", name: "GENOME LEDGER (PGL) Receipts Store", port: 8083, status: "UNVERIFIED_OR_MISSING" }
     ],
     timestamp: new Date().toISOString()
   });
@@ -2425,17 +2367,13 @@ ${JSON.stringify(blueprint, null, 2)}`;
     });
 
   } catch (error: any) {
-    console.warn("LLM API failed or quota exhausted, generating local high-fidelity fallback test suite:", error);
-    
-    // Create spectacular, highly-aligned, detailed fallback test suite to ensure an incredibly successful UX!
-    const fallbackTestCode = generateLocalFallbackTestSuite(selectedSpecName, testFramework, blueprint);
-    return res.json({
-      success: true,
+    console.warn("LLM API failed or quota exhausted; no local synthetic test suite will be generated:", error);
+    return res.status(503).json({
+      success: false,
       specName: selectedSpecName,
       framework: testFramework,
-      code: fallbackTestCode,
-      source: "local-compiler",
-      fallbackWarning: "Local high-fidelity generator output successfully (Ollama or remote API currently bypassed or offline)."
+      error: "Test generation is unavailable because the configured model did not return a result.",
+      evidenceState: "NOT_VERIFIED"
     });
   }
 });
@@ -2991,7 +2929,7 @@ app.post("/api/constitution/sign", (req, res) => {
 });
 
 // 4. UNIFIED CAPABILITY CATALOG AND AI-CATALOG ENDPOINTS
-// Exposes the complete Interlink-CAPI standard and available capabilities for external IDE discovery agents.
+// Exposes the canonical cAPI Interlink role and declared capabilities for external IDE discovery agents.
 app.get(["/.well-known/ai-catalog.json", "/.well-known/ai-catalog.json/route.ts"], (req, res) => {
   try {
     const protocolPath = path.join(process.cwd(), "public", "protocol.json");
@@ -3020,7 +2958,7 @@ app.get(["/.well-known/ai-catalog.json", "/.well-known/ai-catalog.json/route.ts"
 
     const unifiedCatalog = {
       catalog_version: "1.0",
-      name: "Interlink-CAPI Unified Catalog",
+      name: "cAPI Canonical Interlink Catalog",
       description: "Automated discovery endpoint for external IDE agents to query system capabilities, schemas, and protocols.",
       timestamp: new Date().toISOString(),
       entrypoint: hostUrl,

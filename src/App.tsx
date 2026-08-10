@@ -991,7 +991,7 @@ export default function App() {
   // Trigger true synchronization handshake verification across plural backends
   const handleVerifySync = async () => {
     setIsVerifyingSync(true);
-    setSyncLogs(["[HANDSHAKE] Contacting primary TrustConnection gateways...", "[HANDSHAKE] Authenticating Ed25519 identity nodes..."]);
+    setSyncLogs(["[HANDSHAKE] Backend synchronization probe is not implemented.", "[HANDSHAKE] Status: NOT_VERIFIED"]);
     try {
       const response = await fetch("/api/backends/verify-sync", {
         method: "POST",
@@ -1014,28 +1014,22 @@ export default function App() {
 
       const data = await response.json();
       
-      // Delay logging for an industrial console effect!
       setTimeout(() => {
         setSyncLogs(prev => [
           ...prev,
-          ...data.logs,
-          `[SUCCESS] System alignment converged in ${data.totalLatencyMs}ms. Status: ${data.systemState}`
+          `[NOT_VERIFIED] ${data.reason || "No synchronization evidence was returned."}`
         ]);
 
-        // Add manual event to escrow console
         const timestampStr = new Date().toISOString();
         const randId = "evt-" + Math.floor(Math.random() * 9000 + 1000);
-        const hasActiveNodes = backendStatuses && backendStatuses.length > 0 && backendStatuses.some(b => b.status === "Active");
-        const eventClaimState = hasActiveNodes ? "SYNTHETIC_VERIFIED" : "SIMULATED_EXECUTION";
 
         setSmartEscrowEvents(prev => [
           {
             id: randId,
             timestamp: timestampStr,
-            type: "SUCCESS",
-            claimState: eventClaimState,
-            message: `Manual Handshake: Synchronization verified. Latency: ${data.totalLatencyMs}ms. [TEST MODE]`,
-            latencyMs: data.totalLatencyMs
+            type: "INFO",
+            claimState: "NOT_VERIFIED",
+            message: "Manual Handshake: Backend synchronization is NOT_VERIFIED. No production authority was established."
           },
           ...prev
         ]);
@@ -1173,12 +1167,12 @@ export default function App() {
         gnomeledger: gnomeledgerUrl,
         veklom_vnp: vnpUrl
       },
-      interlink_cAPI_integration: {
-        interlink_capi_repo: "https://github.com/reprewindai-dev/interlink-cAPI",
+      capi_integration: {
         capi_repo: "https://github.com/reprewindai-dev/cAPI",
-        binding_status: "CONVERGED_ABIDE_BLUEPRINT",
+        role: "Canonical Interlink discovery, negotiation, and composition layer",
+        binding_status: "NOT_VERIFIED",
         unified_call_interface: "connection.call({ capability, input, planId, idempotencyKey })",
-        negotiation_mode: "MUTUAL_TRUST_HANDSHAKE_v2.0"
+        negotiation_mode: "NOT_VERIFIED"
       },
       backend_ping_results: backendStatuses.length > 0 ? backendStatuses : "No active pings recorded yet",
       active_verification_ledger_logs: syncLogs.length > 0 ? syncLogs : ["No active handshakes verified in this session"],
@@ -1257,28 +1251,20 @@ export default function App() {
 
           const data = await response.json();
           
-          // Local/Tunnel backend status offline check for realistic synthetic labelling
-          const hasActiveNodes = backendStatuses && backendStatuses.length > 0 && backendStatuses.some(b => b.status === "Active");
-          const eventType = "SUCCESS";
-          // If probes show offline, we use SIMULATED_EXECUTION, otherwise SYNTHETIC_VERIFIED
-          const eventClaimState = hasActiveNodes ? "SYNTHETIC_VERIFIED" : "SIMULATED_EXECUTION";
-          
           setSmartEscrowEvents(prev => [
             {
               id: randId,
               timestamp: timestampStr,
-              type: eventType,
-              claimState: eventClaimState,
-              message: `Auto-Verify Tick: Sync handshake simulated converged (${data.totalLatencyMs}ms). No production authority.`,
-              latencyMs: data.totalLatencyMs
+              type: "INFO",
+              claimState: "NOT_VERIFIED",
+              message: "Auto-Verify Tick: Backend synchronization is NOT_VERIFIED. No production authority was established."
             },
             ...prev
           ]);
 
           setSyncLogs(prev => [
             `[AUTO-VERIFY TICK] - ${timestampStr}`,
-            ...data.logs,
-            `[FIXTURE_PASSED] Auto-Verify completed. Latency: ${data.totalLatencyMs}ms`,
+            `[NOT_VERIFIED] ${data.reason || "No synchronization evidence was returned."}`,
             ...prev.slice(0, 50)
           ]);
 
@@ -3512,7 +3498,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                             { name: "veklom-byos-backend", url: "https://github.com/reprewindai-dev/veklom-byos-backend" },
                             { name: "lockerphycer (Security Layer)", url: "https://github.com/reprewindai-dev/lockerphycer" },
                             { name: "gnomledger (PGL)", url: "https://github.com/reprewindai-dev/gnomledger" },
-                            { name: "interlink-cAPI (Unified Asset)", url: "https://github.com/reprewindai-dev/interlink-cAPI" },
+                            { name: "cAPI (Canonical Interlink)", url: "https://github.com/reprewindai-dev/cAPI" },
                             { name: "UACPV5-TERMINAL", url: "https://github.com/reprewindai-dev/UACPV5-TERMINAL/" },
                             { name: "delyn-backend (DELYN)", url: "https://github.com/reprewindai-dev/delyn-backend" }
                           ].map((r) => (
@@ -5135,7 +5121,7 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                         </div>
                         
                         <p className="text-[10px] text-gray-400 leading-relaxed normal-case">
-                          The <code className="text-[#00F0FF]">interlink-cAPI</code> serves as the discovery, negotiation, and composition layer between the <code className="text-[#00F0FF]">ABIDE_BLUEPRINT</code> intent specification and the underlying persistent <code className="text-white">BYOS</code> workspace nodes.
+                          The canonical <code className="text-[#00F0FF]">cAPI</code> serves the Interlink discovery, negotiation, and composition role between the <code className="text-[#00F0FF]">ABIDE_BLUEPRINT</code> intent specification and the underlying persistent <code className="text-white">BYOS</code> workspace nodes.
                         </p>
 
                         <div className="p-3 bg-[#050505] border border-[#222] rounded-none space-y-2.5 font-mono text-[9px] uppercase">
@@ -5146,8 +5132,8 @@ compliance: "Standard X402 microtransaction ledger validation schemas and public
                           <div className="space-y-1">
                             <div className="text-gray-500 font-bold">Repository Gates:</div>
                             <div className="flex flex-col gap-1 pl-2 text-gray-300 select-all leading-normal normal-case">
-                              <a href="https://github.com/reprewindai-dev/interlink-cAPI" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
-                                <span>[ interlink-cAPI (Unified MCP &amp; API Asset) ]</span>
+                              <a href="https://github.com/reprewindai-dev/cAPI" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">
+                                <span>[ cAPI (Canonical Interlink) ]</span>
                                 <ExternalLink size={10} />
                               </a>
                               <a href="https://github.com/reprewindai-dev/UACPV5-TERMINAL/" target="_blank" rel="noreferrer" className="text-[#00F0FF] hover:underline hover:text-white flex items-center gap-1">

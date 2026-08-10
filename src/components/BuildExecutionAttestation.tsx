@@ -273,64 +273,17 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
             setStep("anchoring");
             addLog(`⛓️ [GNOMLEDGER] Packing transaction receipt...`);
             addLog(`⛓️ [GNOMLEDGER] Merkle root generated: sha256:${blueprint.hash.substring(0, 16)}...`);
-            addLog(`🪙 [x402 SETTLEMENT] Resolving autonomous micro-payment escrow channel...`);
-            addLog(`🪙 [x402 SETTLEMENT] Settled Turnaround time: ${syncData.totalLatencyMs}ms. Cost: $0.31. Status: SEAMLESS`);
+            addLog(`🪙 [x402 SETTLEMENT] NOT_IMPLEMENTED: no settlement adapter was contacted.`);
           }, 2000);
 
           setTimeout(() => {
             setStep("completed");
-            addLog(`🏆 [SUCCESS] End-to-end provenance dependency sealed. Receipt recorded.`);
-            
-            // Construct receipt matching exactly the correct schema
+            addLog(`⚠️ [NOT_VERIFIED] No authorization, provenance receipt, ledger anchor, or settlement was created.`);
             const receipt = {
               "receipt_version": "abide.build-execution.v1",
-              "authorization": {
-                "blueprint_id": `bp_${blueprint.hash.substring(0, 8)}`,
-                "blueprint_hash": `sha256:${blueprint.hash}`,
-                "plan_hash": `sha256:${generateHash(blueprint.title + "plan")}`,
-                "authorizing_identity": `ei_${generateHash(userEmail || "anon").substring(0, 12)}`
-              },
-              "source": {
-                "repository": "github.com/reprewindai-dev/poltergeist",
-                "commit_sha": "c530b192e48231db0c8ea23fb04e68e09f518b52",
-                "working_tree_hash": `sha256:${generateHash(selectedFile + triggerCount)}`,
-                "dirty_state": false,
-                "changed_files_digest": `sha256:${generateHash(selectedFile)}`,
-                "change_cursor": `poltergeist-sequence-${triggerCount}`
-              },
-              "build": {
-                "build_id": `build_${generateHash(selectedTarget + triggerCount).substring(0, 10)}`,
-                "target": selectedTarget,
-                "trigger_reason": "source_change",
-                "trigger_sequence": triggerCount,
-                "build_recipe_hash": `sha256:${generateHash(selectedTarget + "recipe")}`,
-                "dependency_lock_hash": "sha256:4b9e2f1a0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f",
-                "toolchain_digest": "sha256:0e9d8c7b6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d",
-                "started_at": new Date(Date.now() - 10000).toISOString(),
-                "completed_at": new Date(Date.now() - 5000).toISOString(),
-                "result": "passed"
-              },
-              "artifact": {
-                "path": `dist/${selectedTarget === "api-server" ? "server" : selectedTarget}`,
-                "artifact_hash": `sha256:${generateHash(selectedTarget + "compiled")}`,
-                "provenance_status": "verified",
-                "freshness_status": "current",
-                "source_binding_verified": true
-              },
-              "execution": {
-                "connection_id": `conn_${generateHash(userEmail + triggerCount).substring(0, 12)}`,
-                "execution_identity": `ei_${generateHash(userEmail || "anon").substring(0, 12)}`,
-                "executed_artifact_hash": `sha256:${generateHash(selectedTarget + "compiled")}`,
-                "artifact_match": true,
-                "budget_authorized": 5.00,
-                "budget_consumed": 0.31
-              },
-              "evidence": {
-                "ledger_record_id": `pgl_${generateHash(blueprint.hash + triggerCount).substring(0, 12)}`,
-                "merkle_root": `sha256:${generateHash(blueprint.hash + "merkle")}`,
-                "anchor_status": "confirmed",
-                "settlement_id": `x402_settle_${generateHash(triggerCount.toString()).substring(0, 10)}`
-              }
+              "evidence_state": "NOT_VERIFIED",
+              "reason": "This UI surface does not contact an authorization, provenance, ledger, or settlement adapter.",
+              "selected_target": selectedTarget
             };
             setActiveReceipt(receipt);
           }, 3800);
@@ -418,7 +371,7 @@ export default function BuildExecutionAttestation({ blueprint, userEmail }: Buil
           </div>
           <div>
             <span className="text-[9px] text-[#555] block">Linter & Compilers</span>
-            <span className="font-bold text-emerald-400 leading-tight">ONLINE / VERIFIED</span>
+            <span className="font-bold text-amber-400 leading-tight">UNVERIFIED / DEMO</span>
           </div>
         </div>
       )}

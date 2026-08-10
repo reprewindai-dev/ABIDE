@@ -39,11 +39,6 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/cappo-backend",
     description: "CAPPO Core API & Capability Verification Gateway. Directs orchestration, verifies access, and registers compliance credentials (The Disposer under ABIDE Proposes, CAPPO Disposes).",
     stack: "Node.js / Express + TypeScript / Open Policy Agent",
-    pglBirthCert: "PGL-BIRTH-CERT-72c6",
-    lineageChain: "15 anchor blocks",
-    pricingType: "Value",
-    priceText: "$0.05 per active verification",
-    microNodes: "Abide Micro-Node B",
     capabilities: ["govern-agent-session", "score-api-eligibility", "evaluate-policy"]
   },
   {
@@ -51,11 +46,6 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/veklom-byos-backend",
     description: "Build Your Own Sovereignty (BYOS) engine. Governs custom node provisioning, dynamic latency profiling, and VM enclaves using PostgreSQL.",
     stack: "Rust + gRPC + Tokio Async Scheduler / PostgreSQL",
-    pglBirthCert: "PGL-BIRTH-CERT-99fa",
-    lineageChain: "32 anchor blocks",
-    pricingType: "Value",
-    priceText: "$0.12 per container boot",
-    microNodes: "Abide Micro-Node B",
     capabilities: ["resolve-capability-plan", "govern-agent-session", "byos-postgres-store"]
   },
   {
@@ -63,11 +53,6 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/lockerphycer",
     description: "THE SECURITY LAYER BACKEND (Lock The Cipher). Physical security & hardware isolation layer. Integrates TPM/HSM-bound cryptographic identity, enclave execution, and Groth16/PLONK verifiers.",
     stack: "C/C++ / Rust / Assembly (Sovereign hardware enclaves)",
-    pglBirthCert: "PGL-BIRTH-CERT-44ad",
-    lineageChain: "8 anchor blocks",
-    pricingType: "Rare / Critical",
-    priceText: "$2.50 per secure key-gen",
-    microNodes: "Abide Micro-Node A",
     capabilities: ["verify-provider-ownership", "zk-groth16-verify", "enclave-seal-issue"]
   },
   {
@@ -75,23 +60,13 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/gnomledger",
     description: "Peer Grounding Ledger (PGL) register. Immutable ledger recording lineage events, birth certificates, and sovereign transaction tokens.",
     stack: "Solidity / WASM VM Smart Contracts (Arbitrum L2)",
-    pglBirthCert: "PGL-BIRTH-CERT-0001 (Genesis Anchor)",
-    lineageChain: "1,248 anchor blocks",
-    pricingType: "Meaningless / Cheap",
-    priceText: "$0.0001 per anchor block write",
-    microNodes: "Abide Micro-Node C",
     capabilities: ["mint-settlement-evidence", "issue-verification-badge", "anchor-merkle-root"]
   },
   {
-    name: "interlink-cAPI",
-    url: "https://github.com/reprewindai-dev/interlink-cAPI",
-    description: "cAPI CONNECTION (THE ASSET). The Unified MCP and API discovery, negotiation, and composition supergraph router with signed capability snapshots.",
+    name: "cAPI",
+    url: "https://github.com/reprewindai-dev/cAPI",
+    description: "Canonical Interlink discovery, negotiation, and composition layer with declared capability snapshots.",
     stack: "TypeScript / Fastify / MCP SDK",
-    pglBirthCert: "PGL-BIRTH-CERT-88be",
-    lineageChain: "44 anchor blocks",
-    pricingType: "Value",
-    priceText: "$0.01 per routing request",
-    microNodes: "Abide Micro-Node B",
     capabilities: ["discover-local-capabilities", "route-mcp-tool", "verify-signed-snapshot"]
   },
   {
@@ -99,11 +74,6 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/UACPV5-TERMINAL/",
     description: "THE TERMINAL. Sovereign command execution interface, real-time process streaming, and interactive telemetry console for ABIDE & CAPPO.",
     stack: "React / Node.js / WebSockets / xterm.js",
-    pglBirthCert: "PGL-BIRTH-CERT-33a1",
-    lineageChain: "19 anchor blocks",
-    pricingType: "Value",
-    priceText: "$0.02 per interactive session",
-    microNodes: "Abide Micro-Node B",
     capabilities: ["execute-terminal-process", "stream-telemetry-logs", "interactive-console"]
   },
   {
@@ -111,11 +81,6 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/ABIDE",
     description: "The Planning & Intent Compilation Layer. Core Invariant: ABIDE Proposes, CAPPO Disposes. Mathematically decoupled from authorization; compiles human intent into proposed execution graphs.",
     stack: "TypeScript / Z3-TS SMT Solver / Node.js",
-    pglBirthCert: "PGL-BIRTH-CERT-ab01",
-    lineageChain: "56 anchor blocks",
-    pricingType: "Value",
-    priceText: "$0.05 per intent compilation",
-    microNodes: "Abide Micro-Node B",
     capabilities: ["compile-human-intent", "synthesize-execution-graph", "evaluate-smt-constraints"]
   },
   {
@@ -123,11 +88,6 @@ const REPOSITORIES = [
     url: "https://github.com/reprewindai-dev/delyn-backend",
     description: "DELYN Sovereign Intelligence Backend. Cognitive reasoning, neurosymbolic evaluation, and automated agent skill synthesis.",
     stack: "Python / Rust / PyTorch (Sovereign Enclave)",
-    pglBirthCert: "PGL-BIRTH-CERT-55de",
-    lineageChain: "24 anchor blocks",
-    pricingType: "Value",
-    priceText: "$0.08 per cognitive trace",
-    microNodes: "Abide Micro-Node B",
     capabilities: ["cognitive-reasoning-trace", "neurosymbolic-eval", "agent-skill-synthesize"]
   }
 ];
@@ -139,19 +99,12 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
   const [scannedRepos, setScannedRepos] = useState<Record<string, boolean>>({});
   const [checkedLegacy, setCheckedLegacy] = useState<Record<string, boolean>>({});
 
-  // Abide micro-nodes configuration
-  const [rateLimitCaps, setRateLimitCaps] = useState<Record<string, number>>({
-    "Abide-Node-A": 10,
-    "Abide-Node-B": 100,
-    "Abide-Node-C": 1000
-  });
-
   const [paymentMode, setPaymentMode] = useState<"human" | "m2m">("m2m");
   const [selectedRequestType, setSelectedRequestType] = useState<"cheap" | "value" | "rare">("value");
   const [isProcessingM2M, setIsProcessingM2M] = useState(false);
   const [m2mConsoleLogs, setM2MConsoleLogs] = useState<string[]>([
-    "[gateway] Abide M2M network initialized. Listening on socket 3000.",
-    "[X402] Escrow balance locked: 25.0000 USD."
+    "[gateway] M2M settlement is not configured in this environment.",
+    "[NOT_VERIFIED] No payment, ledger, or authorization operation has been performed."
   ]);
 
   // Actual structural duplicates inside the repositories
@@ -229,52 +182,12 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
 
   const handleM2MRequest = () => {
     setIsProcessingM2M(true);
-    const timeStr = new Date().toISOString().split("T")[1].substring(0, 8);
-    
-    let targetNode = "Abide-Node-B";
-    let cost = 0.05;
-    let description = "Active capability verification";
-    let actionStr = "VERIFY_CAPABILITY";
-
-    if (selectedRequestType === "cheap") {
-      targetNode = "Abide-Node-C";
-      cost = 0.0001;
-      description = "Logging and metadata query";
-      actionStr = "ANCHOR_BLOCK_WRITE";
-    } else if (selectedRequestType === "rare") {
-      targetNode = "Abide-Node-A";
-      cost = 2.50;
-      description = "Secure HSM enclave keygen signature";
-      actionStr = "HSM_ENCLAVE_SIGN";
-    }
-
-    // Check rate limit compliance
-    const currentRateLimit = rateLimitCaps[targetNode];
-    const simulatedLoad = Math.floor(Math.random() * (currentRateLimit * 1.5));
-    const isRateLimited = simulatedLoad > currentRateLimit;
-
-    setTimeout(() => {
-      setIsProcessingM2M(false);
-      if (isRateLimited) {
-        setM2MConsoleLogs(prev => [
-          `[${timeStr}] [GATEWAY_ERROR] Rate limit exceeded on ${targetNode}! Current load: ${simulatedLoad} req/s. Cap: ${currentRateLimit} req/s.`,
-          `[${timeStr}] [GATEWAY_INFO] Rate limiting applied frictionless. Request dropped without drainage.`,
-          ...prev
-        ]);
-        return;
-      }
-
-      const txHash = "0x" + Math.random().toString(16).substring(2, 10) + "a8972fcb" + Math.random().toString(16).substring(2, 10) + "99e1";
-      const birthCertId = `PGL-BIRTH-CERT-${Math.random().toString(16).substring(2, 6)}`;
-
-      setM2MConsoleLogs(prev => [
-        `[${timeStr}] [X402_SETTLED] Debit: $${cost.toFixed(4)} USD settled instantly via micro-payment stream.`,
-        `[${timeStr}] [ABIDE_GATEWAY] Frictionless access granted. Action: ${actionStr} (${description}).`,
-        `[${timeStr}] [GNOMLEDGER_ANCHOR] Birth certificate registered! ID: ${birthCertId}. Lineage state: STABLE.`,
-        `[${timeStr}] [ARBITRUM_L2] Broadcasted event to Arbitrum. Tx: ${txHash}.`,
-        ...prev
-      ]);
-    }, 1000);
+    setIsProcessingM2M(false);
+    setM2MConsoleLogs(prev => [
+      `[NOT_IMPLEMENTED] No live settlement adapter is configured for "${selectedRequestType}" requests.`,
+      "[NOT_VERIFIED] No payment, ledger anchor, transaction, or authorization was created.",
+      ...prev
+    ]);
   };
 
   const toggleLegacyTask = (id: string) => {
@@ -400,7 +313,7 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
           <div className="p-4 border border-[#222] bg-[#0A0A0A] rounded-none">
             <span className="text-[9px] text-[#00F0FF] font-bold tracking-widest uppercase block mb-1">CORE REPOSITORY INDEX</span>
             <p className="text-[11px] text-[#888] normal-case leading-relaxed">
-              These 4 core repositories formulate the live technical surface of the Veklom Capability OS. Each is assigned a unique Gnomledger Birth Certificate registering its lineage and integrity hashes.
+              These repository entries are a declared catalog surface only. Capabilities and repository state remain UNVERIFIED until measured.
             </p>
           </div>
 
@@ -436,27 +349,8 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
                     {repo.description}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
-                    <div className="p-2 bg-[#111] border border-[#222]">
-                      <span className="text-gray-500 text-[8px] block uppercase">PGL BIRTH CERTIFICATE</span>
-                      <span className="text-[#00F0FF] font-black">{repo.pglBirthCert}</span>
-                    </div>
-                    <div className="p-2 bg-[#111] border border-[#222]">
-                      <span className="text-gray-500 text-[8px] block uppercase">LINEAGE DEPTH</span>
-                      <span className="text-white font-bold">{repo.lineageChain}</span>
-                    </div>
-                    <div className="p-2 bg-[#111] border border-[#222]">
-                      <span className="text-gray-500 text-[8px] block uppercase">X402 PRICING CATEGORY</span>
-                      <span className="text-amber-400 font-bold uppercase">{repo.pricingType}</span>
-                    </div>
-                    <div className="p-2 bg-[#111] border border-[#222]">
-                      <span className="text-gray-500 text-[8px] block uppercase">PRICING VALUE</span>
-                      <span className="text-emerald-400 font-bold">{repo.priceText}</span>
-                    </div>
-                  </div>
-
                   <div className="space-y-1">
-                    <span className="text-[8.5px] text-gray-500 font-bold uppercase block">Mapped Blueprint Capabilities:</span>
+                    <span className="text-[8.5px] text-gray-500 font-bold uppercase block">Declared Blueprint Capabilities (UNVERIFIED):</span>
                     <div className="flex flex-wrap gap-1">
                       {repo.capabilities.map((capId) => (
                         <span key={capId} className="text-[9px] px-1.5 py-0.5 bg-[#00F0FF]/5 text-[#00F0FF] border border-[#00F0FF]/15 uppercase">
@@ -479,11 +373,11 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
             {/* Pay Plans Selection */}
             <div className="p-5 border-2 border-[#222] bg-[#050505] space-y-4">
               <div className="border-b border-[#111] pb-2">
-                <span className="text-[9px] text-[#00F0FF] font-bold tracking-widest block">[ CORE INGRESS GATES ]</span>
-                <h4 className="text-white font-black text-sm tracking-tight">Sovereign Billing & Access Matrix</h4>
+                <span className="text-[9px] text-[#00F0FF] font-bold tracking-widest block">[ DECLARED INGRESS GATES ]</span>
+                <h4 className="text-white font-black text-sm tracking-tight">Access Capability Declarations</h4>
               </div>
               <p className="text-[10px] text-gray-400 normal-case leading-relaxed">
-                Configure whether you are accessing Veklom services as a human via Veklom Pay Plans, or as a machine agent paying real-time X402 micro-payments.
+                These are declared interface categories only. No payment, settlement, or authorization evidence is available from this surface.
               </p>
 
               <div className="flex flex-col gap-2 pt-2">
@@ -499,7 +393,7 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
                     <User size={12} />
                     <span>VEKLOM HUMAN ACCESS PLAN</span>
                   </div>
-                  <span className="text-[9px] text-amber-500 mt-1 font-black">Monthly Subscription (Sovereign Flat Mode)</span>
+                  <span className="text-[9px] text-amber-500 mt-1 font-black">Declared human access category</span>
                 </button>
 
                 <button
@@ -514,113 +408,24 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
                     <Cpu size={12} />
                     <span>X402 MACHINE-TO-MACHINE PAY-AS-YOU-GO</span>
                   </div>
-                  <span className="text-[9px] text-emerald-400 mt-1 font-black">Micro-Payments Settle Instantly on Gnomledger</span>
+                  <span className="text-[9px] text-emerald-400 mt-1 font-black">Settlement NOT_VERIFIED</span>
                 </button>
               </div>
 
               {paymentMode === "human" ? (
                 <div className="p-3 bg-black border border-[#111] space-y-2 text-[10px]">
                   <div className="flex justify-between font-bold text-white">
-                    <span>Sovereign Seat</span>
-                    <span className="text-emerald-400">$49/mo</span>
+                    <span>Human access</span>
+                    <span className="text-emerald-400">NOT_VERIFIED</span>
                   </div>
-                  <p className="text-[9px] text-gray-500 normal-case">Fixed rate human seats with complete access, subject to a soft rate-limiting quota.</p>
+                  <p className="text-[9px] text-gray-500 normal-case">No live billing configuration or access grant was measured.</p>
                 </div>
               ) : (
                 <div className="p-3 bg-black border border-[#111] space-y-2 text-[10px]">
-                  <span className="text-gray-500 text-[8px] block">X402 PRICING MATRIX:</span>
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Meaningless Cheap stuff</span>
-                      <span className="text-emerald-400 font-bold">$0.0001 / call</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Value Operations</span>
-                      <span className="text-emerald-400 font-bold">$0.05 / check</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Rare / Critical HSM Enclave</span>
-                      <span className="text-emerald-400 font-bold">$2.50 / keygen</span>
-                    </div>
-                  </div>
+                  <span className="text-gray-500 text-[8px] block">X402 SETTLEMENT:</span>
+                  <span className="text-emerald-400 font-bold">NOT_VERIFIED</span>
                 </div>
               )}
-            </div>
-
-            {/* Abide Micro-Nodes Deployed */}
-            <div className="p-5 border-2 border-[#222] bg-[#050505] space-y-4 lg:col-span-2">
-              <div className="border-b border-[#111] pb-2">
-                <span className="text-[9px] text-[#00F0FF] font-bold tracking-widest block">[ ABIDE MICRO-NODES NETWORK ]</span>
-                <h4 className="text-white font-black text-sm tracking-tight">Active Micro-Nodes & Rate-Limit Controllers</h4>
-              </div>
-              <p className="text-[10px] text-gray-400 normal-case leading-relaxed">
-                Abide deploys frictionless rate-limited micro-nodes across physical and ledger boundaries. Adjust rate limits to safeguard enclaves against Drained-Wallet exhaustion attacks.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-                {[
-                  {
-                    id: "Abide-Node-A",
-                    name: "Abide Micro-Node A (Secure Enclave)",
-                    repo: "lockerphycer",
-                    status: "Enforced",
-                    col: "text-red-400",
-                    border: "border-red-500/20",
-                    bg: "bg-red-500/5",
-                    max: 20
-                  },
-                  {
-                    id: "Abide-Node-B",
-                    name: "Abide Micro-Node B (API Gateway)",
-                    repo: "cappo / BYOS",
-                    status: "Active",
-                    col: "text-amber-400",
-                    border: "border-amber-500/20",
-                    bg: "bg-amber-500/5",
-                    max: 200
-                  },
-                  {
-                    id: "Abide-Node-C",
-                    name: "Abide Micro-Node C (Ledger Anchoring)",
-                    repo: "gnomledger",
-                    status: "Idle",
-                    col: "text-[#00F0FF]",
-                    border: "border-cyan-500/20",
-                    bg: "bg-cyan-500/5",
-                    max: 2000
-                  }
-                ].map((node) => (
-                  <div key={node.id} className={`p-4 border ${node.border} ${node.bg} space-y-3`}>
-                    <div className="flex justify-between items-start border-b border-[#111] pb-2">
-                      <div>
-                        <span className="text-[8px] text-gray-500 block uppercase">{node.repo}</span>
-                        <span className="text-white font-black text-[11px] block">{node.id}</span>
-                      </div>
-                      <span className={`text-[8px] font-black ${node.col}`}>[ {node.status} ]</span>
-                    </div>
-
-                    <p className="text-[9px] text-gray-400 normal-case leading-normal">{node.name}</p>
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[8px] font-bold text-gray-500">
-                        <span>RATE LIMIT CAPACITY:</span>
-                        <span className="text-white font-bold">{rateLimitCaps[node.id]} req/s</span>
-                      </div>
-                      <input 
-                        type="range"
-                        min="5"
-                        max={node.max}
-                        value={rateLimitCaps[node.id]}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          setRateLimitCaps(prev => ({ ...prev, [node.id]: val }));
-                        }}
-                        className="w-full accent-[#00F0FF] bg-black h-1 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -681,10 +486,7 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
               <div className="bg-black border border-[#222] p-4 flex-1 overflow-y-auto max-h-[240px] font-mono text-[10px] leading-relaxed text-emerald-400 space-y-1">
                 {m2mConsoleLogs.map((log, i) => {
                   let logCol = "text-emerald-400";
-                  if (log.includes("[X402_SETTLED]")) logCol = "text-[#00F0FF] font-bold";
                   if (log.includes("[GATEWAY_ERROR]")) logCol = "text-red-400 font-bold";
-                  if (log.includes("[GNOMLEDGER_ANCHOR]")) logCol = "text-amber-400 font-bold";
-                  if (log.includes("[ARBITRUM_L2]")) logCol = "text-violet-400";
                   return (
                     <div key={i} className={`${logCol} whitespace-pre-wrap`}>
                       {log}
@@ -884,9 +686,9 @@ export const GapsDuplicates: React.FC<GapsDuplicatesProps> = ({ gapsReport, capa
                 requirements: "Implement Tiers 1-4 hierarchical Merkle batching to support 5000+ events/sec without blockchain gas bottlenecks."
               },
               {
-                repo: "interlink-cAPI",
-                url: "https://github.com/reprewindai-dev/interlink-cAPI",
-                role: "cAPI CONNECTION (THE ASSET). Unified MCP & API Router",
+                repo: "cAPI",
+                url: "https://github.com/reprewindai-dev/cAPI",
+                role: "Canonical Interlink discovery, negotiation & composition layer",
                 db: "Dynamic GraphQL / MCP Supergraph Registry",
                 endpoints: [
                   "GET /api/v1/capabilities/snapshot — Returns a cryptographically signed JSON snapshot of live capabilities across the mesh",

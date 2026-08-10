@@ -110,8 +110,8 @@ export async function executeTlaModelChecking(plan: PlanIR): Promise<PlanIR> {
 }
 
 /**
- * 3. Wire Groth16 / PLONK zk-SNARK Proof Circuits into PlanIR
- * Attaches cryptographically verified ZK circuits directly onto the PlanIR contract.
+ * 3. Record experimental proof structure checks on PlanIR.
+ * This does not establish cryptographic proof validity or authorization.
  */
 export async function verifyPlanZkSnarkCircuit(plan: PlanIR, request?: ZkAttestationRequest): Promise<PlanIR> {
   console.log(`[M2M Verifier] Evaluating ZK proof circuit for PlanIR ${plan.planId}...`);
@@ -138,22 +138,23 @@ export async function verifyPlanZkSnarkCircuit(plan: PlanIR, request?: ZkAttesta
   };
 
   const zkResult = await executeZkAttestationPipeline(defaultRequest);
-  const isVerified = zkResult.status === "APPROVED";
+  const isStructureValidated = zkResult.status === "STRUCTURE_VALIDATED";
   
   plan.zkSnarkCircuit = {
     proofType: defaultRequest.proofType,
     proof: defaultRequest.proof,
     publicSignals: defaultRequest.publicSignals,
     verificationKeyHash: `vkey-${defaultRequest.proofType.toLowerCase()}-${plan.canonicalHash.slice(0, 8)}`,
-    verified: isVerified,
-    verifiedAt: new Date().toISOString(),
+    verified: false,
+    verifiedAt: isStructureValidated ? new Date().toISOString() : undefined,
     circuitName: `circuit_planir_${plan.planId.slice(0, 8)}`
   };
 
-  if (!isVerified) {
-    throw new Error(`ZK Proof Circuit verification failed: Attestation rejected by ZK Gateway (Trace: ${zkResult.attestationTrace?.join(", ") || "Invalid commitment pairing"})`);
+  if (!isStructureValidated) {
+    throw new Error(`ZK structure validation failed: ${zkResult.errorMessage || zkResult.attestationTrace?.join(", ") || "Structural validation rejected"}`);
   }
 
+  plan.verificationStatus = "UNVERIFIED";
   return plan;
 }
 

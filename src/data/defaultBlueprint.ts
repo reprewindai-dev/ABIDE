@@ -139,10 +139,10 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
         status: "Active"
       },
       {
-        name: "interlink-cAPI",
-        url: "https://github.com/reprewindai-dev/interlink-cAPI",
+        name: "cAPI",
+        url: "https://github.com/reprewindai-dev/cAPI",
         capabilities: ["discover-local-capabilities", "route-mcp-tool", "verify-signed-snapshot"],
-        status: "Active"
+        status: "UNVERIFIED"
       },
       {
         name: "UACPV5-TERMINAL",
@@ -154,7 +154,7 @@ export const DEFAULT_BLUEPRINT: BlueprintResult = {
         name: "delyn-backend",
         url: "https://github.com/reprewindai-dev/delyn-backend",
         capabilities: ["cognitive-reasoning-trace", "neurosymbolic-eval", "agent-skill-synthesize"],
-        status: "Active"
+        status: "UNVERIFIED"
       }
     ],
     environments: ["Local Sandbox Emulator", "Edge Cluster West-1", "Gnomledger Mainnet"],

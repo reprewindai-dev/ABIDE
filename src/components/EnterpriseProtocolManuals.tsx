@@ -1410,7 +1410,7 @@ export default function EnterpriseProtocolManuals() {
                   <span className="text-[9px] bg-[#00F0FF]/10 px-2 py-0.5 border border-[#00F0FF]/30">BN254 / BLS12-381</span>
                 </div>
                 <p className="text-[11px] text-gray-300 font-sans leading-relaxed">
-                  Generates zero-knowledge attestations using bilinear pairing over elliptic curve points (A, B, C). These proofs allow an agent to prove that its internal reasoning trace matches submitted hashes without exposing raw confidential data.
+                  Describes the intended zero-knowledge attestation architecture. The current implementation performs experimental structure checks only; cryptographic pairing is not implemented.
                 </p>
               </div>
             </div>

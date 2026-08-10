@@ -34,8 +34,8 @@ export default function GovernanceSimulator({ capabilities }: GovernanceSimulato
 
   const [logs, setLogs] = useState<string[]>([
     "SYS_INIT: Governance policies successfully loaded.",
-    "SYS_INIT: Active SLA latency safety limits set to < 15ms.",
-    "SYS_STATUS: Node compliance rating: 100%. Gnomledger network connection verified."
+    "SYS_INIT: Declared SLA limits are not runtime evidence.",
+    "SYS_STATUS: Gnomledger network state: UNVERIFIED_OR_MISSING."
   ]);
 
   // Execute actual SEKED compiler run
@@ -166,7 +166,7 @@ export default function GovernanceSimulator({ capabilities }: GovernanceSimulato
 
     setLogs([
       `[${new Date().toISOString().split("T")[1].substring(0, 8)}] 🔄 [GOVERNANCE RESET] All kill-switches reset. Restored complete network compliance state.`,
-      "SYS_STATUS: Node compliance rating: 100%. Gnomledger network connection verified."
+      "SYS_STATUS: Gnomledger network state: UNVERIFIED_OR_MISSING."
     ]);
     
     runSekedCompile(12, 98, 0, 100, 1);
@@ -257,7 +257,7 @@ export default function GovernanceSimulator({ capabilities }: GovernanceSimulato
       if (data.success) {
         setCompiledPlan(data.plan);
         setLogs(prev => [
-          `[${new Date().toISOString().split("T")[1].substring(0, 8)}] 🟢 [CAPPO AUTHORIZATION] Plan ${data.plan.planId} APPROVED via Sovereign Override Token. Status: APPROVED`,
+          `[${new Date().toISOString().split("T")[1].substring(0, 8)}] 🟢 [CAPPO RESPONSE] Plan ${data.plan.planId} returned status: ${data.plan.status}. ABIDE does not authorize execution.`,
           ...prev
         ]);
       } else {
@@ -284,7 +284,7 @@ export default function GovernanceSimulator({ capabilities }: GovernanceSimulato
         setExecutionReceipt(data.receipt);
         setExecutionResults(data.results || []);
         setLogs(prev => [
-          `[${new Date().toISOString().split("T")[1].substring(0, 8)}] 🟢 [M2M EXECUTION COMPLETE] Receipt: ${data.receipt?.receiptId} | PGL Anchor: ${data.receipt?.merkleRoot?.substring(0, 24)}... | SLSA Level 3`,
+          `[${new Date().toISOString().split("T")[1].substring(0, 8)}] 🟢 [M2M RESPONSE] No ABIDE authorization claim was made. Receipt evidence state: ${data.receipt?.evidenceState || "NOT_VERIFIED"}.`,
           ...prev
         ]);
       } else {

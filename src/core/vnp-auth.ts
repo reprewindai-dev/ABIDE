@@ -5,7 +5,12 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-const JWT_SECRET = process.env.JWT_SECRET || "VNP_SOVEREIGN_AUTH_SECRET_2026_HMAC_SHA256";
+function requireJwtSecret(): string {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is required for VNP authentication.");
+  }
+  return process.env.JWT_SECRET;
+}
 const DB_FILE = path.join(process.cwd(), "vnp-users-db.json");
 
 export interface VnpApiKey {
@@ -157,7 +162,7 @@ export function generateJwtToken(user: VnpUser): { token: string; expiresAt: str
     sessionLeaseId
   };
 
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn });
+  const token = jwt.sign(payload, requireJwtSecret(), { expiresIn });
   return { token, expiresAt, sessionLeaseId };
 }
 
@@ -182,7 +187,7 @@ export function authenticateToken(req: Request, res: Response, next: any) {
   }
 
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const decoded: any = jwt.verify(token, requireJwtSecret());
     (req as any).user = decoded;
     next();
   } catch (err: any) {

@@ -410,9 +410,8 @@ export default function CognitiveIde({
   // ZK Attestation Gateway & 4 Main Backends State
   const [zkFlowMode, setZkFlowMode] = useState<boolean>(true);
   const [zkConsoleLogs, setZkConsoleLogs] = useState<string[]>([
-    "[SYSTEM: ZK-Proof Received] -> [Z3 SMT Constraint: SAT] -> [Execution Unlocked]",
-    "[MESH: CAPPO Core Auth (8082) & DELYN Sovereign Intel (8085) Sync Verified]",
-    "[MESH: LOCK THE CIPHER Cryptographic Engine (8086) & GENOME LEDGER PGL (8083) Active]"
+    "[SYSTEM: ZK flow is DEMO-only; no proof verification or execution authority is established]",
+    "[MESH: Backend states are UNVERIFIED_OR_MISSING until independently probed]"
   ]);
   const [isVerifyingZk, setIsVerifyingZk] = useState<boolean>(false);
   const [zkAttestResult, setZkAttestResult] = useState<any>(null);
@@ -2087,7 +2086,7 @@ export async function executeCapability(payload: any) {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 items-stretch">
                               {[
                                 { stage: "1. ZK Entry Gateway", label: "Accept Groth16 / PLONK Proofs", desc: "External agents send ZKP Attestation without exposing raw code, payloads, or secret data.", color: "border-[#00F0FF] bg-[#00F0FF]/5 text-[#00F0FF]" },
-                                { stage: "2. Groth16 / PLONK Verifier", label: "Bilinear Pairing Check", desc: "Verifies e(A,B) = e(α,β) · e(∑xᵢ·ICᵢ, γ) · e(C,δ) over BN254/BLS12-381 curves in <2ms.", color: "border-purple-500 bg-purple-500/5 text-purple-400" },
+                                { stage: "2. Groth16 / PLONK Structure Check", label: "Experimental Structure Validation", desc: "Checks proof shape and public-signal presence only; cryptographic pairing and polynomial opening are not implemented.", color: "border-purple-500 bg-purple-500/5 text-purple-400" },
                                 { stage: "3. Z3 SMT Solver Block", label: "Blind Intent Compilation", desc: "Formulates SMT-LIB constraints (assert (= zk_attestation_valid true)) solved in <5ms.", color: "border-emerald-500 bg-emerald-500/5 text-emerald-400" },
                                 { stage: "4. Einstein Predictor Router", label: "Heuristic Weight Dispatch", desc: "Evaluates node jitter (<12ms) & SLO (99.99%) to dynamically route to optimal enclave.", color: "border-amber-500 bg-amber-500/5 text-amber-400" },
                                 { stage: "5. Velum 4-Backend Mesh", label: "Canonical Synchronizer", desc: "Syncs authorization across CAPPO (8082), DELYN (8085), LOCK THE CIPHER (8086), PGL (8083).", color: "border-blue-500 bg-blue-500/5 text-blue-400" },
@@ -2146,7 +2145,7 @@ export async function executeCapability(payload: any) {
                                     if (data.fullConsoleOutput) {
                                       setZkConsoleLogs(data.fullConsoleOutput);
                                     } else {
-                                      setZkConsoleLogs(prev => [...prev, `[SYSTEM: ZK-Proof Received] -> [Z3 SMT Constraint: ${data.solverResult}] -> [Execution Unlocked]`]);
+                                      setZkConsoleLogs(prev => [...prev, `[DEMO] ZK flow status: ${data.status || "NOT_IMPLEMENTED"}. No proof or execution authority was established.`]);
                                     }
                                     setZkAttestResult(data);
                                   } catch (err: any) {
@@ -2158,7 +2157,7 @@ export async function executeCapability(payload: any) {
                                 disabled={isVerifyingZk}
                                 className="w-full py-2 bg-gradient-to-r from-[#00F0FF] to-emerald-400 hover:from-white hover:to-white text-black font-black text-[11px] uppercase tracking-wider transition-all shadow-md"
                               >
-                                {isVerifyingZk ? "⚡ Verifying Groth16 & Z3 (<5ms)..." : "⚡ Submit Real Groth16 Proof (BN254)"}
+                                {isVerifyingZk ? "⚡ Loading DEMO status..." : "⚡ Open ZK Demo (No Verification)"}
                               </button>
 
                               <button

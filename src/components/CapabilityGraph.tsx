@@ -33,9 +33,9 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
   const [auditTargetId, setAuditTargetId] = useState<string>(() => capabilities[0]?.id || "");
   
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
-    "[SYSTEM_INIT] Veklom Sovereign Node Orchestrator active.",
-    "[SUB_AGENTS] 3 background M2M sub-agents listening on network loop.",
-    "[GNOMLEDGER] Verified anchor proof signature: v_sec_0x2a91... [SLA: <15ms]"
+    "[SYSTEM_INIT] Veklom Sovereign Node Orchestrator state: UNVERIFIED.",
+    "[SUB_AGENTS] Background M2M sub-agent state: UNVERIFIED_OR_MISSING.",
+    "[GNOMLEDGER] Evidence adapter state: UNVERIFIED_OR_MISSING."
   ]);
 
   // Weaver Form States
@@ -172,30 +172,9 @@ export default function CapabilityGraphComponent({ companyGraph, capabilities, k
     setConsoleLogs(prev => [
       ...prev,
       `[ops-command-runner] $ ./veklom-ops-command --validate --capability "${capId}"`,
-      `[ops-command-runner] Initiating symbolic verification of capability boundary: ${targetCap.name}`
+      `[ops-command-runner] Structure inspection for "${targetCap.name}" is NOT_IMPLEMENTED; no ledger or verification operation was performed.`
     ]);
-
-    setTimeout(() => {
-      setConsoleLogs(prev => [
-        ...prev,
-        `[sub-agent-alpha] Scanning AST interface fields for "${targetCap.name}"... Found valid exposure definitions.`,
-        `[sub-agent-beta] SLA test packet injection: sent 100 fake micro-transaction payloads. Avg latency returned: 11.4ms.`
-      ]);
-    }, 600);
-
-    setTimeout(() => {
-      const anchorHash = `AG_ANCHOR_${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-      setConsoleLogs(prev => [
-        ...prev,
-        `[sub-agent-gamma] No schema drift detected. Committing cryptographic signature to Gnomledger...`,
-        `[gnomledger] Block generated and verified. Proof signature: ${anchorHash}`,
-        `[ops-command-runner] SUCCESS: Capability "${targetCap.name}" verification state promoted to VERIFIED SAFETY.`
-      ]);
-      
-      setCustomCapabilities(prev => prev.map(c => c.id === capId ? { ...c, verificationState: "Verified" } : c));
-      setLocalCapabilities(prev => prev.map(c => c.id === capId ? { ...c, verificationState: "Verified" } : c));
-      setIsExecutingOps(false);
-    }, 1600);
+    setIsExecutingOps(false);
   };
 
   // Dynamic coordinate generation for nodes based on compiled blueprint
