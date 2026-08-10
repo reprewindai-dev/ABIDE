@@ -162,14 +162,38 @@ describe("Enterprise Hardening: Verification & M2M Contract Regression Suite", (
     assert.ok(persistedRecord, "Sealed receipt must be found in persistent PGL ledger file");
   });
 
-  it("5. Groth16 / PLONK ZK-SNARK Proof Circuits: should wire and evaluate proof circuits directly onto PlanIR", async () => {
-    const plan = createSamplePlan(1);
-    const verifiedPlan = await verifyPlanZkSnarkCircuit(plan);
+  it("5. Groth16 / PLONK proof circuits: should record structural checks on PlanIR without claiming verification", async () => {
+    const previousSecret = process.env.APPROVAL_TOKEN_SECRET;
+    process.env.APPROVAL_TOKEN_SECRET = "test-approval-token-secret-for-structure-validation";
 
-    assert.ok(verifiedPlan.zkSnarkCircuit, "ZK SNARK circuit must be wired onto PlanIR");
-    assert.strictEqual(verifiedPlan.zkSnarkCircuit.proofType, "GROTH16", "Should default to GROTH16 circuit");
-    assert.strictEqual(verifiedPlan.zkSnarkCircuit.verified, true, "Proof circuit must be verified");
-    assert.ok(verifiedPlan.zkSnarkCircuit.verificationKeyHash?.startsWith("vkey-groth16-"), "Must bind verification key hash");
+    try {
+      const plan = createSamplePlan(1);
+      const checkedPlan = await verifyPlanZkSnarkCircuit(plan);
+
+      assert.ok(checkedPlan.zkSnarkCircuit, "ZK SNARK circuit must be wired onto PlanIR");
+      assert.strictEqual(checkedPlan.zkSnarkCircuit.proofType, "GROTH16", "Should default to GROTH16 circuit");
+      assert.strictEqual(checkedPlan.zkSnarkCircuit.verified, false, "Structural checks must never report cryptographic verification");
+      assert.strictEqual(checkedPlan.verificationStatus, "UNVERIFIED", "Plan must remain UNVERIFIED after structural checks only");
+      assert.ok(checkedPlan.zkSnarkCircuit.verificationKeyHash?.startsWith("vkey-groth16-"), "Must bind verification key hash");
+    } finally {
+      if (previousSecret === undefined) delete process.env.APPROVAL_TOKEN_SECRET;
+      else process.env.APPROVAL_TOKEN_SECRET = previousSecret;
+    }
+  });
+
+  it("5b. Proof structure checks must fail closed when no signing secret is configured", async () => {
+    const previousSecret = process.env.APPROVAL_TOKEN_SECRET;
+    delete process.env.APPROVAL_TOKEN_SECRET;
+
+    try {
+      await assert.rejects(
+        () => verifyPlanZkSnarkCircuit(createSamplePlan(1)),
+        /APPROVAL_TOKEN_SECRET/,
+        "Must refuse to seal evidence with an unconfigured signing secret"
+      );
+    } finally {
+      if (previousSecret !== undefined) process.env.APPROVAL_TOKEN_SECRET = previousSecret;
+    }
   });
 
   it("6. Lamport TLA+ State-Space Model Checking: should simulate algorithm state transitions prior to execution", async () => {
